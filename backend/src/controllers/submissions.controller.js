@@ -223,7 +223,7 @@ export const lockSubmission = async (req, res) => {
                     lockExpiresAt: lockExpiresAt
                 }
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!submission) {

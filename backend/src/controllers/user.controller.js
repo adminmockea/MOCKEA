@@ -370,7 +370,7 @@ export const markNotificationsAsRead = async (req, res) => {
         const user = await User.findOneAndUpdate(
             { email: email.toLowerCase().trim() },
             { $set: { lastNotificationsReadAt: new Date() } },
-            { new: true }
+            { returnDocument: 'after' }
         );
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -393,7 +393,7 @@ export const saveFcmToken = async (req, res) => {
         const user = await User.findOneAndUpdate(
             { email: email.toLowerCase().trim() },
             { $addToSet: { fcmTokens: token } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!user) {
@@ -417,7 +417,7 @@ export const removeFcmToken = async (req, res) => {
         const user = await User.findOneAndUpdate(
             { email: email.toLowerCase().trim() },
             { $pull: { fcmTokens: token } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!user) {

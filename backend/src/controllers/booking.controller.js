@@ -208,7 +208,7 @@ export const bookSlot = async (req, res, next) => {
           studentNotes: studentNotes || "",
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate("instructor", "name");
 
     if (!slot) {
