@@ -2,11 +2,45 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiPlay, FiMic, FiCheckCircle, FiVolume2, FiCpu } from 'react-icons/fi';
 import { Link } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import useAxios from '../hooks/useAxios';
+import { toast } from 'react-toastify';
 
 const PteHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingState, setRecordingState] = useState('idle'); // idle, recording, analyzing, completed
   const [progress, setProgress] = useState(0);
+  const axiosPublic = useAxios();
+
+  const { data: publicConfig } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: async () => {
+      const res = await axiosPublic.get('/settings/public');
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleWatchDemoClick = () => {
+    const isEnabled = publicConfig?.watchDemoEnabled !== false;
+    let url = publicConfig?.watchDemoUrl || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+    if (!isEnabled || !url.trim()) {
+      toast.info('Demo video is currently disabled or unavailable.');
+      return;
+    }
+
+    url = url.trim();
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      url = `https://${url}`;
+    }
+
+    if (url.startsWith('/')) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   useEffect(() => {
     let interval;
@@ -92,7 +126,10 @@ const PteHero = () => {
             <span className="relative z-10">Start PTE Practice</span>
             <FiArrowRight className="relative z-10 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <button className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2">
+          <button 
+            onClick={handleWatchDemoClick}
+            className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2 cursor-pointer"
+          >
             <FiPlay /> Watch System Guide
           </button>
         </motion.div>

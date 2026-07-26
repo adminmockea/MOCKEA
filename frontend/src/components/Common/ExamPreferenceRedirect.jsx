@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router";
 import useAuth from "../../hooks/useAuth";
 import useUserProfile from "../../hooks/useUserProfile";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import Loader from "../Loader/Loader";
 import { motion } from "framer-motion";
 import { PiBookOpenTextFill, PiGlobeHemisphereEastFill, PiArrowRightBold } from "react-icons/pi";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiPlay } from "react-icons/fi";
 import { toast } from "react-toastify";
+import useAxios from "../../hooks/useAxios";
 
 const Testimonials = lazy(() => import("../Home/Testimonials").then(m => ({ default: m.Testimonials })));
 const FreeResources = lazy(() => import("../Home/FreeResources").then(m => ({ default: m.FreeResources })));
@@ -20,6 +21,37 @@ export default function ExamPreferenceRedirect() {
     const { userData, isLoading: profileLoading } = useUserProfile();
     const axiosSecure = useAxiosSecure();
     const queryClient = useQueryClient();
+    const axiosPublic = useAxios();
+
+    const { data: publicConfig } = useQuery({
+        queryKey: ['public-settings'],
+        queryFn: async () => {
+            const res = await axiosPublic.get('/settings/public');
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 5,
+    });
+
+    const handleWatchDemoClick = () => {
+        const isEnabled = publicConfig?.watchDemoEnabled !== false;
+        let url = publicConfig?.watchDemoUrl || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+        if (!isEnabled || !url.trim()) {
+            toast.info('Demo video is currently disabled or unavailable.');
+            return;
+        }
+
+        url = url.trim();
+        if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+            url = `https://${url}`;
+        }
+
+        if (url.startsWith('/')) {
+            window.location.href = url;
+        } else {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+    };
 
     const queryParams = new URLSearchParams(location.search);
     const forceSelect = queryParams.get("select") === "true" || queryParams.get("change") === "true";
@@ -106,6 +138,19 @@ export default function ExamPreferenceRedirect() {
                     >
                         Select your target exam. We will customize your dashboard, mock tests, and practice rooms to match.
                     </motion.p>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="pt-3 flex justify-center"
+                    >
+                        <button 
+                            onClick={handleWatchDemoClick}
+                            className="px-6 py-3 bg-white border border-slate-300 hover:border-slate-400 text-slate-800 font-bold rounded-xl shadow-xs transition-all hover:bg-slate-50 flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            <FiPlay className="text-cta-btn fill-cta-btn" /> Watch Demo
+                        </button>
+                    </motion.div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">

@@ -4,8 +4,43 @@ import heroStudent from '../../assets/hero-student.png';
 import heroAbstract from '../../assets/hero-abstract.png';
 import heroGroup from '../../assets/hero-group.png';
 import { Link } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import useAxios from '../../hooks/useAxios';
+import { toast } from 'react-toastify';
 
 const Hero2 = () => {
+  const axiosPublic = useAxios();
+
+  const { data: publicConfig } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: async () => {
+      const res = await axiosPublic.get('/settings/public');
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleWatchDemoClick = () => {
+    const isEnabled = publicConfig?.watchDemoEnabled !== false;
+    let url = publicConfig?.watchDemoUrl || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+    if (!isEnabled || !url.trim()) {
+      toast.info('Demo video is currently disabled or unavailable.');
+      return;
+    }
+
+    url = url.trim();
+    if (!/^https?:\/\//i.test(url) && !url.startsWith('/')) {
+      url = `https://${url}`;
+    }
+
+    if (url.startsWith('/')) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="relative min-h-[60vh] lg:h-screen flex items-center bg-white font-sans text-gray-900 py-5 md:py-10 lg:py-0">
 
@@ -52,7 +87,10 @@ const Hero2 = () => {
               <span className="relative z-10">Start Mock Exam</span>
               <FiArrowRight className="relative animate-ping z-10 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <button className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2">
+            <button 
+              onClick={handleWatchDemoClick}
+              className="px-8 py-4 bg-gray-100 border border-gray-200 text-gray-800 font-bold rounded-xl transition-all hover:bg-gray-200 flex items-center justify-center gap-2 cursor-pointer"
+            >
               <FiPlay /> Watch Demo
             </button>
           </motion.div>
