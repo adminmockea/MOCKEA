@@ -319,60 +319,120 @@ export const Pricing = () => {
           ))}
         </div>
 
-        {/* Bangladesh Regional Pricing & bKash Banner */}
+        {/* Bangladesh Regional Pricing & bKash Banner with Enhanced Motion Graphics */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
           className="mt-12 md:mt-16 bg-white rounded-[2.25rem] p-6 sm:p-8 md:p-10 text-slate-900 shadow-xl relative overflow-hidden border border-slate-200/90"
         >
-          {/* Subtle Decorative Background Glows */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-red-100/30 rounded-full filter blur-3xl -mr-20 -mt-20 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-blue-100/30 rounded-full filter blur-3xl -ml-20 -mb-20 pointer-events-none" />
+          {/* Animated Ambient Background Glows */}
+          <motion.div 
+            animate={{ scale: [1, 1.25, 1], opacity: [0.25, 0.45, 0.25], x: [0, 15, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 right-0 w-72 h-72 bg-red-200/40 rounded-full filter blur-3xl -mr-20 -mt-20 pointer-events-none" 
+          />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2], y: [0, -15, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-0 left-0 w-72 h-72 bg-blue-200/40 rounded-full filter blur-3xl -ml-20 -mb-20 pointer-events-none" 
+          />
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
             
             {/* Left Info Column */}
-            <div className="space-y-3 text-center lg:text-left max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100">
-                <span className="text-lg leading-none">🇧🇩</span>
+            <div className="space-y-4 text-center lg:text-left max-w-xl">
+              
+              {/* Badge with Waving Flag Animation */}
+              <motion.div 
+                whileHover={{ scale: 1.04 }}
+                transition={{ type: "spring", stiffness: 400 }}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100/80 cursor-default shadow-sm"
+              >
+                <motion.span 
+                  animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="text-lg leading-none inline-block origin-bottom"
+                >
+                  🇧🇩
+                </motion.span>
                 <span className="text-xs font-extrabold uppercase tracking-wider text-cta-btn">
                   Bangladesh Special Pricing
                 </span>
                 <span className="inline-block w-2 h-2 rounded-full bg-cta-btn animate-pulse" />
-              </div>
+              </motion.div>
 
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-[#000f38] tracking-tight">
+              <motion.h3 
+                initial={{ opacity: 0, x: -10 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="text-xl sm:text-2xl md:text-3xl font-black text-[#000f38] tracking-tight leading-snug"
+              >
                 Users from Bangladesh get localized BDT rates & bKash payment options
-              </h3>
+              </motion.h3>
               
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 Pay conveniently in local currency with instant activation support for all major mobile banking methods.
               </p>
 
-              {/* Payment Methods Badges */}
+              {/* Interactive Staggered Payment Method Badges */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 pt-1">
-                <span className="px-3.5 py-1.5 rounded-xl bg-[#E2136E] text-white font-black text-xs shadow-md shadow-[#E2136E]/20 flex items-center gap-1.5 border border-[#E2136E]/20">
+                
+                {/* bKash Animated Glow Badge */}
+                <motion.span 
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  animate={{ 
+                    boxShadow: [
+                      "0 4px 14px rgba(226,19,110,0.3)", 
+                      "0 6px 22px rgba(226,19,110,0.6)", 
+                      "0 4px 14px rgba(226,19,110,0.3)"
+                    ] 
+                  }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#E2136E] text-white font-black text-xs flex items-center gap-1.5 border border-[#E2136E]/30 cursor-pointer select-none"
+                >
                   bKash Payment Supported
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">
+                </motion.span>
+
+                <motion.span 
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200/80 cursor-pointer transition-colors hover:bg-slate-200/60"
+                >
                   Nagad
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">
+                </motion.span>
+
+                <motion.span 
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200/80 cursor-pointer transition-colors hover:bg-slate-200/60"
+                >
                   Rocket
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200">
+                </motion.span>
+
+                <motion.span 
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200/80 cursor-pointer transition-colors hover:bg-slate-200/60"
+                >
                   Local Cards & MFS
-                </span>
+                </motion.span>
+
               </div>
             </div>
 
-            {/* Right BDT Cards Column */}
+            {/* Right Interactive Motion Cards Column */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full lg:w-auto shrink-0">
               
-              {/* Standard Plan BDT */}
-              <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-5 text-center sm:text-left hover:border-slate-300 transition-all flex flex-col justify-between">
+              {/* Standard Plan BDT Card with Motion Physics */}
+              <motion.div 
+                whileHover={{ y: -6, scale: 1.03 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                className="bg-slate-50/90 border border-slate-200 rounded-2xl p-5 text-center sm:text-left flex flex-col justify-between cursor-pointer hover:shadow-lg transition-shadow"
+              >
                 <div>
                   <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1">
                     Standard Plan
@@ -384,11 +444,22 @@ export const Pricing = () => {
                 <div className="text-[11px] font-bold text-emerald-600 mt-2 flex items-center justify-center sm:justify-start gap-1">
                   <span>✓</span> Local BDT Rate
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Premium Plan BDT */}
-              <div className="bg-cta-btn text-white rounded-2xl p-5 text-center sm:text-left shadow-lg shadow-red-500/20 hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between border border-red-600">
-                <div>
+              {/* Premium Plan BDT Card with Shimmer & Physics */}
+              <motion.div 
+                whileHover={{ y: -6, scale: 1.04 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                className="bg-cta-btn text-white rounded-2xl p-5 text-center sm:text-left shadow-lg shadow-red-500/25 relative overflow-hidden flex flex-col justify-between border border-red-600 cursor-pointer"
+              >
+                {/* Shimmer Light Beam Effect */}
+                <motion.div
+                  animate={{ x: ['-100%', '250%'] }}
+                  transition={{ repeat: Infinity, repeatDelay: 3.5, duration: 1.6, ease: "easeInOut" }}
+                  className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
+                />
+
+                <div className="relative z-10">
                   <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">
                     Premium Plan
                   </div>
@@ -396,10 +467,11 @@ export const Pricing = () => {
                     {premiumBdt}
                   </div>
                 </div>
-                <div className="text-[11px] font-extrabold text-white mt-2 flex items-center justify-center sm:justify-start gap-1">
+
+                <div className="relative z-10 text-[11px] font-extrabold text-white mt-2 flex items-center justify-center sm:justify-start gap-1">
                   <span>★</span> Best Value for BD
                 </div>
-              </div>
+              </motion.div>
 
             </div>
 
