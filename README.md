@@ -26,57 +26,19 @@ Welcome to **MOCKEA**, an enterprise-ready, full-stack monorepo platform designe
 
 ## 🛠️ Complete Tech Stack & Connected Services
 
-| Layer | Technology / Service | Details / Credentials | Purpose |
+| Layer | Technology / Service | Details / Configuration | Purpose |
 | :--- | :--- | :--- | :--- |
 | **Frontend Framework** | React 19 + Vite 6 | SPA with Code-Splitting | Ultra-fast client build and lazy routing |
 | **Styling & UI** | Tailwind CSS 4 + DaisyUI 5 | Vanilla CSS directives | Modern responsive design system & dark mode |
 | **State Management** | TanStack Query 5 (React Query) | Stale-while-revalidate | Server-state caching and synchronization |
 | **Backend Engine** | Node.js (ES Modules) + Express 5 | PM2 Clustering | Scalable RESTful API backend |
-| **Primary Database** | MongoDB Atlas (`EcoStream`) | `cluster0.xbf1ip3.mongodb.net` | Persistent data storage for users, tests, submissions |
+| **Primary Database** | MongoDB Atlas | Cluster Instance | Persistent data storage for users, tests, submissions |
 | **Caching Database** | Redis + In-Memory Fallback | Key-value store (`cache.js`) | Read-through cache for tests and question banks |
-| **Authentication** | Firebase Auth & Admin SDK | Project ID: `eco-stream-90d55` | Identity management, Google OAuth & JWT validation |
+| **Authentication** | Firebase Auth & Admin SDK | Firebase Project | Identity management, Google OAuth & JWT validation |
 | **AI Evaluation Engine** | Google Gemini 2.5 Flash API | `GEMINI_API_KEY` | Automated essay/speech grading & AI Chatbot tutor |
-| **Media Cloud Storage** | Cloudinary CDN | Cloud: `dfcbdyhsw` | Audio recordings & resource PDF storage |
-| **Analytics Telemetry** | Google Analytics 4 (`react-ga4`) | ID: `G-M2XMQ7DRWD` | Route pageviews, checkouts & anti-cheat alerts |
-| **Hosting Platform** | Firebase Hosting & Vercel | `eco-stream-90d55.web.app` | Global CDN client hosting & server API hosting |
-
----
-
-## 📂 Project Architecture
-
-```text
-MOCKEA/
-├── README.md                      # Primary platform documentation
-├── DevHandover.md                 # Technical Developer Handover Report
-├── HandoverDoc.md                 # User & Operational Manual (Student/Instructor/Admin)
-├── frontend/                      # React 19 / Vite Client Application
-│   ├── public/                    # Static assets & icons
-│   ├── src/
-│   │   ├── components/            # UI Components (Common & Dashboard modules)
-│   │   ├── context/               # Auth & UI React Contexts
-│   │   ├── hooks/                 # Shared Custom Hooks (useAxiosSecure, useTestIntegrity, etc.)
-│   │   ├── Layout/                # Layout Wrappers (RootLayout, DashboardLayout)
-│   │   ├── Router/                # React Router 7 setup & Private/Admin route guards
-│   │   ├── utils/                 # Analytics, alert helpers, error loggers
-│   │   ├── index.css              # Tailwind CSS directives
-│   │   └── main.jsx               # Application entry point
-│   ├── firebase.config.js         # Frontend Firebase SDK initialization
-│   ├── package.json
-│   └── vite.config.js
-│
-└── backend/                       # Node.js / Express 5 API Server
-    ├── ecosystem.config.cjs       # PM2 Process Manager clustering config
-    ├── src/
-    │   ├── controllers/           # API business logic controllers
-    │   ├── lib/                   # Integrations (connectDB, firebase.config, aiService)
-    │   ├── middlewares/           # Auth guards, CORS, API rate limiters, sanitizers
-    │   ├── model/                 # Mongoose Schemas (User, Questions, MockTest, Submission, etc.)
-    │   ├── routes/                # Express API endpoint declarations
-    │   ├── utils/                 # Utilities (cache.js, sanitizeInput, push.js)
-    │   └── index.js               # Express app entry script
-    ├── package.json
-    └── vercel.json                # Vercel deployment configuration
-```
+| **Media Cloud Storage** | Cloudinary CDN | Cloudinary Instance | Audio recordings & resource PDF storage |
+| **Analytics Telemetry** | Google Analytics 4 (`react-ga4`) | GA4 Telemetry | Route pageviews, checkouts & anti-cheat alerts |
+| **Hosting Platform** | Firebase Hosting & Vercel | Production CDN & API Server | Global CDN client hosting & server API hosting |
 
 ---
 
@@ -89,30 +51,30 @@ Set up local `.env` files in both workspace directories before running:
 PORT=3000
 DEV_URL=http://localhost:5173
 DEV_URL2=http://localhost:5174
-CLIENT_URL=https://eco-stream-90d55.web.app
-CLIENT_URL2=https://mockea.web.app
-MONGODB_URI=mongodb+srv://ecostream:password@cluster0.xbf1ip3.mongodb.net/EcoStream?appName=Cluster0
+CLIENT_URL=http://localhost:5173
+CLIENT_URL2=http://localhost:5174
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
 REDIS_URL=redis://localhost:6379
-FIREBASE_KEY=base64_encoded_firebase_service_account_json
-GEMINI_API_KEY=AIzaSy...
-CLOUDINARY_CLOUD_NAME=dfcbdyhsw
-CLOUDINARY_API_KEY=996644535223745
-CLOUDINARY_API_SECRET=id2...
+FIREBASE_KEY=your_base64_encoded_firebase_service_account_json
+GEMINI_API_KEY=your_gemini_api_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
 
 ### Frontend `.env` (`frontend/.env`)
 ```env
 VITE_local_url=http://localhost:3000/api/
-VITE_live_url=https://ecostream-backend.vercel.app/api/
-VITE_apiKey=AIzaSy...
-VITE_authDomain=eco-stream-90d55.firebaseapp.com
-VITE_projectId=eco-stream-90d55
-VITE_storageBucket=eco-stream-90d55.firebasestorage.app
-VITE_messagingSenderId=815483653834
-VITE_appId=1:815483653834:web:...
-VITE_measurementId=G-M2XMQ7DRWD
-VITE_CLOUD_NAME=dfcbdyhsw
-VITE_UPLOAD_PRESET=mockea
+VITE_live_url=https://your-api-domain.com/api/
+VITE_apiKey=your_firebase_api_key
+VITE_authDomain=your-project.firebaseapp.com
+VITE_projectId=your-project-id
+VITE_storageBucket=your-project.firebasestorage.app
+VITE_messagingSenderId=your_messaging_sender_id
+VITE_appId=your_app_id
+VITE_measurementId=your_ga4_measurement_id
+VITE_CLOUD_NAME=your_cloudinary_cloud_name
+VITE_UPLOAD_PRESET=your_upload_preset
 ```
 
 ---

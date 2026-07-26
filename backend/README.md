@@ -83,15 +83,15 @@ All routes are mounted under `/api` in `src/index.js`:
 PORT=3000
 DEV_URL=http://localhost:5173
 DEV_URL2=http://localhost:5174
-CLIENT_URL=https://eco-stream-90d55.web.app
-CLIENT_URL2=https://mockea.web.app
-MONGODB_URI=mongodb+srv://ecostream:password@cluster0.xbf1ip3.mongodb.net/EcoStream?appName=Cluster0
+CLIENT_URL=http://localhost:5173
+CLIENT_URL2=http://localhost:5174
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
 REDIS_URL=redis://localhost:6379
-FIREBASE_KEY=base64_encoded_firebase_service_account_json
-GEMINI_API_KEY=AIzaSy...
-CLOUDINARY_CLOUD_NAME=dfcbdyhsw
-CLOUDINARY_API_KEY=996644535223745
-CLOUDINARY_API_SECRET=id2...
+FIREBASE_KEY=your_base64_encoded_firebase_service_account_json
+GEMINI_API_KEY=your_gemini_api_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
 
 ---
