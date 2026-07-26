@@ -45,6 +45,12 @@ export const Pricing = () => {
   if (isLoading) return <PricingSkeleton />;
   if (isError) return <Error />;
 
+  const standardPlan = pricingPlans.find(p => p.name?.toLowerCase().includes('standard') || p.name?.toLowerCase().includes('essential')) || pricingPlans[1];
+  const premiumPlan = pricingPlans.find(p => p.name?.toLowerCase().includes('premium') || p.name?.toLowerCase().includes('elite') || p.isPopular) || pricingPlans[2];
+
+  const standardBdt = standardPlan?.bdtPrice || 'BDT 1289tk';
+  const premiumBdt = premiumPlan?.bdtPrice || 'BDT 2989tk';
+
   return (
     <section id="pricing" className="relative bg-white rounded-4xl px-4 py-10 md:px-8 overflow-hidden font-sans">
       {/* Premium Decorative Background Elements */}
@@ -312,6 +318,93 @@ export const Pricing = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Bangladesh Regional Pricing & bKash Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-12 md:mt-16 bg-white rounded-[2.25rem] p-6 sm:p-8 md:p-10 text-slate-900 shadow-xl relative overflow-hidden border border-slate-200/90"
+        >
+          {/* Subtle Decorative Background Glows */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-red-100/30 rounded-full filter blur-3xl -mr-20 -mt-20 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-blue-100/30 rounded-full filter blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            
+            {/* Left Info Column */}
+            <div className="space-y-3 text-center lg:text-left max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 border border-red-100">
+                <span className="text-lg leading-none">🇧🇩</span>
+                <span className="text-xs font-extrabold uppercase tracking-wider text-cta-btn">
+                  Bangladesh Special Pricing
+                </span>
+                <span className="inline-block w-2 h-2 rounded-full bg-cta-btn animate-pulse" />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-[#000f38] tracking-tight">
+                Users from Bangladesh get localized BDT rates & bKash payment options
+              </h3>
+              
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                Pay conveniently in local currency with instant activation support for all major mobile banking methods.
+              </p>
+
+              {/* Payment Methods Badges */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 pt-1">
+                <span className="px-3.5 py-1.5 rounded-xl bg-[#E2136E] text-white font-black text-xs shadow-md shadow-[#E2136E]/20 flex items-center gap-1.5 border border-[#E2136E]/20">
+                  bKash Payment Supported
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">
+                  Nagad
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">
+                  Rocket
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200">
+                  Local Cards & MFS
+                </span>
+              </div>
+            </div>
+
+            {/* Right BDT Cards Column */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full lg:w-auto shrink-0">
+              
+              {/* Standard Plan BDT */}
+              <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-5 text-center sm:text-left hover:border-slate-300 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1">
+                    Standard Plan
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-[#000f38] tracking-tight">
+                    {standardBdt}
+                  </div>
+                </div>
+                <div className="text-[11px] font-bold text-emerald-600 mt-2 flex items-center justify-center sm:justify-start gap-1">
+                  <span>✓</span> Local BDT Rate
+                </div>
+              </div>
+
+              {/* Premium Plan BDT */}
+              <div className="bg-cta-btn text-white rounded-2xl p-5 text-center sm:text-left shadow-lg shadow-red-500/20 hover:scale-[1.02] transition-all relative overflow-hidden flex flex-col justify-between border border-red-600">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-1">
+                    Premium Plan
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    {premiumBdt}
+                  </div>
+                </div>
+                <div className="text-[11px] font-extrabold text-white mt-2 flex items-center justify-center sm:justify-start gap-1">
+                  <span>★</span> Best Value for BD
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </motion.div>
 
       </div>
     </section>

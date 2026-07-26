@@ -33,6 +33,10 @@ const pricingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    bdtPrice: {
+        type: String,
+        default: "",
+    },
 },{timestamps:true});
 
 const Pricing = mongoose.model("Pricing", pricingSchema);

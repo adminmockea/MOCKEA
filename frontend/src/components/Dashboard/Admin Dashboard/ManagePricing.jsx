@@ -16,6 +16,7 @@ const ManagePricing = () => {
     name: '',
     subtitle: '',
     price: '',
+    bdtPrice: '',
     duration: '',
     features: [''],
     isPopular: false,
@@ -90,7 +91,10 @@ const ManagePricing = () => {
   const handleOpenModal = (plan = null) => {
     if (plan) {
       setEditingPlan(plan);
-      setFormData(plan);
+      setFormData({
+        ...plan,
+        bdtPrice: plan.bdtPrice || ''
+      });
     } else {
       setEditingPlan(null);
       setFormData(initialFormState);
@@ -162,6 +166,7 @@ const ManagePricing = () => {
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Price / Duration</th>
+                <th className="px-6 py-4">BDT Price (BD)</th>
                 <th className="px-6 py-4">Popular</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -169,7 +174,7 @@ const ManagePricing = () => {
             <tbody className="divide-y divide-slate-100">
               {plans.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">No pricing plans found.</td>
+                  <td colSpan="6" className="px-6 py-8 text-center text-slate-500">No pricing plans found.</td>
                 </tr>
               ) : (
                 plans.map(plan => (
@@ -177,6 +182,19 @@ const ManagePricing = () => {
                     <td className="px-6 py-4 font-medium text-slate-900">{plan.priceId}</td>
                     <td className="px-6 py-4 font-semibold text-slate-900">{plan.name}</td>
                     <td className="px-6 py-4">{plan.price} <span className="text-slate-400 text-xs">/ {plan.duration}</span></td>
+                    <td className="px-6 py-4 font-bold text-slate-800">
+                      {plan.bdtPrice ? (
+                        <span className="text-emerald-600 font-extrabold">{plan.bdtPrice}</span>
+                      ) : (
+                        <span className="text-slate-500 font-medium">
+                          {plan.name?.toLowerCase().includes('standard') || plan.name?.toLowerCase().includes('essential')
+                            ? 'BDT 1289tk (Default)'
+                            : plan.name?.toLowerCase().includes('premium') || plan.name?.toLowerCase().includes('elite') || plan.isPopular
+                            ? 'BDT 2989tk (Default)'
+                            : 'Free'}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       {plan.isPopular ? (
                         <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Yes</span>
@@ -229,8 +247,12 @@ const ManagePricing = () => {
                     <input type="text" name="subtitle" required value={formData.subtitle} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="e.g. KICKSTART YOUR PREP" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price *</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Price (USD / Default) *</label>
                     <input type="text" name="price" required value={formData.price} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="e.g. Free or $19" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">BDT Price (Bangladesh Users)</label>
+                    <input type="text" name="bdtPrice" value={formData.bdtPrice || ''} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="e.g. BDT 1289tk or BDT 2989tk" />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Duration *</label>
