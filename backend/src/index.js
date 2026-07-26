@@ -17,6 +17,7 @@ import apiRateLimiter from "./middlewares/apiRateLimiter.js";
 import chatbotRouter from "./routes/chatbot.route.js";
 import { sanitizeMiddleware } from "./middlewares/sanitize.js";
 import superAdminRouter from "./routes/superAdmin.route.js";
+import settingsRouter from "./routes/settings.route.js";
 import ipBlocker from "./middlewares/ipBlocker.js";
 import bookingRouter from "./routes/booking.route.js";
 
@@ -71,6 +72,7 @@ app.use("/api/analytics", analyticsRouter);
 import { getPublicSystemConfig } from "./controllers/superAdmin.controller.js";
 
 app.use("/api/settings/logs", errorLogRouter);
+app.use("/api/settings", settingsRouter);
 app.use("/api/pricing", pricingRouter);
 app.use("/api/resources", resourceRouter);
 app.use("/api/trainers", trainersRouter);

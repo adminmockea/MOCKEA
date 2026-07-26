@@ -26,6 +26,14 @@ const systemConfigSchema = new mongoose.Schema(
       authLimit: { type: Number, default: 10 },
       submitLimit: { type: Number, default: 5 },
     },
+    watchDemoUrl: {
+      type: String,
+      default: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    },
+    watchDemoEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

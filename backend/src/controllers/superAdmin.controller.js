@@ -50,7 +50,7 @@ export const getSystemConfig = async (req, res) => {
 // 2. Update System Configuration
 export const updateSystemConfig = async (req, res) => {
   try {
-    const { maintenanceMode, maintenanceMessage, featureFlags, systemNotice, rateLimits } = req.body;
+    const { maintenanceMode, maintenanceMessage, featureFlags, systemNotice, rateLimits, watchDemoUrl, watchDemoEnabled } = req.body;
 
     let config = await SystemConfig.findOne();
     if (!config) {
@@ -62,6 +62,14 @@ export const updateSystemConfig = async (req, res) => {
     if (featureFlags !== undefined) config.featureFlags = { ...config.featureFlags, ...featureFlags };
     if (systemNotice !== undefined) config.systemNotice = { ...config.systemNotice, ...systemNotice };
     if (rateLimits !== undefined) config.rateLimits = { ...config.rateLimits, ...rateLimits };
+    if (watchDemoUrl !== undefined) {
+      let url = typeof watchDemoUrl === "string" ? watchDemoUrl.trim() : "";
+      if (url && !/^https?:\/\//i.test(url) && !url.startsWith("/")) {
+        url = `https://${url}`;
+      }
+      config.watchDemoUrl = url;
+    }
+    if (watchDemoEnabled !== undefined) config.watchDemoEnabled = Boolean(watchDemoEnabled);
 
     await config.save();
 
@@ -217,6 +225,8 @@ export const getPublicSystemConfig = async (req, res) => {
       maintenanceMode: config.maintenanceMode,
       maintenanceMessage: config.maintenanceMessage,
       systemNotice: config.systemNotice,
+      watchDemoUrl: config.watchDemoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      watchDemoEnabled: config.watchDemoEnabled !== undefined ? config.watchDemoEnabled : true,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
