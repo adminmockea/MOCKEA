@@ -110,7 +110,12 @@ export const getAllMockTests = async (req, res) => {
             // BOTH: no filter — student sees everything
         }
 
-        const tests = await MockTest.find(filter).populate('sections.reading sections.listening sections.writing sections.speaking');
+        const tests = await MockTest.find(filter)
+            .populate('sections.reading', 'title category subType testType duration')
+            .populate('sections.listening', 'title category subType testType duration')
+            .populate('sections.writing', 'title category subType testType duration')
+            .populate('sections.speaking', 'title category subType testType duration')
+            .lean();
 
         // Check if standard user took a test today
         let todayMockTestTaken = false;
