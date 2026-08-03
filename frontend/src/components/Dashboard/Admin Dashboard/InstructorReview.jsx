@@ -123,7 +123,18 @@ const InstructorReview = () => {
                                         {sub.testType === 'writing' ? <PiNotePencilFill /> : <PiMicrophoneStageFill />}
                                     </div>
                                     <div>
-                                        <h4 className="font-black leading-tight">{sub.userName}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-black leading-tight">{sub.userName}</h4>
+                                            {sub.institution ? (
+                                                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-800'}`}>
+                                                    {sub.institution.code}
+                                                </span>
+                                            ) : (
+                                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${selectedSubmission?._id === sub._id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                                    B2C
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedSubmission?._id === sub._id ? 'text-white/60' : 'text-slate-400'}`}>
                                             {sub.testType} • {new Date(sub.createdAt).toLocaleDateString()}
                                         </p>

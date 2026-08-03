@@ -38,6 +38,8 @@ const Writing = lazy(() => import("../components/Dashboard/Student Dashboard/Wri
 const Speaking = lazy(() => import("../components/Dashboard/Student Dashboard/Speaking/Speaking"));
 const DashboardIndex = lazy(() => import("../components/Dashboard/DashboardIndex"));
 const ManageUsers = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageUsers"));
+const ManageInstitutions = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageInstitutions"));
+const InstitutionDetail = lazy(() => import("../components/Dashboard/Admin Dashboard/InstitutionDetail"));
 const ManageSubmissions = lazy(() => import("../components/Dashboard/Admin Dashboard/ManageSubmissions"));
 const AdminSettings = lazy(() => import("../components/Dashboard/Admin Dashboard/AdminSettings"));
 const FullMockTestLibrary = lazy(() => import("../components/Dashboard/Student Dashboard/FullMockTest/FullMockTestLibrary"));
@@ -298,6 +300,22 @@ const router = createBrowserRouter([
               <StudentRoutes>
                 {withSuspense(StudentCourses)}
               </StudentRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-institutions",
+            element: (
+              <AdminRoutes>
+                {withSuspense(ManageInstitutions)}
+              </AdminRoutes>
+            ),
+          },
+          {
+            path: "admin/manage-institutions/:id",
+            element: (
+              <AdminRoutes>
+                {withSuspense(InstitutionDetail)}
+              </AdminRoutes>
             ),
           },
           {

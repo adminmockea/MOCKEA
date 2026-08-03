@@ -128,9 +128,60 @@ const PlanDropdown = ({ user, onChangePlan, loading, disabled }) => {
   );
 };
 
+const InstitutionDropdown = ({ user, institutions, onChangeInstitution, loading, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const currentInstCode = user.institutionCode || user.institution?.code || null;
+
+  return (
+    <div className="relative">
+      <button
+        className="btn btn-ghost btn-xs gap-1 font-semibold"
+        onClick={() => setOpen((v) => !v)}
+        disabled={loading || disabled}
+      >
+        <span className={`badge badge-sm ${currentInstCode ? "badge-primary" : "badge-ghost"}`}>
+          {currentInstCode ? currentInstCode : "B2C"}
+        </span>
+        {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute left-0 top-full mt-1 z-30 min-w-[170px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          <button
+            className="flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-base-200 transition-colors font-medium border-b border-base-200"
+            onClick={() => {
+              onChangeInstitution(user._id, "none");
+              setOpen(false);
+            }}
+          >
+            <span>Unassigned (B2C)</span>
+            {!currentInstCode && <span>✓</span>}
+          </button>
+          {institutions.map((inst) => (
+            <button
+              key={inst._id}
+              className="flex w-full items-center justify-between px-3 py-2 text-xs hover:bg-base-200 transition-colors"
+              onClick={() => {
+                onChangeInstitution(user._id, inst._id);
+                setOpen(false);
+              }}
+            >
+              <div className="text-left">
+                <p className="font-semibold text-slate-800">{inst.code}</p>
+                <p className="text-[10px] text-slate-400 truncate max-w-[110px]">{inst.name}</p>
+              </div>
+              {currentInstCode === inst.code && <span className="text-success font-bold">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── User Row ───────────────────────────────────────────────────────────────────
 
-const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, loadingId, currentUserRole }) => {
+const UserRow = ({ user, institutions, onChangeRole, onChangePlan, onChangeInstitution, onDelete, onToggleBan, loadingId, currentUserRole }) => {
   const isLoading = loadingId === user._id;
   const isEditingDisabled = currentUserRole !== "superadmin" && (user.role === "admin" || user.role === "superadmin");
   const joinDate = new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -155,6 +206,16 @@ const UserRow = ({ user, onChangeRole, onChangePlan, onDelete, onToggleBan, load
 
       <td className="py-3">
         <RoleDropdown user={user} onChangeRole={onChangeRole} loading={isLoading} disabled={isEditingDisabled} />
+      </td>
+
+      <td className="py-3 hidden sm:table-cell">
+        <InstitutionDropdown
+          user={user}
+          institutions={institutions}
+          onChangeInstitution={onChangeInstitution}
+          loading={isLoading}
+          disabled={isEditingDisabled}
+        />
       </td>
 
       <td className="py-3 hidden sm:table-cell">
@@ -252,6 +313,16 @@ const ManageUsers = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [institutions, setInstitutions] = useState([]);
+
+  // Fetch institutions list for admin dropdown
+  useEffect(() => {
+    axiosSecure.get("/institutions").then((res) => {
+      if (res.data.success) {
+        setInstitutions(res.data.institutions || []);
+      }
+    }).catch((err) => console.error(err));
+  }, []);
 
   // ── Timeframe Modal state ──────────────────────────────────────────────────
   const [timeframeModal, setTimeframeModal] = useState({
@@ -276,6 +347,31 @@ const ManageUsers = () => {
       retry: 2,
     }
   );
+
+  // ── useMutation: change institution ──────────────────────────────────────────
+  const institutionMutation = useMutation({
+    mutationFn: ({ id, institutionId }) => axiosSecure.patch(`/user/${id}/institution`, { institutionId }),
+    onSuccess: (res) => {
+      Swal.fire({
+        title: "Institution Updated!",
+        text: res.data?.message || "User institution affiliation updated.",
+        icon: "success",
+        timer: 1800,
+        showConfirmButton: false,
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setLoadingId(null);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update institution");
+      setLoadingId(null);
+    },
+  });
+
+  const handleChangeInstitution = (id, institutionId) => {
+    setLoadingId(id);
+    institutionMutation.mutate({ id, institutionId });
+  };
 
   // ── useMutation: change role ──────────────────────────────────────────────────
   const roleMutation = useMutation({
@@ -584,6 +680,7 @@ const ManageUsers = () => {
                 <tr>
                   <th className="pl-4 text-xs font-semibold text-base-content/60 uppercase tracking-wider">User</th>
                   <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider">Role</th>
+                  <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden sm:table-cell">Institution</th>
                   <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden sm:table-cell">Plan</th>
                   <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden md:table-cell">Status</th>
                   <th className="text-xs font-semibold text-base-content/60 uppercase tracking-wider hidden lg:table-cell">Joined</th>
@@ -595,8 +692,10 @@ const ManageUsers = () => {
                   <UserRow
                     key={user._id}
                     user={user}
+                    institutions={institutions}
                     onChangeRole={handleChangeRole}
                     onChangePlan={handleChangePlan}
+                    onChangeInstitution={handleChangeInstitution}
                     onDelete={handleDelete}
                     onToggleBan={handleToggleBan}
                     loadingId={loadingId}
