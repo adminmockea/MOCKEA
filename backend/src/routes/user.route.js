@@ -14,6 +14,8 @@ import {
   markNotificationsAsRead,
   saveFcmToken,
   removeFcmToken,
+  joinInstitution,
+  adminUpdateUserInstitution,
 } from "../controllers/user.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
@@ -27,6 +29,7 @@ userRouter.post("/auth/register", apiRateLimiter("authLimit", 60 * 1000), postUs
 userRouter.use(verifyUserToken);
 
 // Authenticated user routes
+userRouter.patch("/join-institution", joinInstitution);
 userRouter.get("/profile/notifications", getUserNotifications);
 userRouter.put("/profile/notifications/read", markNotificationsAsRead);
 userRouter.patch("/fcm-token", saveFcmToken);
@@ -37,6 +40,7 @@ userRouter.get("/:email", getUserProfile);
 userRouter.patch("/:id/exam-preference", updateUserExamPreference);
 
 // Admin-only routes
+userRouter.patch("/:id/institution", verifyUserRole(["admin"]), adminUpdateUserInstitution);
 userRouter.patch("/:id/role", verifyUserRole(["admin"]), updateUserRole);
 userRouter.patch("/:id/plan", verifyUserRole(["admin"]), updateUserPlan);
 userRouter.delete("/:id", verifyUserRole(["admin"]), deleteUser);

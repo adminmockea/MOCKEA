@@ -72,6 +72,11 @@ const PracticeSubmissionSchema = new mongoose.Schema(
         },
         lockExpiresAt: {
             type: Date,
+        },
+        institution: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Institution',
+            default: null,
         }
     },
     { timestamps: true }
@@ -81,6 +86,7 @@ PracticeSubmissionSchema.index({ userId: 1 });
 PracticeSubmissionSchema.index({ questionSetId: 1 });
 PracticeSubmissionSchema.index({ status: 1 });
 PracticeSubmissionSchema.index({ userEmail: 1 });
+PracticeSubmissionSchema.index({ institution: 1 });
 
 const PracticeSubmission = mongoose.model('PracticeSubmission', PracticeSubmissionSchema);
 export default PracticeSubmission;

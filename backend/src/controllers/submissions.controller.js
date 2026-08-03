@@ -36,7 +36,8 @@ export const submitPractice = async (req, res) => {
             questionSetId,
             testType,
             title,
-            content
+            content,
+            institution: user.institution || null
         });
 
         await submission.save();
@@ -71,16 +72,33 @@ export const getMySubmissions = async (req, res) => {
 
 export const getSubmissions = async (req, res) => {
     try {
-        const { status, testType, page, limit } = req.query;
+        const { status, testType, institutionId, page, limit } = req.query;
         const filter = {};
         if (status) filter.status = status;
         if (testType) filter.testType = testType;
+
+        if (req.user && req.user.role === 'instructor') {
+            if (req.user.institution) {
+                filter.institution = req.user.institution;
+            } else {
+                filter.institution = null;
+            }
+        } else if (institutionId) {
+            if (institutionId === 'none' || institutionId === 'b2c') {
+                filter.institution = null;
+            } else {
+                filter.institution = institutionId;
+            }
+        }
 
         const total = await PracticeSubmission.countDocuments(filter);
         res.set("X-Total-Count", total.toString());
         res.set("Access-Control-Expose-Headers", "X-Total-Count");
 
-        let query = PracticeSubmission.find(filter).sort({ createdAt: -1 });
+        let query = PracticeSubmission.find(filter)
+            .populate('userId', 'name email institutionCode')
+            .populate('institution', 'name code')
+            .sort({ createdAt: -1 });
 
         if (page || limit) {
             const pageNum = parseInt(page) || 1;

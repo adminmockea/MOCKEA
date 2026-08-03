@@ -74,12 +74,18 @@ const mockTestResultSchema = new mongoose.Schema({
     },
     lockExpiresAt: {
         type: Date
+    },
+    institution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution',
+        default: null
     }
 }, { timestamps: true });
 
 mockTestResultSchema.index({ userId: 1 });
 mockTestResultSchema.index({ testId: 1 });
 mockTestResultSchema.index({ status: 1 });
+mockTestResultSchema.index({ institution: 1 });
 mockTestResultSchema.index({ userId: 1, createdAt: -1 });
 
 const MockTestResult = mongoose.model('MockTestResult', mockTestResultSchema);

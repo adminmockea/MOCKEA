@@ -237,7 +237,11 @@ export const startTest = async (req, res) => {
             }
         }
 
-        const result = new MockTestResult({ userId: userObj._id, testId });
+        const result = new MockTestResult({
+            userId: userObj._id,
+            testId,
+            institution: userObj.institution || null
+        });
         await result.save();
         res.status(201).json({ success: true, resultId: result._id });
     } catch (error) {
@@ -470,14 +474,31 @@ export const getResultDetail = async (req, res) => {
 // Get all results (For Instructors)
 export const getAllResults = async (req, res) => {
     try {
-        const { page, limit } = req.query;
-        const total = await MockTestResult.countDocuments();
+        const { page, limit, institutionId } = req.query;
+        const filter = {};
+
+        if (req.user && req.user.role === 'instructor') {
+            if (req.user.institution) {
+                filter.institution = req.user.institution;
+            } else {
+                filter.institution = null;
+            }
+        } else if (institutionId) {
+            if (institutionId === 'none' || institutionId === 'b2c') {
+                filter.institution = null;
+            } else {
+                filter.institution = institutionId;
+            }
+        }
+
+        const total = await MockTestResult.countDocuments(filter);
 
         res.set("X-Total-Count", total.toString());
         res.set("Access-Control-Expose-Headers", "X-Total-Count");
 
-        let query = MockTestResult.find()
-            .populate('userId', 'name email')
+        let query = MockTestResult.find(filter)
+            .populate('userId', 'name email institutionCode')
+            .populate('institution', 'name code')
             .populate('testId', 'title')
             .sort({ createdAt: -1 });
 

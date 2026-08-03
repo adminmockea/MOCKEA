@@ -70,6 +70,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    institution: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Institution",
+      default: null,
+    },
+    institutionCode: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -77,6 +88,8 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ plan: 1, planExpiresAt: 1 });
+userSchema.index({ institution: 1 });
+userSchema.index({ institutionCode: 1 });
 
 const User = mongoose.model("User", userSchema);
 export default User;

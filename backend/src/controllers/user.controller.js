@@ -1,4 +1,5 @@
 import User from "../model/user.js";
+import Institution from "../model/Institution.js";
 import Notification from "../model/notification.js";
 import { activateUserPlan, checkAndAutoExpirePlan } from "../utils/subscriptionService.js";
 
@@ -19,7 +20,7 @@ const escapeRegex = (str) => {
 
 export const postUser = async (req, res) => {
     try {
-        const { email, name, targetExam, gender } = req.body;
+        const { email, name, targetExam, gender, institutionCode } = req.body;
 
         if (!email || !name) {
             return res.status(400).json({ success: false, message: "Please provide email and name" });
@@ -32,15 +33,43 @@ export const postUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "Email already exists" });
         }
 
+        let institutionId = null;
+        let matchedCode = null;
+
+        if (institutionCode) {
+            const cleanCode = institutionCode.toUpperCase().trim();
+            const inst = await Institution.findOne({ code: cleanCode, status: "active" });
+            if (!inst) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid or inactive institution code",
+                });
+            }
+            institutionId = inst._id;
+            matchedCode = inst.code;
+        }
+
         const user = new User({
             name,
             email: cleanEmail,
             targetExam: targetExam || "IELTS",
-            gender: gender || null
+            gender: gender || null,
+            institution: institutionId,
+            institutionCode: matchedCode
         });
         await user.save();
 
-        return res.status(201).json({ success: true, message: "User created successfully" });
+        return res.status(201).json({
+            success: true,
+            message: "User created successfully",
+            user: {
+                _id: user._id,
+                email: user.email,
+                name: user.name,
+                institution: user.institution,
+                institutionCode: user.institutionCode
+            }
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -48,7 +77,7 @@ export const postUser = async (req, res) => {
 
 export const getAllUser = async (req, res) => {
     try {
-        const { search, role, plan, status, page, limit } = req.query;
+        const { search, role, plan, status, institutionId, page, limit } = req.query;
 
         const filter = {};
 
@@ -57,12 +86,20 @@ export const getAllUser = async (req, res) => {
             filter.$or = [
                 { name: { $regex: safeSearch, $options: "i" } },
                 { email: { $regex: safeSearch, $options: "i" } },
+                { institutionCode: { $regex: safeSearch, $options: "i" } },
             ];
         }
         if (role && role !== "all") filter.role = role;
         if (plan && plan !== "all") filter.plan = plan;
         if (status === "banned") filter.isBanned = true;
         if (status === "active") filter.isBanned = { $ne: true };
+        if (institutionId) {
+            if (institutionId === "none" || institutionId === "b2c") {
+                filter.institution = null;
+            } else {
+                filter.institution = institutionId;
+            }
+        }
 
         // Hide superadmins from non-superadmin callers
         const requester = req.user;
@@ -79,7 +116,9 @@ export const getAllUser = async (req, res) => {
         res.set("X-Total-Count", total.toString());
         res.set("Access-Control-Expose-Headers", "X-Total-Count");
 
-        let query = User.find(filter).sort({ createdAt: -1 });
+        let query = User.find(filter)
+            .populate("institution", "name code status")
+            .sort({ createdAt: -1 });
 
         if (page || limit) {
             const pageNum = parseInt(page) || 1;
@@ -141,7 +180,7 @@ export const getUserProfile = async (req, res) => {
             return res.status(403).json({ success: false, message: "Access denied: cannot access another user's profile" });
         }
 
-        let user = await User.findOne({ email: cleanEmail });
+        let user = await User.findOne({ email: cleanEmail }).populate("institution", "name code status contactEmail contactPhone address");
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -425,6 +464,103 @@ export const removeFcmToken = async (req, res) => {
         }
 
         return res.status(200).json({ success: true, message: "FCM token removed successfully" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const joinInstitution = async (req, res) => {
+    try {
+        const { institutionCode } = req.body;
+        if (!institutionCode) {
+            return res.status(400).json({ success: false, message: "Institution code is required" });
+        }
+
+        const cleanCode = institutionCode.toUpperCase().trim();
+        const inst = await Institution.findOne({ code: cleanCode, status: "active" });
+        if (!inst) {
+            return res.status(400).json({ success: false, message: "Invalid or inactive institution code" });
+        }
+
+        const user = await User.findOne({ email: req.decoded_email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        user.institution = inst._id;
+        user.institutionCode = inst.code;
+        await user.save();
+
+        const updatedUser = await User.findById(user._id).populate("institution", "name code status");
+
+        return res.status(200).json({
+            success: true,
+            message: `Successfully joined ${inst.name} (${inst.code})`,
+            user: updatedUser
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const adminUpdateUserInstitution = async (req, res) => {
+    try {
+        const { id } = req.params; // User ID
+        const { institutionId } = req.body;
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        if (!institutionId || institutionId === "none" || institutionId === "b2c") {
+            // Unlink institution
+            if (user.institution) {
+                await Institution.findByIdAndUpdate(user.institution, {
+                    $pull: { assignedInstructors: user._id }
+                });
+            }
+            user.institution = null;
+            user.institutionCode = null;
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                message: `User '${user.name}' institution removed (Global B2C)`,
+                user
+            });
+        }
+
+        const inst = await Institution.findById(institutionId);
+        if (!inst) {
+            return res.status(404).json({ success: false, message: "Institution not found" });
+        }
+
+        // If switching from old institution, remove from old assignedInstructors
+        if (user.institution && user.institution.toString() !== inst._id.toString()) {
+            await Institution.findByIdAndUpdate(user.institution, {
+                $pull: { assignedInstructors: user._id }
+            });
+        }
+
+        user.institution = inst._id;
+        user.institutionCode = inst.code;
+        await user.save();
+
+        if (user.role === "instructor" || user.role === "admin" || user.role === "superadmin") {
+            if (!inst.assignedInstructors.includes(user._id)) {
+                inst.assignedInstructors.push(user._id);
+                await inst.save();
+            }
+        }
+
+        const updatedUser = await User.findById(id).populate("institution", "name code status");
+
+        return res.status(200).json({
+            success: true,
+            message: `User '${user.name}' institution set to ${inst.name} (${inst.code})`,
+            user: updatedUser
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }

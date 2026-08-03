@@ -20,6 +20,7 @@ import superAdminRouter from "./routes/superAdmin.route.js";
 import settingsRouter from "./routes/settings.route.js";
 import ipBlocker from "./middlewares/ipBlocker.js";
 import bookingRouter from "./routes/booking.route.js";
+import institutionRouter from "./routes/institution.route.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -78,6 +79,7 @@ app.use("/api/resources", resourceRouter);
 app.use("/api/trainers", trainersRouter);
 app.use("/api/chatbot", chatbotRouter);
 app.use("/api/bookings", bookingRouter);
+app.use("/api/institutions", institutionRouter);
 app.use("/api/superadmin", superAdminRouter);
 app.get("/api/settings/public", getPublicSystemConfig);
 
