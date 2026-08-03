@@ -29,6 +29,38 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
 
   const password = watch("password");
   const confirmPassword = watch("confirmPassword");
+  const institutionCode = watch("institutionCode");
+
+  const [instStatus, setInstStatus] = useState({ loading: false, valid: null, name: "" });
+
+  useEffect(() => {
+    if (!institutionCode || !institutionCode.trim()) {
+      setInstStatus({ loading: false, valid: null, name: "" });
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setInstStatus({ loading: true, valid: null, name: "" });
+      try {
+        const res = await axiosInstance.get(
+          `/institutions/validate-code/${institutionCode.trim()}`,
+          { validateStatus: (status) => status < 500 }
+        );
+        if (res.data && res.data.valid) {
+          setInstStatus({
+            loading: false,
+            valid: true,
+            name: res.data.institution?.name || "Verified Institution",
+          });
+        } else {
+          setInstStatus({ loading: false, valid: false, name: "" });
+        }
+      } catch (err) {
+        setInstStatus({ loading: false, valid: false, name: "" });
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [institutionCode, axiosInstance]);
 
   useEffect(() => {
     if (confirmPassword) {
@@ -205,6 +237,35 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
               {errors.gender.message}
             </span>
           )}
+        </div>
+
+        {/* Institution Code (Optional) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-bold text-gray-700">
+              Institution Code <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+            </label>
+            {instStatus.loading && (
+              <span className="text-xs text-blue-600 animate-pulse font-medium">Validating code...</span>
+            )}
+            {instStatus.valid === true && (
+              <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                ✓ {instStatus.name}
+              </span>
+            )}
+            {instStatus.valid === false && (
+              <span className="text-xs text-rose-600 font-medium">✕ Invalid or inactive code</span>
+            )}
+          </div>
+          <input
+            type="text"
+            placeholder="e.g. OXFORD2026"
+            className="w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none uppercase font-mono font-semibold border-gray-200 focus:border-blue-600 focus:bg-blue-50"
+            {...register("institutionCode")}
+          />
+          <p className="text-[11px] text-gray-400 mt-1">
+            If your institution or academy gave you a code, enter it here so your instructors can review your tests.
+          </p>
         </div>
 
         {/* Email */}
