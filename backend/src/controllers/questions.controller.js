@@ -260,6 +260,35 @@ export const getQuestions = async (req, res) => {
             questions = await getFreeTierDailyQuestions(email, type || "all", questions);
         }
 
+        if (userRole === "admin" || userRole === "instructor") {
+            const mockTests = await MockTest.find({}, 'title sections').lean();
+            const questionMockTestMap = {};
+
+            mockTests.forEach(test => {
+                ['reading', 'listening', 'writing', 'speaking'].forEach(sectionKey => {
+                    const sectionQs = test.sections?.[sectionKey] || [];
+                    sectionQs.forEach(qId => {
+                        const idStr = qId.toString();
+                        if (!questionMockTestMap[idStr]) {
+                            questionMockTestMap[idStr] = [];
+                        }
+                        if (!questionMockTestMap[idStr].some(m => m._id.toString() === test._id.toString())) {
+                            questionMockTestMap[idStr].push({
+                                _id: test._id,
+                                title: test.title
+                            });
+                        }
+                    });
+                });
+            });
+
+            questions = questions.map(q => {
+                const qObj = q.toObject ? q.toObject() : { ...q };
+                qObj.usedInMockTests = questionMockTestMap[q._id.toString()] || [];
+                return qObj;
+            });
+        }
+
         return res.status(200).json({
             success: true,
             message: "Questions fetched successfully",
