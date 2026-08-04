@@ -109,6 +109,8 @@ const CreateMockTest = () => {
         mutation.mutate(formData);
     };
 
+    const [mockUsageFilter, setMockUsageFilter] = useState("all"); // "all", "unused", "in_mock"
+
     const sectionIcons = {
         reading: <PiBookOpen />,
         listening: <PiEar />,
@@ -116,12 +118,21 @@ const CreateMockTest = () => {
         speaking: <PiMicrophoneStage />
     };
 
-    // Filter questions matching the selected examType (includes BOTH)
+    // Filter questions matching the selected examType and mock usage filter
     const filteredQuestions = (type) => {
         return questions.filter(q => {
             if (q.testType !== type) return false;
-            if (formData.examType === "BOTH") return true;
-            return (q.examType === formData.examType || q.examType === "BOTH");
+            
+            // Exam type filter
+            const matchesExam = formData.examType === "BOTH" || (q.examType === formData.examType || q.examType === "BOTH");
+            if (!matchesExam) return false;
+
+            // Mock usage filter
+            const hasMockTests = q.usedInMockTests && q.usedInMockTests.length > 0;
+            if (mockUsageFilter === "unused" && hasMockTests) return false;
+            if (mockUsageFilter === "in_mock" && !hasMockTests) return false;
+
+            return true;
         });
     };
 
@@ -217,14 +228,36 @@ const CreateMockTest = () => {
                     </div>
                 </div>
 
-                {/* Exam type info banner */}
-                <div className={`flex items-center gap-3 p-4 rounded-2xl border text-sm font-semibold ${
-                    formData.examType === 'IELTS' ? 'bg-primary/5 border-primary/20 text-primary' :
-                    formData.examType === 'PTE' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                    'bg-amber-50 border-amber-200 text-amber-700'
-                }`}>
-                    <span className="text-xl">{formData.examType === 'IELTS' ? '🎓' : formData.examType === 'PTE' ? '📘' : '🌐'}</span>
-                    Showing questions for: <strong>{formData.examType === 'BOTH' ? 'All Exams (IELTS + PTE)' : formData.examType}</strong>. Switching exam type clears your selection.
+                {/* Exam type & Mock Filter banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border text-sm font-semibold bg-white border-base-300 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xl">{formData.examType === 'IELTS' ? '🎓' : formData.examType === 'PTE' ? '📘' : '🌐'}</span>
+                        <span>Showing questions for: <strong>{formData.examType === 'BOTH' ? 'All Exams (IELTS + PTE)' : formData.examType}</strong>. Switching exam type clears your selection.</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-start sm:self-auto bg-base-200 p-1 rounded-xl">
+                        <button
+                            type="button"
+                            onClick={() => setMockUsageFilter("all")}
+                            className={`btn btn-xs rounded-lg font-bold border-none ${mockUsageFilter === "all" ? "bg-white text-primary shadow-sm" : "btn-ghost text-base-content/60"}`}
+                        >
+                            All
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMockUsageFilter("unused")}
+                            className={`btn btn-xs rounded-lg font-bold border-none ${mockUsageFilter === "unused" ? "bg-white text-primary shadow-sm" : "btn-ghost text-base-content/60"}`}
+                        >
+                            Unused Only
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMockUsageFilter("in_mock")}
+                            className={`btn btn-xs rounded-lg font-bold border-none ${mockUsageFilter === "in_mock" ? "bg-white text-primary shadow-sm" : "btn-ghost text-base-content/60"}`}
+                        >
+                            📌 In Mock Tests
+                        </button>
+                    </div>
                 </div>
 
                 {/* Section Bundler */}
@@ -245,34 +278,58 @@ const CreateMockTest = () => {
                                     )}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {sectionQs.map((q) => (
-                                        <div 
-                                            key={q._id}
-                                            onClick={() => toggleQuestion(type, q._id)}
-                                            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                                                formData.sections[type].includes(q._id)
-                                                ? "border-primary bg-primary/5 shadow-inner"
-                                                : "border-base-300 bg-white hover:border-primary/40"
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span 
-                                                    className="font-semibold text-sm line-clamp-1 flex-1 pr-2"
-                                                    onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
-                                                >
-                                                    {q.title}
-                                                </span>
-                                                {formData.sections[type].includes(q._id) && <PiCheckCircle className="text-primary flex-shrink-0" />}
+                                    {sectionQs.map((q) => {
+                                        const isSelected = formData.sections[type].includes(q._id);
+                                        const mockList = q.usedInMockTests || [];
+                                        const inMockTest = mockList.length > 0;
+                                        const mockNames = mockList.map(m => m.title).join(", ");
+
+                                        return (
+                                            <div 
+                                                key={q._id}
+                                                onClick={() => toggleQuestion(type, q._id)}
+                                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                                                    isSelected
+                                                    ? "border-primary bg-primary/5 shadow-inner"
+                                                    : inMockTest
+                                                    ? "border-amber-300/80 bg-amber-50/40 hover:border-amber-400"
+                                                    : "border-base-300 bg-white hover:border-primary/40"
+                                                }`}
+                                            >
+                                                <div>
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <span 
+                                                            className="font-semibold text-sm line-clamp-1 flex-1"
+                                                            onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                                        >
+                                                            {q.title}
+                                                        </span>
+                                                        {isSelected && <PiCheckCircle className="text-primary flex-shrink-0 text-lg" />}
+                                                    </div>
+
+                                                    {inMockTest && (
+                                                        <div className="mt-2 min-w-0 max-w-full">
+                                                            <span 
+                                                                className="badge badge-warning badge-xs gap-1 font-bold py-2 px-2.5 rounded-lg border-none bg-amber-100 text-amber-900 inline-flex items-center max-w-full min-w-0"
+                                                                title={`Already in Mock Test(s): ${mockNames}`}
+                                                            >
+                                                                <span className="truncate flex-1 min-w-0">📌 In Mock Test: {mockList[0]?.title}</span>
+                                                                {mockList.length > 1 && <span className="opacity-80 font-black flex-shrink-0">+{mockList.length - 1}</span>}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center justify-between gap-2 mt-3 pt-2 border-t border-base-200/60">
+                                                    <p className="text-[10px] text-base-content/50 font-medium">{q.questions?.length || 0} Questions</p>
+                                                    <span className={`badge badge-xs font-black ${EXAM_COLORS[q.examType] || 'badge-ghost'}`}>{q.examType}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <p className="text-[10px] text-base-content/50">{q.questions?.length || 0} Questions</p>
-                                                <span className={`badge badge-xs font-black ${EXAM_COLORS[q.examType] || 'badge-ghost'}`}>{q.examType}</span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {sectionQs.length === 0 && (
                                         <div className="col-span-full py-8 text-center text-sm text-base-content/40 border-2 border-dashed border-base-300 rounded-2xl">
-                                            No {type} questions for <strong>{formData.examType}</strong>. Add some from the Question Manager first!
+                                            No {type} questions match the selected filter for <strong>{formData.examType}</strong>.
                                         </div>
                                     )}
                                 </div>
