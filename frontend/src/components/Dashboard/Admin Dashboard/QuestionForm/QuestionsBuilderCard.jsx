@@ -288,7 +288,7 @@ export default function QuestionsBuilderCard({
                                         onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
                                         required
                                     >
-                                        <option value="" className="bg-white text-slate-800 font-medium">— Select Correct Answer —</option>
+                                        <option value="" className="text-slate-800 font-medium">— Select Correct Answer —</option>
                                         {(q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0
                                             ? q.options.filter(opt => opt && opt.trim() !== "")
                                             : q.type === "true-false"
@@ -297,7 +297,7 @@ export default function QuestionsBuilderCard({
                                                     ? ["Yes", "No", "Not Given"]
                                                     : []
                                         ).map((opt, optIdx) => (
-                                            <option key={optIdx} value={opt} className="bg-white text-slate-800 font-medium">
+                                            <option key={optIdx} value={opt} className="text-slate-800 font-medium">
                                                 {opt}
                                             </option>
                                         ))}

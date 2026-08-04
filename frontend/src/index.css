@@ -128,6 +128,19 @@ select option,
 select optgroup,
 .select option,
 .select optgroup {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Background color on hover, focus, active, and checked selection dropdown options */
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked,
+.select option:hover,
+.select option:focus,
+.select option:active,
+.select option:checked {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
 }

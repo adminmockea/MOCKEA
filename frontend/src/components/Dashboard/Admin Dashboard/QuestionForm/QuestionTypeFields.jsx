@@ -16,9 +16,9 @@ export const QuestionTypeSelect = ({ value, onChange, examType }) => {
             onChange={(e) => onChange(e.target.value)}
         >
             {groups.map((g) => (
-                <optgroup key={g.group} label={`── ${g.group} ──`} className="bg-white text-slate-800 font-bold">
+                <optgroup key={g.group} label={`── ${g.group} ──`} className="text-slate-800 font-bold">
                     {g.types.map((t) => (
-                        <option key={t.value} value={t.value} className="bg-white text-slate-800 font-medium">
+                        <option key={t.value} value={t.value} className="text-slate-800 font-medium">
                             {t.label}
                         </option>
                     ))}
