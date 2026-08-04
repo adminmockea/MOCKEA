@@ -13,6 +13,7 @@ export const useManageQuestions = () => {
     const [filterType, setFilterType] = useState("all");
     const [filterPlan, setFilterPlan] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
+    const [filterMockStatus, setFilterMockStatus] = useState("all");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -34,6 +35,9 @@ export const useManageQuestions = () => {
             const matchesPlan = filterPlan === "all" || q.forPlanType === filterPlan;
             const matchesStatus = filterStatus === "all" ||
                 (filterStatus === "active" ? q.isActive !== false : q.isActive === false);
+            const matchesMockStatus = filterMockStatus === "all" ||
+                (filterMockStatus === "in_mock" ? (q.usedInMockTests && q.usedInMockTests.length > 0) : (!q.usedInMockTests || q.usedInMockTests.length === 0));
+
             let matchesSearch = true;
             if (searchQuery) {
                 try {
@@ -43,9 +47,9 @@ export const useManageQuestions = () => {
                     matchesSearch = q.title?.toLowerCase().includes(searchQuery.toLowerCase());
                 }
             }
-            return matchesType && matchesPlan && matchesStatus && matchesSearch;
+            return matchesType && matchesPlan && matchesStatus && matchesMockStatus && matchesSearch;
         });
-    }, [questions, filterType, filterPlan, filterStatus, searchQuery]);
+    }, [questions, filterType, filterPlan, filterStatus, filterMockStatus, searchQuery]);
 
     const toggleStatusMutation = useMutation({
         mutationFn: ({ id, isActive }) => axiosSecure.put(`/questions/${id}`, { isActive }),
@@ -136,6 +140,8 @@ export const useManageQuestions = () => {
         setFilterPlan,
         filterStatus,
         setFilterStatus,
+        filterMockStatus,
+        setFilterMockStatus,
         isFilterOpen,
         setIsFilterOpen,
         selectedIds,

@@ -68,15 +68,28 @@ const QuestionsTable = ({
                             </td>
                             <td className="py-4 font-bold text-slate-800">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-base-100 text-lg">
+                                    <div className="p-2 rounded-xl bg-base-100 text-lg flex-shrink-0">
                                         {getIcon(q.testType)}
                                     </div>
-                                    <span 
-                                        className="line-clamp-1 max-w-[200px]" 
-                                        onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
-                                    >
-                                        {q.title}
-                                    </span>
+                                    <div className="flex flex-col min-w-0">
+                                        <span 
+                                            className="line-clamp-1 max-w-[220px]" 
+                                            onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                        >
+                                            {q.title}
+                                        </span>
+                                        {q.usedInMockTests && q.usedInMockTests.length > 0 && (
+                                            <div className="min-w-0 max-w-[220px] mt-0.5">
+                                                <span 
+                                                    className="badge badge-warning text-[10px] gap-1 font-bold py-1 px-2 rounded-md border-none bg-amber-100 text-amber-900 inline-flex items-center max-w-full min-w-0"
+                                                    title={`Assigned to Mock Test(s): ${q.usedInMockTests.map(m => m.title).join(", ")}`}
+                                                >
+                                                    <span className="truncate flex-1 min-w-0">📌 {q.usedInMockTests[0]?.title}</span>
+                                                    {q.usedInMockTests.length > 1 && <span className="opacity-80 font-black flex-shrink-0">+{q.usedInMockTests.length - 1}</span>}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </td>
                             <td className="py-4">

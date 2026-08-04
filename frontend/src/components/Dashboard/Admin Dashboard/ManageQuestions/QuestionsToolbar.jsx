@@ -13,6 +13,8 @@ const QuestionsToolbar = ({
     setFilterPlan,
     filterStatus,
     setFilterStatus,
+    filterMockStatus,
+    setFilterMockStatus,
     uniqueTypes,
     viewMode,
     setViewMode,
@@ -44,7 +46,7 @@ const QuestionsToolbar = ({
                             >
                                 <PiFunnel className="text-sm" />
                                 <span>Filter</span>
-                                {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all") && (
+                                {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all" || filterMockStatus !== "all") && (
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                                 )}
                             </button>
@@ -94,13 +96,26 @@ const QuestionsToolbar = ({
                                                 <option value="disabled">Disabled Only</option>
                                             </select>
                                         </div>
-                                        {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all") && (
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Mock Test Assignment</label>
+                                            <select
+                                                value={filterMockStatus}
+                                                onChange={(e) => setFilterMockStatus(e.target.value)}
+                                                className="select select-bordered select-sm rounded-xl w-full text-xs font-bold text-slate-700 bg-white"
+                                            >
+                                                <option value="all">All Questions</option>
+                                                <option value="in_mock">📌 In Mock Test</option>
+                                                <option value="not_in_mock">Standalone (Not in Mock)</option>
+                                            </select>
+                                        </div>
+                                        {(filterType !== "all" || filterPlan !== "all" || filterStatus !== "all" || filterMockStatus !== "all") && (
                                             <button
                                                 type="button"
                                                 onClick={() => {
                                                     setFilterType("all");
                                                     setFilterPlan("all");
                                                     setFilterStatus("all");
+                                                    setFilterMockStatus("all");
                                                 }}
                                                 className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 rounded-lg w-full font-bold mt-1"
                                             >

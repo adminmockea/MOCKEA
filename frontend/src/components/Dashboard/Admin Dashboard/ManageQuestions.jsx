@@ -1,4 +1,4 @@
-import { useNavigate } from "react";
+import { useNavigate } from "react-router";
 import useManageQuestions from "../../../hooks/useManageQuestions";
 import TableShell from "../../Common/TableShell";
 import QuestionsToolbar from "./ManageQuestions/QuestionsToolbar";
@@ -24,6 +24,8 @@ const ManageQuestions = () => {
         setFilterPlan,
         filterStatus,
         setFilterStatus,
+        filterMockStatus,
+        setFilterMockStatus,
         isFilterOpen,
         setIsFilterOpen,
         selectedIds,
@@ -50,6 +52,8 @@ const ManageQuestions = () => {
                 setFilterPlan={setFilterPlan}
                 filterStatus={filterStatus}
                 setFilterStatus={setFilterStatus}
+                filterMockStatus={filterMockStatus}
+                setFilterMockStatus={setFilterMockStatus}
                 uniqueTypes={uniqueTypes}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
