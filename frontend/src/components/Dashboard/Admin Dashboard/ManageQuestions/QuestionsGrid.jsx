@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { PiBookOpen, PiEar, PiPencilLine, PiMicrophoneStage, PiSquaresFour } from "react-icons/pi";
 import HoverActions from "../../../Common/HoverActions";
 
@@ -27,8 +28,10 @@ const QuestionsGrid = ({
     handleToggleStatus,
     handleDelete,
     setSelectedQuestion,
-    navigate
+    navigate: propNavigate
 }) => {
+    const navigateHook = useNavigate();
+    const navigate = propNavigate || navigateHook;
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredQuestions.map((q) => (

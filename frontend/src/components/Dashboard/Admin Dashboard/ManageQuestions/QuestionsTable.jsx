@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { PiBookOpen, PiEar, PiPencilLine, PiMicrophoneStage } from "react-icons/pi";
 import HoverActions from "../../../Common/HoverActions";
 
@@ -28,8 +29,10 @@ const QuestionsTable = ({
     handleToggleStatus,
     handleDelete,
     setSelectedQuestion,
-    navigate
+    navigate: propNavigate
 }) => {
+    const navigateHook = useNavigate();
+    const navigate = propNavigate || navigateHook;
     return (
         <div className="overflow-x-auto p-4">
             <table className="table table-md w-full">

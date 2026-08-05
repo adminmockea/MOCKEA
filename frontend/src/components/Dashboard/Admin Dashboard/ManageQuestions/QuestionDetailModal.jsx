@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router";
 import { PiBookOpen, PiEar, PiCheckCircle, PiInfo } from "react-icons/pi";
 import AdminModal from "../../../Common/AdminModal";
 
-const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate, handleBulkAction, selectedIds, setSelectedIds, bulkMutation }) => {
+const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: propNavigate, handleBulkAction, selectedIds, setSelectedIds, bulkMutation }) => {
+    const navigateHook = useNavigate();
+    const navigate = propNavigate || navigateHook;
     return (
         <>
             {/* Questions Preview Modal */}
