@@ -51,6 +51,9 @@ export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, o
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {q.options.map((opt, i) => (
                         <div key={i} className="flex items-center gap-1.5 w-full">
+                            <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
+                                {String.fromCharCode(65 + i)}
+                            </span>
                             <input
                                 type="text"
                                 className="input input-bordered input-sm rounded-xl flex-1"

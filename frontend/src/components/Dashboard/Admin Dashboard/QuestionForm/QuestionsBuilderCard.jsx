@@ -296,11 +296,16 @@ export default function QuestionsBuilderCard({
                                                 : q.type === "yes-no"
                                                     ? ["Yes", "No", "Not Given"]
                                                     : []
-                                        ).map((opt, optIdx) => (
-                                            <option key={optIdx} value={opt} className="text-slate-800 font-medium">
-                                                {opt}
-                                            </option>
-                                        ))}
+                                        ).map((opt, optIdx) => {
+                                            const letter = String.fromCharCode(65 + optIdx);
+                                            const hasLetterPrefix = /^([A-Za-z0-9]+[\.\)]\s*)/.test(opt);
+                                            const displayLabel = hasLetterPrefix ? opt : `${letter}. ${opt}`;
+                                            return (
+                                                <option key={optIdx} value={opt} className="text-slate-800 font-medium">
+                                                    {displayLabel}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                 ) : (
                                     <input
