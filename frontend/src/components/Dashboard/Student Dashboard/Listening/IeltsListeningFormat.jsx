@@ -27,6 +27,25 @@ const COMPLETION_TYPES = new Set([
     "flow-chart-completion",
 ]);
 
+const findQuestion = (questions, matchKey, offset = 0) => {
+    if (!questions || !matchKey) return null;
+    const cleanKey = matchKey.toLowerCase().replace(/^[a-z]+/, "");
+    return questions.find((item, idx) => {
+        const questionNum = offset + idx + 1;
+        const localIndex = idx + 1;
+        const cleanId = (item.id || "").toLowerCase().replace(/^[a-z]+/, "");
+        return (
+            item.id === matchKey ||
+            (item.id && item.id.toLowerCase() === matchKey.toLowerCase()) ||
+            questionNum.toString() === matchKey ||
+            questionNum.toString() === cleanKey ||
+            localIndex.toString() === matchKey ||
+            localIndex.toString() === cleanKey ||
+            (cleanId && cleanId === cleanKey && cleanKey !== "")
+        );
+    });
+};
+
 const convertMarkdownTablesToHtml = (text) => {
     if (!text) return "";
     
@@ -203,15 +222,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
         }
 
         return text.replace(/___([\w-]+)___/g, (match, matchKey) => {
-            const q = questions.find((item, idx) => {
-                const questionNum = offset + idx + 1;
-                const localIndex = idx + 1;
-                return (
-                    item.id === matchKey ||
-                    questionNum.toString() === matchKey ||
-                    localIndex.toString() === matchKey
-                );
-            });
+            const q = findQuestion(questions, matchKey, offset);
             if (!q) return match;
 
             const qIndexInSet = questions.indexOf(q);
@@ -1196,7 +1207,8 @@ const groupVisualsByQuestionGroups = (visualGroups, questionGroups, offset, ques
         }
 
         const hasInlineInstructions = qg.instructions && /___([\w-]+)___/.test(qg.instructions) && !/^\|.+\|$/m.test(qg.instructions);
-        if (groupVisuals.length > 0 || hasInlineInstructions) {
+        const hasTable = qg.instructions && /___([\w-]+)___/.test(qg.instructions) && /^\|.+\|$/m.test(qg.instructions);
+        if (groupVisuals.length > 0 || hasInlineInstructions || hasTable) {
             grouped.push({
                 type: 'group',
                 header: qg,
@@ -1561,15 +1573,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
             const matches = text.match(/___([\w-]+)___/g) || [];
             matches.forEach(m => {
                 const matchKey = m.replace(/___/g, "").trim();
-                const q = activeSet.questions?.find((item, idx) => {
-                    const questionNum = offset + idx + 1;
-                    const localIndex = idx + 1;
-                    return (
-                        item.id === matchKey ||
-                        questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey
-                    );
-                });
+                const q = findQuestion(activeSet.questions, matchKey, offset);
                 if (q) {
                     ids.add(q.id);
                 }
@@ -1578,7 +1582,7 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
 
         scanText(activeSet.passage);
         activeSet.questionGroups?.forEach(g => {
-            if (g.instructions && !/^\|.+\|$/m.test(g.instructions)) {
+            if (g.instructions) {
                 scanText(g.instructions);
             }
         });
@@ -1670,9 +1674,10 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
 
 
                 {/* ── Questions ───────────────────────────────────────── */}
-                {remainingQuestions.length > 0 && (() => {
+                {(() => {
                     const groups = groupQuestions(remainingQuestions, activeSet.questionGroups, offset, activeSet.questions);
                     const groupedItems = groupVisualsByQuestionGroups(groups, activeSet.questionGroups, offset, activeSet.questions);
+                    if (groupedItems.length === 0) return null;
                     return (
                         <GroupedQuestionsRenderer
                             groupedItems={groupedItems}
