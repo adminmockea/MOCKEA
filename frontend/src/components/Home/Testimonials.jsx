@@ -96,3 +96,5 @@ export const Testimonials = forwardRef((props, ref) => {
 });
 
 Testimonials.displayName = "Testimonials";
+
+export default Testimonials;

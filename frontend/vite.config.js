@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss()],
+  optimizeDeps: {
+    include: ['swiper', 'swiper/react', 'swiper/modules'],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -18,6 +21,9 @@ export default defineConfig({
               normalizedId.includes('node_modules/react-router/')
             ) {
               return 'vendor-react';
+            }
+            if (normalizedId.includes('node_modules/swiper/')) {
+              return 'vendor-swiper';
             }
             if (normalizedId.includes('node_modules/react-icons/')) {
               return 'vendor-icons';

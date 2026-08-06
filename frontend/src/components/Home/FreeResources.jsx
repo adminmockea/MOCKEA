@@ -55,3 +55,5 @@ export const FreeResources = forwardRef((props, ref) => {
 });
 
 FreeResources.displayName = "FreeResources";
+
+export default FreeResources;
