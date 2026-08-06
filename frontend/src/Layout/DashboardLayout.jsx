@@ -222,7 +222,7 @@ const DashboardLayout = () => {
             <div className="divider my-4"></div>
 
             <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Home">
-              <NavLink to="/" className={!isDrawerOpen ? "justify-center" : ""}>
+              <NavLink to="/" end className={!isDrawerOpen ? "justify-center" : ""}>
                 <PiHouse className="w-5 h-5 shrink-0" />
                 {isDrawerOpen && <span>Home</span>}
               </NavLink>

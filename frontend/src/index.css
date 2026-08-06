@@ -144,3 +144,34 @@ select option:checked,
   background-color: #2563eb !important;
   color: #ffffff !important;
 }
+
+/* Sidebar Active & Hover Link Highlighting */
+.drawer-side .menu li > a {
+  transition: all 0.2s ease-in-out;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.drawer-side .menu li > a.active,
+.drawer-side .menu li > a.active:hover,
+.drawer-side .menu li > a.active:focus {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+}
+
+.drawer-side .menu li > a.active svg,
+.drawer-side .menu li > a.active span {
+  color: #ffffff !important;
+}
+
+.drawer-side .menu li > a:not(.active):hover {
+  background-color: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+.drawer-side .menu li > a:not(.active):hover svg {
+  color: #2563eb;
+}
