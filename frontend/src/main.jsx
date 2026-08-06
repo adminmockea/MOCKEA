@@ -10,6 +10,23 @@ import AuthProvider from './context/Provider/AuthProvider.jsx'
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary.jsx'
 import { setupGlobalErrorLogging } from './utils/errorLogger.js'
 
+// Unregister broken or leftover service workers (e.g., sw.js) interfering with localhost fetches
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      const scriptURL = registration.active?.scriptURL || registration.installing?.scriptURL || registration.waiting?.scriptURL || '';
+      if (scriptURL.endsWith('/sw.js') || (scriptURL.includes('sw.js') && !scriptURL.includes('firebase-messaging-sw.js'))) {
+        registration.unregister().then((success) => {
+          if (success) {
+            console.log('[ServiceWorker] Unregistered broken SW:', scriptURL);
+            window.location.reload();
+          }
+        });
+      }
+    }
+  });
+}
+
 // Initialize global client error interceptors
 setupGlobalErrorLogging();
 
