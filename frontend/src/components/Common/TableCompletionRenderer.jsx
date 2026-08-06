@@ -179,27 +179,58 @@ export default function TableCompletionRenderer({
     const { introText, tableRows, outroText } = useMemo(() => {
         if (!instructions) return { introText: "", tableRows: null, outroText: "" };
         
-        const lines = instructions.split("\n");
-        const tableStartIndex = lines.findIndex(l => l.trim().startsWith("|") && l.trim().endsWith("|"));
+        const lines = instructions.split(/\r?\n/);
+        const tableStartIndex = lines.findIndex(l => l.trim().startsWith("|"));
         if (tableStartIndex === -1) {
             return { introText: instructions, tableRows: null, outroText: "" };
         }
         
-        // Find where the table ends
-        let tableEndIndex = tableStartIndex;
-        while (tableEndIndex < lines.length && lines[tableEndIndex].trim().startsWith("|") && lines[tableEndIndex].trim().endsWith("|")) {
-            tableEndIndex++;
-        }
-        
         const introLines = lines.slice(0, tableStartIndex).join("\n").trim();
-        const tableLines = lines.slice(tableStartIndex, tableEndIndex).map(l => l.trim());
-        const outroLines = lines.slice(tableEndIndex).join("\n").trim();
+        
+        const tableLines = [];
+        let currentLine = "";
+        let lastTableIndex = tableStartIndex;
+
+        for (let i = tableStartIndex; i < lines.length; i++) {
+            const trimmed = lines[i].trim();
+
+            if (trimmed.startsWith("|")) {
+                if (currentLine) {
+                    tableLines.push(currentLine);
+                }
+                currentLine = trimmed;
+                lastTableIndex = i;
+            } else if (currentLine) {
+                if (trimmed === "" && currentLine.endsWith("|")) {
+                    tableLines.push(currentLine);
+                    currentLine = "";
+                    lastTableIndex = i - 1;
+                    break;
+                }
+                currentLine += "\n" + trimmed;
+                lastTableIndex = i;
+            } else {
+                break;
+            }
+        }
+
+        if (currentLine) {
+            tableLines.push(currentLine);
+        }
+
+        const outroLines = lines.slice(lastTableIndex + 1).join("\n").trim();
         
         // Parse table rows
         const rows = [];
         let isHeader = true;
         for (const line of tableLines) {
-            const cells = line.split("|").slice(1, -1).map(c => c.trim());
+            let cellParts = line.split("|");
+            if (cellParts[0].trim() === "") cellParts.shift();
+            if (cellParts.length > 0 && cellParts[cellParts.length - 1].trim() === "") cellParts.pop();
+
+            const cells = cellParts.map(c => c.trim());
+            if (cells.length === 0) continue;
+
             // Check for markdown alignment row (e.g. |---| or |:---|:---:|)
             if (cells.every(c => /^:?-+:?$/.test(c))) {
                 isHeader = false;
@@ -211,7 +242,7 @@ export default function TableCompletionRenderer({
         
         return {
             introText: introLines,
-            tableRows: rows.length >= 2 ? rows : null,
+            tableRows: rows.length >= 1 ? rows : null,
             outroText: outroLines
         };
     }, [instructions]);

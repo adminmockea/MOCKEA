@@ -96,11 +96,32 @@ export const convertMarkdownContentToHtml = (rawText) => {
       continue;
     }
 
-    if (lines[index].trim().startsWith("|") && lines[index].trim().endsWith("|")) {
+    if (lines[index].trim().startsWith("|")) {
       const tableLines = [];
-      while (index < lines.length && lines[index].trim().startsWith("|") && lines[index].trim().endsWith("|")) {
-        tableLines.push(lines[index]);
-        index += 1;
+      let currentLine = "";
+
+      while (index < lines.length) {
+        const trimmed = lines[index].trim();
+        if (trimmed.startsWith("|")) {
+          if (currentLine) {
+            tableLines.push(currentLine);
+          }
+          currentLine = trimmed;
+          index += 1;
+        } else if (currentLine) {
+          if (trimmed === "" && currentLine.endsWith("|")) {
+            tableLines.push(currentLine);
+            currentLine = "";
+            break;
+          }
+          currentLine += "\n" + trimmed;
+          index += 1;
+        } else {
+          break;
+        }
+      }
+      if (currentLine) {
+        tableLines.push(currentLine);
       }
       htmlParts.push(convertMarkdownTableBlock(tableLines));
       continue;
