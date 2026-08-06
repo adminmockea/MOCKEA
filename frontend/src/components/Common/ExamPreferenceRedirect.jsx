@@ -11,8 +11,8 @@ import { FiCheck, FiPlay } from "react-icons/fi";
 import { toast } from "react-toastify";
 import useAxios from "../../hooks/useAxios";
 
-const Testimonials = lazy(() => import("../Home/Testimonials").then(m => ({ default: m.Testimonials })));
-const FreeResources = lazy(() => import("../Home/FreeResources").then(m => ({ default: m.FreeResources })));
+const Testimonials = lazy(() => import("../Home/Testimonials").then(m => ({ default: m.default || m.Testimonials })));
+const FreeResources = lazy(() => import("../Home/FreeResources").then(m => ({ default: m.default || m.FreeResources })));
 
 export default function ExamPreferenceRedirect() {
     const navigate = useNavigate();

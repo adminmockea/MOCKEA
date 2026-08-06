@@ -17,14 +17,20 @@ const Error = () => {
       status: 500
     });
 
-    // Automatically reload the page if a chunk failed to load
+    // Automatically reload the page once if a chunk failed to load (guarded to prevent infinite reload loops)
     const errorMessage = error?.message || String(error || '');
-    if (
+    const isChunkError =
       errorMessage.includes('Failed to fetch dynamically imported module') ||
       errorMessage.includes('Loading chunk') ||
-      errorMessage.includes('dynamic import')
-    ) {
-      window.location.reload();
+      errorMessage.includes('dynamic import');
+
+    if (isChunkError) {
+      const reloadKey = `chunk_reload_${window.location.pathname}`;
+      const hasReloaded = sessionStorage.getItem(reloadKey);
+      if (!hasReloaded) {
+        sessionStorage.setItem(reloadKey, 'true');
+        window.location.reload();
+      }
     }
   }, [error]);
 
