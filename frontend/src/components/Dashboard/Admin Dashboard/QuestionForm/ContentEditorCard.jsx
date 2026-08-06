@@ -7,6 +7,61 @@ import {
 } from "react-icons/pi";
 import { makeQuestion } from "./questionFormConstants";
 
+function adjustGroupRanges(groups, changedIdx, field, newValue) {
+    const updated = (groups || []).map(g => ({ ...g }));
+    const val = parseInt(newValue) || 1;
+    
+    if (field === "toQuestion") {
+        updated[changedIdx].toQuestion = val;
+        if ((updated[changedIdx].fromQuestion || 1) > val) {
+            updated[changedIdx].fromQuestion = val;
+        }
+        
+        // Cascade forward to subsequent groups if they overlap
+        for (let i = changedIdx + 1; i < updated.length; i++) {
+            const prevTo = Number(updated[i - 1].toQuestion) || 1;
+            const currentFrom = Number(updated[i].fromQuestion) || 1;
+            const currentTo = Number(updated[i].toQuestion) || 1;
+            
+            if (currentFrom <= prevTo) {
+                updated[i].fromQuestion = prevTo + 1;
+                if (currentTo < prevTo + 1) {
+                    updated[i].toQuestion = prevTo + 1;
+                }
+            }
+        }
+    } else if (field === "fromQuestion") {
+        updated[changedIdx].fromQuestion = val;
+        if ((updated[changedIdx].toQuestion || 1) < val) {
+            updated[changedIdx].toQuestion = val;
+        }
+        
+        // Adjust previous group if it overlaps
+        if (changedIdx > 0) {
+            const prevTo = Number(updated[changedIdx - 1].toQuestion) || 1;
+            if (prevTo >= val) {
+                updated[changedIdx - 1].toQuestion = Math.max(1, val - 1);
+            }
+        }
+        
+        // Cascade forward to subsequent groups if needed
+        for (let i = changedIdx + 1; i < updated.length; i++) {
+            const prevTo = Number(updated[i - 1].toQuestion) || 1;
+            const currentFrom = Number(updated[i].fromQuestion) || 1;
+            const currentTo = Number(updated[i].toQuestion) || 1;
+            
+            if (currentFrom <= prevTo) {
+                updated[i].fromQuestion = prevTo + 1;
+                if (currentTo < prevTo + 1) {
+                    updated[i].toQuestion = prevTo + 1;
+                }
+            }
+        }
+    }
+    
+    return updated;
+}
+
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
     const [focusedSelectId, setFocusedSelectId] = useState(null);
     const [selectRevisions, setSelectRevisions] = useState({});
@@ -287,11 +342,28 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                     <div className="flex items-center justify-between">
                         <div>
                             <label className="text-xs font-black text-slate-700 tracking-wide uppercase">Question Groups</label>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Define ranges, headers & instructions shown above each block of questions.</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Define ranges, headers &amp; instructions shown above each block of questions.</p>
                         </div>
                         <button
                             type="button"
-                            onClick={() => patch({ questionGroups: [...(formData.questionGroups || []), { title: "", instructions: "", fromQuestion: 1, toQuestion: 1, passageIndex: 0 }] })}
+                            onClick={() => {
+                                const groups = formData.questionGroups || [];
+                                const lastGroup = groups[groups.length - 1];
+                                const nextFrom = lastGroup ? (Number(lastGroup.toQuestion) || 0) + 1 : 1;
+                                const newGroup = { title: "", instructions: "", fromQuestion: nextFrom, toQuestion: nextFrom, passageIndex: 0, linkUrl: "", rightSideQuestion: false };
+                                const upd = [...groups, newGroup];
+                                const maxTo = Math.max(...upd.map(g => Number(g.toQuestion) || 1));
+                                let currentQuestions = [...(formData.questions || [])];
+                                if (currentQuestions.length < maxTo) {
+                                    const diff = maxTo - currentQuestions.length;
+                                    for (let i = 0; i < diff; i++) {
+                                        currentQuestions.push(makeQuestion(testType));
+                                    }
+                                    patch({ questionGroups: upd, questions: currentQuestions });
+                                } else {
+                                    patch({ questionGroups: upd });
+                                }
+                            }}
                             className="btn btn-outline btn-primary btn-sm rounded-xl gap-1"
                         >
                             <PiPlus /> Add Group
@@ -325,9 +397,19 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                 placeholder="From"
                                                 value={group.fromQuestion || 1}
                                                 onChange={(e) => {
-                                                    const upd = [...(formData.questionGroups || [])];
-                                                    upd[gIdx] = { ...upd[gIdx], fromQuestion: parseInt(e.target.value) || 1 };
-                                                    patch({ questionGroups: upd });
+                                                    const val = parseInt(e.target.value) || 1;
+                                                    const upd = adjustGroupRanges(formData.questionGroups || [], gIdx, "fromQuestion", val);
+                                                    const maxTo = Math.max(...upd.map(g => Number(g.toQuestion) || 1));
+                                                    let currentQuestions = [...(formData.questions || [])];
+                                                    if (currentQuestions.length < maxTo) {
+                                                        const diff = maxTo - currentQuestions.length;
+                                                        for (let i = 0; i < diff; i++) {
+                                                            currentQuestions.push(makeQuestion(testType));
+                                                        }
+                                                        patch({ questionGroups: upd, questions: currentQuestions });
+                                                    } else {
+                                                        patch({ questionGroups: upd });
+                                                    }
                                                 }}
                                             />
                                             <span className="text-slate-400 font-bold text-xs select-none">to</span>
@@ -338,12 +420,11 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                 value={group.toQuestion || 1}
                                                 onChange={(e) => {
                                                     const val = parseInt(e.target.value) || 1;
-                                                    const upd = [...(formData.questionGroups || [])];
-                                                    upd[gIdx] = { ...upd[gIdx], toQuestion: val };
-                                                    
+                                                    const upd = adjustGroupRanges(formData.questionGroups || [], gIdx, "toQuestion", val);
+                                                    const maxTo = Math.max(...upd.map(g => Number(g.toQuestion) || 1));
                                                     let currentQuestions = [...(formData.questions || [])];
-                                                    if (currentQuestions.length < val) {
-                                                        const diff = val - currentQuestions.length;
+                                                    if (currentQuestions.length < maxTo) {
+                                                        const diff = maxTo - currentQuestions.length;
                                                         for (let i = 0; i < diff; i++) {
                                                             currentQuestions.push(makeQuestion(testType));
                                                         }

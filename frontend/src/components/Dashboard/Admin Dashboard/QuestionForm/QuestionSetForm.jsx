@@ -123,7 +123,29 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const data = { ...formData, testType };
+
+        let sanitizedGroups = (formData.questionGroups || []).map(g => ({
+            ...g,
+            fromQuestion: Number(g.fromQuestion) || 1,
+            toQuestion: Number(g.toQuestion) || 1,
+        }));
+
+        for (let i = 0; i < sanitizedGroups.length; i++) {
+            if (sanitizedGroups[i].toQuestion < sanitizedGroups[i].fromQuestion) {
+                sanitizedGroups[i].toQuestion = sanitizedGroups[i].fromQuestion;
+            }
+            if (i > 0) {
+                const prevTo = sanitizedGroups[i - 1].toQuestion;
+                if (sanitizedGroups[i].fromQuestion <= prevTo) {
+                    sanitizedGroups[i].fromQuestion = prevTo + 1;
+                    if (sanitizedGroups[i].toQuestion < sanitizedGroups[i].fromQuestion) {
+                        sanitizedGroups[i].toQuestion = sanitizedGroups[i].fromQuestion;
+                    }
+                }
+            }
+        }
+
+        const data = { ...formData, questionGroups: sanitizedGroups, testType };
 
         if (testType === "reading") {
             if (formData.examType === "PTE") {
