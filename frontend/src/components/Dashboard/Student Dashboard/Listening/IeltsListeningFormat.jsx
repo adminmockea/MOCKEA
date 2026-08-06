@@ -27,10 +27,42 @@ const COMPLETION_TYPES = new Set([
     "flow-chart-completion",
 ]);
 
-const findQuestion = (questions, matchKey, offset = 0) => {
+const findQuestion = (questions, matchKey, offset = 0, header = null, placeholderIdx = 0, usedQuestionIds = null) => {
     if (!questions || !matchKey) return null;
+
+    const fromQ = header?.fromQuestion ? Number(header.fromQuestion) : null;
+    const toQ = header?.toQuestion ? Number(header.toQuestion) : null;
+
+    if (fromQ !== null && toQ !== null && !isNaN(fromQ) && !isNaN(toQ)) {
+        const groupQuestions = questions.filter((item, idx) => {
+            const questionNum = offset + idx + 1;
+            return questionNum >= fromQ && questionNum <= toQ;
+        });
+
+        if (groupQuestions.length > 0) {
+            const exactMatch = groupQuestions.find((item) => {
+                const qIdx = questions.indexOf(item);
+                const questionNum = offset + qIdx + 1;
+                return (
+                    item.id === matchKey ||
+                    (item.id && item.id.toLowerCase() === matchKey.toLowerCase()) ||
+                    questionNum.toString() === matchKey
+                );
+            });
+            if (exactMatch && (!usedQuestionIds || !usedQuestionIds.has(exactMatch.id))) {
+                return exactMatch;
+            }
+
+            const unusedInGroup = groupQuestions.filter(item => !usedQuestionIds || !usedQuestionIds.has(item.id));
+            if (unusedInGroup.length > 0) {
+                return unusedInGroup[0];
+            }
+        }
+    }
+
     const cleanKey = matchKey.toLowerCase().replace(/^[a-z]+/, "");
     return questions.find((item, idx) => {
+        if (usedQuestionIds && usedQuestionIds.has(item.id)) return false;
         const questionNum = offset + idx + 1;
         const localIndex = idx + 1;
         const cleanId = (item.id || "").toLowerCase().replace(/^[a-z]+/, "");
@@ -206,7 +238,7 @@ const formatFlowChartPassage = (text) => {
 
 const DEBOUNCE_MS = 400;
 
-const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, header, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
     const lastInteractionRef = useRef(new Map());
 
@@ -221,9 +253,14 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             return text;
         }
 
+        const usedQuestionIds = new Set();
+        let placeholderIdx = 0;
+
         return text.replace(/___([\w-]+)___/g, (match, matchKey) => {
-            const q = findQuestion(questions, matchKey, offset);
+            const currentIdx = placeholderIdx++;
+            const q = findQuestion(questions, matchKey, offset, header, currentIdx, usedQuestionIds);
             if (!q) return match;
+            usedQuestionIds.add(q.id);
 
             const qIndexInSet = questions.indexOf(q);
             const labelNum = offset + qIndexInSet + 1;
@@ -469,14 +506,50 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
     const containerRef = useRef(null);
 
     const parsedTable = useMemo(() => {
-        const lines = passage.split("\n").map(l => l.trim()).filter(Boolean);
-        const tableLines = lines.filter(l => l.startsWith("|") && l.endsWith("|"));
-        if (tableLines.length < 2) return null;
+        if (!passage) return null;
+        const lines = passage.split(/\r?\n/);
+        const tableStartIndex = lines.findIndex(l => l.trim().startsWith("|"));
+        if (tableStartIndex === -1) return null;
+
+        const tableLines = [];
+        let currentLine = "";
+
+        for (let i = tableStartIndex; i < lines.length; i++) {
+            const trimmed = lines[i].trim();
+
+            if (trimmed.startsWith("|")) {
+                if (currentLine) {
+                    tableLines.push(currentLine);
+                }
+                currentLine = trimmed;
+            } else if (currentLine) {
+                if (trimmed === "" && currentLine.endsWith("|")) {
+                    tableLines.push(currentLine);
+                    currentLine = "";
+                    break;
+                }
+                currentLine += "\n" + trimmed;
+            } else {
+                break;
+            }
+        }
+
+        if (currentLine) {
+            tableLines.push(currentLine);
+        }
+
+        if (tableLines.length === 0) return null;
 
         const rows = [];
         let isHeader = true;
         for (const line of tableLines) {
-            const cells = line.split("|").slice(1, -1).map(c => c.trim());
+            let cellParts = line.split("|");
+            if (cellParts[0].trim() === "") cellParts.shift();
+            if (cellParts.length > 0 && cellParts[cellParts.length - 1].trim() === "") cellParts.pop();
+
+            const cells = cellParts.map(c => c.trim());
+            if (cells.length === 0) continue;
+
             if (cells.every(c => /^:?-+:?$/.test(c))) {
                 isHeader = false;
                 continue;
@@ -485,7 +558,7 @@ const TableCompletionRenderer = memo(({ passage, questions, answers, onAnswerCha
             isHeader = false;
         }
 
-        return rows;
+        return rows.length >= 1 ? rows : null;
     }, [passage]);
 
     const processedRows = useMemo(() => {
@@ -1517,6 +1590,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submi
                                         submitted={submitted}
                                         result={result}
                                         offset={offset}
+                                        header={header}
                                         clickedOption={clickedOption}
                                         setClickedOption={setClickedOption}
                                     />
