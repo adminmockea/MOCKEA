@@ -8,7 +8,8 @@ import {
     PiPencilLine, 
     PiMicrophoneStage,
     PiPlus,
-    PiCheckCircle
+    PiCheckCircle,
+    PiArrowLeft
 } from "react-icons/pi";
 import { useNavigate, useParams } from "react-router";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
@@ -156,6 +157,13 @@ const CreateMockTest = () => {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
             <header className="flex flex-col gap-2">
+                <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/admin/manage-mock-tests")}
+                    className="btn btn-ghost btn-sm rounded-xl gap-2 self-start mb-1 text-base-content/70 hover:text-base-content"
+                >
+                    <PiArrowLeft className="w-4 h-4" /> Back to Mock Tests
+                </button>
                 <p className="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Admin Panel</p>
                 <h1 className="text-3xl font-bold flex items-center gap-2"><PiFiles className="text-primary" /> {id ? "Edit Full Mock Test" : "Create Full Mock Test"}</h1>
                 <p className="text-base-content/60">Bundle multiple question sets into a complete mock exam. Questions are filtered by exam program.</p>

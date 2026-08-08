@@ -462,6 +462,10 @@ const router = createBrowserRouter([
               </SuperAdminRoutes>
             ),
           },
+          {
+            path: "*",
+            element: <Error />,
+          },
         ],
       },
       {
@@ -471,6 +475,10 @@ const router = createBrowserRouter([
           { index: true, element: withSuspense(GuestTestLibrary) },
           { path: "tests/:id", element: withSuspense(GuestTestEnvironment) },
         ],
+      },
+      {
+        path: "*",
+        element: <Error />,
       },
     ],
   },
