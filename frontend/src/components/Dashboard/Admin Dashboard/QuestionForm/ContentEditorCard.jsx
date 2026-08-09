@@ -6,6 +6,7 @@ import {
     PiPencilLine
 } from "react-icons/pi";
 import { makeQuestion } from "./questionFormConstants";
+import { syncMultipleSelectionGroup } from "../../../../hooks/useQuestionFormState";
 
 function adjustGroupRanges(groups, changedIdx, field, newValue) {
     const updated = (groups || []).map(g => ({ ...g }));
@@ -494,6 +495,10 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                         currentQuestions.push(makeQuestion(testType));
                                                     }
                                                 }
+
+                                                const sourceQ = currentQuestions[fromQ - 1] || {};
+                                                const sourceText = sourceQ.question || "";
+                                                const sourceOpts = (sourceQ.options && sourceQ.options.length > 0) ? sourceQ.options : (selectedType === "multiple-selection" ? ["A", "B", "C", "D", "E"] : ["Option A", "Option B"]);
                                                 
                                                 const updatedQuestions = currentQuestions.map((q, idx) => {
                                                     const questionNum = idx + 1;
@@ -505,8 +510,9 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                             updatedQ.options = ["Yes", "No", "Not Given"];
                                                         } else if (selectedType === "matching-grid") {
                                                             updatedQ.options = ["A", "B", "C"];
-                                                        } else if (selectedType === "multiple-selection") {
-                                                            updatedQ.options = ["A", "B", "C", "D", "E"];
+                                                        } else if (selectedType === "multiple-selection" || selectedType === "multiple-choice") {
+                                                            updatedQ.question = sourceText || q.question;
+                                                            updatedQ.options = [...sourceOpts];
                                                         } else if (selectedType === "drag-drop-completion") {
                                                             const firstDD = currentQuestions.find(item => item.type === "drag-drop-completion");
                                                             if (firstDD) {
@@ -517,8 +523,10 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     }
                                                     return q;
                                                 });
+
+                                                const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, formData.questionGroups);
                                                 
-                                                patch({ questions: updatedQuestions });
+                                                patch({ questions: finalQuestions });
                                             }}
                                         >
                                             <option value="">— Select Type —</option>

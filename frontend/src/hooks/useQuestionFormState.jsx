@@ -109,32 +109,37 @@ export function parseQuestionToState(fetchedQuestion) {
     };
 }
 
-const syncMultipleSelectionGroup = (prevQuestions, questionGroups) => {
+export const syncMultipleSelectionGroup = (prevQuestions, questionGroups) => {
+    if (!prevQuestions || prevQuestions.length === 0) return prevQuestions;
     if (!questionGroups || questionGroups.length === 0) return prevQuestions;
     
     let questions = [...prevQuestions];
+    
+    // Sync strictly within each explicitly defined questionGroup range ONLY IF question types match
     for (const group of questionGroups) {
         const fromQ = Number(group.fromQuestion) || 1;
         const toQ = Number(group.toQuestion) || 1;
         if (fromQ < toQ) {
             const firstQIndex = fromQ - 1;
             const firstQ = questions[firstQIndex];
-            if (firstQ && firstQ.type === "multiple-selection") {
+            if (firstQ && (firstQ.type === "multiple-selection" || firstQ.type === "multiple-choice")) {
                 const sourceText = firstQ.question;
                 const sourceOptions = firstQ.options;
+                const sourceType = firstQ.type;
                 for (let i = fromQ; i < toQ; i++) {
-                    if (questions[i]) {
+                    if (questions[i] && questions[i].type === sourceType) {
                         questions[i] = {
                             ...questions[i],
-                            type: "multiple-selection",
-                            question: sourceText,
-                            options: [...sourceOptions]
+                            type: sourceType,
+                            question: sourceText || questions[i].question,
+                            options: sourceOptions ? [...sourceOptions] : questions[i].options
                         };
                     }
                 }
             }
         }
     }
+
     return questions;
 };
 
@@ -146,19 +151,58 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
     }, []);
 
     const patchQuestion = useCallback((id, updates) => {
-        setFormData((prev) => ({
-            ...prev,
-            questions: prev.questions.map((q) =>
+        setFormData((prev) => {
+            const updatedQuestions = prev.questions.map((q) =>
                 q.id === id ? { ...q, ...updates } : q
-            ),
-        }));
+            );
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+            return {
+                ...prev,
+                questions: finalQuestions,
+            };
+        });
     }, []);
 
     const handleAddQuestion = useCallback((testType) => {
-        setFormData((prev) => ({
-            ...prev,
-            questions: [...prev.questions, makeQuestion(testType || "listening")],
-        }));
+        setFormData((prev) => {
+            const newQ = makeQuestion(testType || "listening");
+            const prevQuestions = prev.questions || [];
+            const lastQIndex = prevQuestions.length - 1;
+            const lastQ = prevQuestions[lastQIndex];
+
+            if (lastQ) {
+                const newQNum = prevQuestions.length + 1; // 1-indexed index of new question
+
+                // Check which group lastQ belongs to
+                const lastQGroup = prev.questionGroups?.find(g => {
+                    const fromQ = Number(g.fromQuestion) || 1;
+                    const toQ = Number(g.toQuestion) || 1;
+                    return (lastQIndex + 1) >= fromQ && (lastQIndex + 1) <= toQ;
+                });
+
+                // ONLY fetch data from lastQ if newQ falls under the exact SAME question group as lastQ
+                const isSameGroup = lastQGroup && (newQNum >= (Number(lastQGroup.fromQuestion) || 1) && newQNum <= (Number(lastQGroup.toQuestion) || 1));
+
+                if (isSameGroup) {
+                    const isMultiType = lastQ.type === "multiple-selection" || (lastQ.type === "multiple-choice" && Number(lastQGroup.fromQuestion) < Number(lastQGroup.toQuestion));
+
+                    if (isMultiType) {
+                        newQ.type = lastQ.type;
+                        newQ.question = lastQ.question;
+                        newQ.options = lastQ.options ? [...lastQ.options] : ["", ""];
+                        newQ.passageIndex = lastQ.passageIndex || 0;
+                    }
+                }
+            }
+
+            const updatedQuestions = [...prevQuestions, newQ];
+            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
+
+            return {
+                ...prev,
+                questions: finalQuestions,
+            };
+        });
     }, []);
 
     const handleRemoveQuestion = useCallback((id) => {
@@ -182,6 +226,25 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                     const firstDD = prev.questions.find(q => q.type === "drag-drop-completion");
                     if (firstDD) {
                         updates.options = [...firstDD.options];
+                    }
+                } else if (value === "multiple-selection" || value === "multiple-choice") {
+                    // Fetch data from matching question ONLY if it is in the SAME question group
+                    const targetQIndex = prev.questions.findIndex(q => q.id === id);
+                    if (targetQIndex !== -1) {
+                        const targetQNum = targetQIndex + 1;
+                        const matchingGroup = prev.questionGroups?.find(g => {
+                            const fromQ = Number(g.fromQuestion) || 1;
+                            const toQ = Number(g.toQuestion) || 1;
+                            return targetQNum >= fromQ && targetQNum <= toQ;
+                        });
+                        if (matchingGroup && Number(matchingGroup.fromQuestion) < Number(matchingGroup.toQuestion)) {
+                            const firstInGroupIndex = (Number(matchingGroup.fromQuestion) || 1) - 1;
+                            const firstInGroup = prev.questions[firstInGroupIndex];
+                            if (firstInGroup && firstInGroup.id !== id && firstInGroup.type === value) {
+                                updates.question = firstInGroup.question;
+                                updates.options = firstInGroup.options ? [...firstInGroup.options] : ["", ""];
+                            }
+                        }
                     }
                 }
             }
