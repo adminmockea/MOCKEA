@@ -204,7 +204,7 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
                 currentOptionsKey = optionsKey;
                 groups.push(currentGridGroup);
             }
-        } else if (item.q && item.q.type === 'multiple-selection') {
+        } else if (item.q && (item.q.type === 'multiple-selection' || item.q.type === 'multiple-choice')) {
             currentGridGroup = null;
             currentGroupId = null;
             currentOptionsKey = null;
@@ -213,9 +213,16 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
             const optionsKey = cleanOptions.join('|');
             const qText = item.q.question ? item.q.question.trim().toLowerCase() : "";
 
-            if (currentSelectionGroup && currentSelectionQuestionText === qText && currentSelectionGroup.optionsKey === optionsKey) {
+            const isGroupableWithCurrent = currentSelectionGroup && qText && currentSelectionQuestionText === qText;
+            const isMultiSelection = item.q.type === 'multiple-selection';
+
+            if (isGroupableWithCurrent) {
                 currentSelectionGroup.items.push(item);
-            } else {
+                if (cleanOptions.length > currentSelectionGroup.options.length) {
+                    currentSelectionGroup.options = cleanOptions;
+                    currentSelectionGroup.optionsKey = optionsKey;
+                }
+            } else if (isMultiSelection) {
                 currentSelectionGroup = {
                     type: 'multiple-selection-group',
                     options: cleanOptions,
@@ -224,6 +231,13 @@ const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassag
                 };
                 currentSelectionQuestionText = qText;
                 groups.push(currentSelectionGroup);
+            } else {
+                currentSelectionGroup = null;
+                currentSelectionQuestionText = null;
+                groups.push({
+                    type: 'single',
+                    item
+                });
             }
         } else {
             currentGridGroup = null;

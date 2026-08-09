@@ -523,17 +523,26 @@ export const evaluateQuestions = async (req, res) => {
             const item = mappedQuestions[i];
             const q = item.q;
 
-            if (q && q.type === 'multiple-selection') {
+            if (q && (q.type === 'multiple-selection' || q.type === 'multiple-choice')) {
                 const qText = q.question ? q.question.trim().toLowerCase() : "";
-                if (currentGroup && currentGroup.qText === qText) {
+                const isGroupableWithCurrent = currentGroup && qText && currentGroup.qText === qText;
+                const isMultiSelection = q.type === 'multiple-selection';
+
+                if (isGroupableWithCurrent) {
                     currentGroup.items.push(item);
-                } else {
+                } else if (isMultiSelection) {
                     currentGroup = {
                         type: 'multiple-selection',
                         qText,
                         items: [item]
                     };
                     groups.push(currentGroup);
+                } else {
+                    currentGroup = null;
+                    groups.push({
+                        type: 'single',
+                        item
+                    });
                 }
             } else {
                 currentGroup = null;
