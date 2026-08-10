@@ -14,7 +14,6 @@ export function parseQuestionToState(fetchedQuestion) {
     let task2Prompt = "";
     
     if (fetchedQuestion.testType === "writing" && fetchedQuestion.passage) {
-        // Try to extract Task 1 & Task 2 prompts from the HTML
         const task1Match = fetchedQuestion.passage.match(/Task 1: Academic Report.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
         const task2Match = fetchedQuestion.passage.match(/Task 2: Opinion Essay.*?<\/h3>\s*<p.*?>(.*?)<\/p>/s);
         
@@ -30,7 +29,6 @@ export function parseQuestionToState(fetchedQuestion) {
     if (fetchedQuestion.testType === "listening" && fetchedQuestion.passage) {
         let tempPassage = fetchedQuestion.passage;
 
-        // Extract example label and answer if example block is present
         const exampleBlockMatch = tempPassage.match(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/);
         if (exampleBlockMatch) {
             const exampleBlockHtml = exampleBlockMatch[0];
@@ -39,13 +37,8 @@ export function parseQuestionToState(fetchedQuestion) {
             exampleAnswer = eqMatch ? eqMatch[2].trim() : "";
         }
 
-        // Strip any saved example blocks before restoring the editable notes content
         tempPassage = stripListeningExampleBlocks(tempPassage);
-
-        // Strip the ielts-listening-notes div wrapper if present
         tempPassage = tempPassage.replace(/<div class=["']ielts-listening-notes[^"']*["'][^>]*>/, "");
-        
-        // Strip the trailing closing div if it exists
         tempPassage = tempPassage.replace(/<\/div>\s*$/, "");
 
         cleanPassage = tempPassage.trim();
@@ -114,23 +107,20 @@ export const syncMultipleSelectionGroup = (prevQuestions, questionGroups) => {
     if (!questionGroups || questionGroups.length === 0) return prevQuestions;
     
     let questions = [...prevQuestions];
-    
-    // Sync strictly within each explicitly defined questionGroup range ONLY IF question types match
     for (const group of questionGroups) {
         const fromQ = Number(group.fromQuestion) || 1;
         const toQ = Number(group.toQuestion) || 1;
         if (fromQ < toQ) {
             const firstQIndex = fromQ - 1;
             const firstQ = questions[firstQIndex];
-            if (firstQ && (firstQ.type === "multiple-selection" || firstQ.type === "multiple-choice")) {
+            if (firstQ && firstQ.type === "multiple-selection") {
                 const sourceText = firstQ.question;
                 const sourceOptions = firstQ.options;
-                const sourceType = firstQ.type;
                 for (let i = fromQ; i < toQ; i++) {
-                    if (questions[i] && questions[i].type === sourceType) {
+                    if (questions[i] && questions[i].type === "multiple-selection") {
                         questions[i] = {
                             ...questions[i],
-                            type: sourceType,
+                            type: "multiple-selection",
                             question: sourceText || questions[i].question,
                             options: sourceOptions ? [...sourceOptions] : questions[i].options
                         };
@@ -139,7 +129,6 @@ export const syncMultipleSelectionGroup = (prevQuestions, questionGroups) => {
             }
         }
     }
-
     return questions;
 };
 
@@ -151,58 +140,19 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
     }, []);
 
     const patchQuestion = useCallback((id, updates) => {
-        setFormData((prev) => {
-            const updatedQuestions = prev.questions.map((q) =>
+        setFormData((prev) => ({
+            ...prev,
+            questions: prev.questions.map((q) =>
                 q.id === id ? { ...q, ...updates } : q
-            );
-            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
-            return {
-                ...prev,
-                questions: finalQuestions,
-            };
-        });
+            ),
+        }));
     }, []);
 
     const handleAddQuestion = useCallback((testType) => {
-        setFormData((prev) => {
-            const newQ = makeQuestion(testType || "listening");
-            const prevQuestions = prev.questions || [];
-            const lastQIndex = prevQuestions.length - 1;
-            const lastQ = prevQuestions[lastQIndex];
-
-            if (lastQ) {
-                const newQNum = prevQuestions.length + 1; // 1-indexed index of new question
-
-                // Check which group lastQ belongs to
-                const lastQGroup = prev.questionGroups?.find(g => {
-                    const fromQ = Number(g.fromQuestion) || 1;
-                    const toQ = Number(g.toQuestion) || 1;
-                    return (lastQIndex + 1) >= fromQ && (lastQIndex + 1) <= toQ;
-                });
-
-                // ONLY fetch data from lastQ if newQ falls under the exact SAME question group as lastQ
-                const isSameGroup = lastQGroup && (newQNum >= (Number(lastQGroup.fromQuestion) || 1) && newQNum <= (Number(lastQGroup.toQuestion) || 1));
-
-                if (isSameGroup) {
-                    const isMultiType = lastQ.type === "multiple-selection" || (lastQ.type === "multiple-choice" && Number(lastQGroup.fromQuestion) < Number(lastQGroup.toQuestion));
-
-                    if (isMultiType) {
-                        newQ.type = lastQ.type;
-                        newQ.question = lastQ.question;
-                        newQ.options = lastQ.options ? [...lastQ.options] : ["", ""];
-                        newQ.passageIndex = lastQ.passageIndex || 0;
-                    }
-                }
-            }
-
-            const updatedQuestions = [...prevQuestions, newQ];
-            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
-
-            return {
-                ...prev,
-                questions: finalQuestions,
-            };
-        });
+        setFormData((prev) => ({
+            ...prev,
+            questions: [...prev.questions, makeQuestion(testType || "listening")],
+        }));
     }, []);
 
     const handleRemoveQuestion = useCallback((id) => {
@@ -222,29 +172,16 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                     updates.options = ["Yes", "No", "Not Given"];
                 } else if (value === "matching-grid") {
                     updates.options = ["A", "B", "C"];
+                } else if (value === "multiple-choice") {
+                    const targetQ = prev.questions.find(q => q.id === id);
+                    const currentOpts = targetQ?.options || [];
+                    if (currentOpts.length === 0 || currentOpts.every(o => o === "A" || o === "B" || o === "C" || o === "D")) {
+                        updates.options = ["Option A", "Option B"];
+                    }
                 } else if (value === "drag-drop-completion") {
                     const firstDD = prev.questions.find(q => q.type === "drag-drop-completion");
-                    if (firstDD) {
+                    if (firstDD && firstDD.options?.length) {
                         updates.options = [...firstDD.options];
-                    }
-                } else if (value === "multiple-selection" || value === "multiple-choice") {
-                    // Fetch data from matching question ONLY if it is in the SAME question group
-                    const targetQIndex = prev.questions.findIndex(q => q.id === id);
-                    if (targetQIndex !== -1) {
-                        const targetQNum = targetQIndex + 1;
-                        const matchingGroup = prev.questionGroups?.find(g => {
-                            const fromQ = Number(g.fromQuestion) || 1;
-                            const toQ = Number(g.toQuestion) || 1;
-                            return targetQNum >= fromQ && targetQNum <= toQ;
-                        });
-                        if (matchingGroup && Number(matchingGroup.fromQuestion) < Number(matchingGroup.toQuestion)) {
-                            const firstInGroupIndex = (Number(matchingGroup.fromQuestion) || 1) - 1;
-                            const firstInGroup = prev.questions[firstInGroupIndex];
-                            if (firstInGroup && firstInGroup.id !== id && firstInGroup.type === value) {
-                                updates.question = firstInGroup.question;
-                                updates.options = firstInGroup.options ? [...firstInGroup.options] : ["", ""];
-                            }
-                        }
                     }
                 }
             }
@@ -267,10 +204,10 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
             const nextValue = targetQuestion.type === "matching-grid"
-                ? String.fromCharCode(65 + targetQuestion.options.length)
+                ? String.fromCharCode(65 + (targetQuestion.options?.length || 0))
                 : "";
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
-            const newOptions = [...targetQuestion.options, nextValue];
+            const newOptions = [...(targetQuestion.options || []), nextValue];
 
             const updatedQuestions = prev.questions.map((q) => {
                 if (isDragDrop && q.type === "drag-drop-completion") {
@@ -279,11 +216,9 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                 return q.id === qId ? { ...q, options: newOptions } : q;
             });
 
-            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
-
             return {
                 ...prev,
-                questions: finalQuestions,
+                questions: updatedQuestions,
             };
         });
     }, []);
@@ -292,7 +227,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
         setFormData((prev) => {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
-            const opts = [...targetQuestion.options];
+            const opts = [...(targetQuestion.options || [])];
             opts[idx] = value;
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
 
@@ -303,11 +238,9 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                 return q.id === qId ? { ...q, options: opts } : q;
             });
 
-            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
-
             return {
                 ...prev,
-                questions: finalQuestions,
+                questions: updatedQuestions,
             };
         });
     }, []);
@@ -316,7 +249,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
         setFormData((prev) => {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
-            const opts = targetQuestion.options.filter((_, i) => i !== idx);
+            const opts = (targetQuestion.options || []).filter((_, i) => i !== idx);
             const isDragDrop = targetQuestion.type === "drag-drop-completion";
 
             const updatedQuestions = prev.questions.map((q) => {
@@ -326,11 +259,9 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                 return q.id === qId ? { ...q, options: opts } : q;
             });
 
-            const finalQuestions = syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups);
-
             return {
                 ...prev,
-                questions: finalQuestions,
+                questions: updatedQuestions,
             };
         });
     }, []);

@@ -510,13 +510,21 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                             updatedQ.options = ["Yes", "No", "Not Given"];
                                                         } else if (selectedType === "matching-grid") {
                                                             updatedQ.options = ["A", "B", "C"];
-                                                        } else if (selectedType === "multiple-selection" || selectedType === "multiple-choice") {
+                                                        } else if (selectedType === "multiple-selection") {
                                                             updatedQ.question = sourceText || q.question;
                                                             updatedQ.options = [...sourceOpts];
+                                                        } else if (selectedType === "multiple-choice") {
+                                                            const hasValidMcqOpts = q.options && q.options.length >= 2 && !q.options.every(o => o === "A" || o === "B" || o === "C" || o === "D");
+                                                            updatedQ.options = hasValidMcqOpts ? [...q.options] : ["Option A", "Option B"];
                                                         } else if (selectedType === "drag-drop-completion") {
-                                                            const firstDD = currentQuestions.find(item => item.type === "drag-drop-completion");
-                                                            if (firstDD) {
-                                                                updatedQ.options = [...firstDD.options];
+                                                            const firstDDInGroup = currentQuestions.find((item, i) => {
+                                                                const num = i + 1;
+                                                                return num >= fromQ && num <= toQ && item.type === "drag-drop-completion";
+                                                            });
+                                                            if (firstDDInGroup && firstDDInGroup.options?.length) {
+                                                                updatedQ.options = [...firstDDInGroup.options];
+                                                            } else {
+                                                                updatedQ.options = [];
                                                             }
                                                         }
                                                         return updatedQ;
