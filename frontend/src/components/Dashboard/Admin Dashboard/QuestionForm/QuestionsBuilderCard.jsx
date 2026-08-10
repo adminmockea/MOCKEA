@@ -18,6 +18,8 @@ export default function QuestionsBuilderCard({
     handleAddOption,
     updateOption,
     handleRemoveOption,
+    handleSmartPasteOptions,
+    handleResetOptions,
     handleAddPair,
     updatePair,
 }) {
@@ -273,6 +275,8 @@ export default function QuestionsBuilderCard({
                                 onAddOption={handleAddOption}
                                 onUpdateOption={updateOption}
                                 onRemoveOption={handleRemoveOption}
+                                onSmartPasteOptions={handleSmartPasteOptions}
+                                onResetOptions={handleResetOptions}
                                 onAddPair={handleAddPair}
                                 onUpdatePair={updatePair}
                                 examType={formData.examType}

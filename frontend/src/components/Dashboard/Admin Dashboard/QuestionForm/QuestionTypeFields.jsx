@@ -6,6 +6,7 @@ import {
   NEEDS_PAIRS, 
   NEEDS_IMAGE 
 } from "./questionFormConstants";
+import { parsePastedOptionsText } from "../../../../hooks/useQuestionFormState.jsx";
 
 export const QuestionTypeSelect = ({ value, onChange, examType }) => {
     const groups = examType === "PTE" ? PTE_QUESTION_TYPE_GROUPS : QUESTION_TYPE_GROUPS;
@@ -28,8 +29,30 @@ export const QuestionTypeSelect = ({ value, onChange, examType }) => {
     );
 };
 
-export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, onRemoveOption, onAddPair, onUpdatePair }) => {
+export const QuestionTypeExtras = ({ 
+    q, 
+    onUpdate, 
+    onAddOption, 
+    onUpdateOption, 
+    onRemoveOption, 
+    onSmartPasteOptions,
+    onResetOptions,
+    onAddPair, 
+    onUpdatePair 
+}) => {
     if (NEEDS_OPTIONS.includes(q.type)) {
+        const handleOptionPaste = (e, i) => {
+            const pastedText = e.clipboardData?.getData("text");
+            if (!pastedText) return;
+            const parsed = parsePastedOptionsText(pastedText);
+            if (parsed && parsed.length > 1) {
+                e.preventDefault();
+                if (onSmartPasteOptions) {
+                    onSmartPasteOptions(q.id, i, parsed);
+                }
+            }
+        };
+
         return (
             <div className="bg-base-100 p-4 rounded-2xl space-y-3">
                 {q.type === "matching-grid" && (
@@ -45,9 +68,21 @@ export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, o
                         />
                     </div>
                 )}
-                <span className="text-[10px] font-black uppercase tracking-widest text-base-content/50">
-                    Options
-                </span>
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-base-content/50">
+                        Options <span className="normal-case font-normal text-slate-400 ml-1">(Paste multi-line options to auto-split A, B, C...)</span>
+                    </span>
+                    {onResetOptions && q.options?.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => onResetOptions(q.id)}
+                            className="btn btn-ghost btn-xs text-slate-400 hover:text-error gap-1 text-[10px] px-1.5"
+                            title="Clear all options"
+                        >
+                            <PiTrash className="w-3 h-3" /> Clear Options
+                        </button>
+                    )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {q.options.map((opt, i) => (
                         <div key={i} className="flex items-center gap-1.5 w-full">
@@ -60,6 +95,7 @@ export const QuestionTypeExtras = ({ q, onUpdate, onAddOption, onUpdateOption, o
                                 placeholder={`Option ${String.fromCharCode(65 + i)}`}
                                 value={opt}
                                 onChange={(e) => onUpdateOption(q.id, i, e.target.value)}
+                                onPaste={(e) => handleOptionPaste(e, i)}
                             />
                             {q.options.length > 1 && (
                                 <button

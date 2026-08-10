@@ -136,30 +136,45 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
     const [formData, setFormData] = useState(initialData);
 
     const patch = useCallback((updates) => {
-        setFormData((prev) => ({ ...prev, ...updates }));
+        setFormData((prev) => {
+            const next = { ...prev, ...updates };
+            if (updates.questions || updates.questionGroups) {
+                next.questions = syncMultipleSelectionGroup(next.questions || prev.questions, next.questionGroups || prev.questionGroups);
+            }
+            return next;
+        });
     }, []);
 
     const patchQuestion = useCallback((id, updates) => {
-        setFormData((prev) => ({
-            ...prev,
-            questions: prev.questions.map((q) =>
+        setFormData((prev) => {
+            const updatedQuestions = prev.questions.map((q) =>
                 q.id === id ? { ...q, ...updates } : q
-            ),
-        }));
+            );
+            return {
+                ...prev,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
+            };
+        });
     }, []);
 
     const handleAddQuestion = useCallback((testType) => {
-        setFormData((prev) => ({
-            ...prev,
-            questions: [...prev.questions, makeQuestion(testType || "listening")],
-        }));
+        setFormData((prev) => {
+            const updatedQuestions = [...prev.questions, makeQuestion(testType || "listening")];
+            return {
+                ...prev,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
+            };
+        });
     }, []);
 
     const handleRemoveQuestion = useCallback((id) => {
-        setFormData((prev) => ({
-            ...prev,
-            questions: prev.questions.filter((q) => q.id !== id),
-        }));
+        setFormData((prev) => {
+            const updatedQuestions = prev.questions.filter((q) => q.id !== id);
+            return {
+                ...prev,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
+            };
+        });
     }, []);
 
     const updateQuestionField = useCallback((id, field, value) => {
@@ -218,7 +233,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
 
             return {
                 ...prev,
-                questions: updatedQuestions,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
             };
         });
     }, []);
@@ -240,7 +255,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
 
             return {
                 ...prev,
-                questions: updatedQuestions,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
             };
         });
     }, []);
@@ -261,7 +276,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
 
             return {
                 ...prev,
-                questions: updatedQuestions,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
             };
         });
     }, []);
@@ -303,6 +318,57 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
         });
     }, []);
 
+    const handleSmartPasteOptions = useCallback((qId, startIdx, newOptionsArr) => {
+        setFormData((prev) => {
+            const targetQuestion = prev.questions.find((q) => q.id === qId);
+            if (!targetQuestion) return prev;
+
+            let opts;
+            if (startIdx === 0) {
+                opts = [...newOptionsArr];
+            } else {
+                opts = [...(targetQuestion.options || [])];
+                for (let k = 0; k < newOptionsArr.length; k++) {
+                    opts[startIdx + k] = newOptionsArr[k];
+                }
+            }
+
+            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const updatedQuestions = prev.questions.map((q) => {
+                if (isDragDrop && q.type === "drag-drop-completion") {
+                    return { ...q, options: opts };
+                }
+                return q.id === qId ? { ...q, options: opts } : q;
+            });
+
+            return {
+                ...prev,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
+            };
+        });
+    }, []);
+
+    const handleResetOptions = useCallback((qId) => {
+        setFormData((prev) => {
+            const targetQuestion = prev.questions.find((q) => q.id === qId);
+            if (!targetQuestion) return prev;
+
+            const defaultOpts = ["", ""];
+            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const updatedQuestions = prev.questions.map((q) => {
+                if (isDragDrop && q.type === "drag-drop-completion") {
+                    return { ...q, options: defaultOpts };
+                }
+                return q.id === qId ? { ...q, options: defaultOpts } : q;
+            });
+
+            return {
+                ...prev,
+                questions: syncMultipleSelectionGroup(updatedQuestions, prev.questionGroups),
+            };
+        });
+    }, []);
+
     return {
         formData,
         setFormData,
@@ -314,7 +380,51 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
         handleAddOption,
         updateOption,
         handleRemoveOption,
+        handleSmartPasteOptions,
+        handleResetOptions,
         handleAddPair,
         updatePair,
     };
 }
+
+export function parsePastedOptionsText(text) {
+    if (!text || typeof text !== "string") return null;
+
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+
+    // Pattern 1: Multi-line paste (split by newlines or tabs)
+    let rawLines = trimmed
+        .split(/\r?\n|\t+/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+    // If copied format has alternating letter line and content line, e.g. ["A", "Option content", "B", "Option content"]
+    if (rawLines.length >= 4 && rawLines.every((l, idx) => idx % 2 === 0 ? /^[A-Ea-e1-9][\.\)\:]?$/.test(l) : true)) {
+        const merged = [];
+        for (let i = 0; i < rawLines.length; i += 2) {
+            if (rawLines[i + 1]) {
+                merged.push(rawLines[i + 1]);
+            }
+        }
+        if (merged.length > 1) return merged;
+    }
+
+    if (rawLines.length > 1) {
+        // Strip single option letter/digit prefixes ONLY (e.g. "A. ", "A) ", "A: ", "A ", "1. ", "1) ")
+        return rawLines.map(line => line.replace(/^([A-Ea-e1-9][\.\)\:\-]?\s+)/, "").trim());
+    }
+
+    // Pattern 2: Single-line paste with option letter prefixes (e.g., "A. text B. text C. text")
+    const singleLineMatches = Array.from(
+        trimmed.matchAll(/(?:^|\s+)([A-Ea-e])[\.\)\:\-]?\s+([^\n]+?)(?=(?:\s+[A-Ea-e][\.\)\:\-]?\s+|$))/g)
+    );
+
+    if (singleLineMatches.length > 1) {
+        return singleLineMatches.map(m => m[2].trim());
+    }
+
+    return null;
+}
+
+

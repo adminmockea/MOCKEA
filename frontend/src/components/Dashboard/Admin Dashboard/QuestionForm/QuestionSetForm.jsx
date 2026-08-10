@@ -72,6 +72,8 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
         handleAddOption,
         updateOption,
         handleRemoveOption,
+        handleSmartPasteOptions,
+        handleResetOptions,
         handleAddPair,
         updatePair,
     } = useQuestionFormState(initialData);
@@ -338,6 +340,8 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                     handleAddOption={handleAddOption} 
                     updateOption={updateOption} 
                     handleRemoveOption={handleRemoveOption}
+                    handleSmartPasteOptions={handleSmartPasteOptions}
+                    handleResetOptions={handleResetOptions}
                     handleAddPair={handleAddPair} 
                     updatePair={updatePair} 
                 />
