@@ -6,10 +6,19 @@ const DEBOUNCE_MS = 500;
 const formatInlineBullets = (str) => {
     if (!str) return str;
     let formatted = str.trim();
-    // Replace markdown list item markers with nice inline bullet points
-    formatted = formatted.replace(/^[-*]\s+/, '<span class="text-primary font-black mr-1.5 select-none">•</span> ');
-    formatted = formatted.replace(/\s*[,;\n]\s*[-*]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
-    formatted = formatted.replace(/\s+[-*]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    
+    // Parse bold text (**text** or <b>text</b> or <strong>text</strong>)
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-slate-900">$1</strong>');
+    formatted = formatted.replace(/<b>(.*?)<\/b>/gi, '<strong class="font-black text-slate-900">$1</strong>');
+    formatted = formatted.replace(/<strong>(.*?)<\/strong>/gi, '<strong class="font-black text-slate-900">$1</strong>');
+
+    // Parse italic text (*text* or <i>text</i>)
+    formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
+
+    // Replace markdown list item markers (- or * or •) with stylized inline bullet points
+    formatted = formatted.replace(/^[-*•]\s+/gm, '<span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    formatted = formatted.replace(/\s*[,;\n]\s*[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    formatted = formatted.replace(/\s+[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
     return formatted;
 };
 
@@ -221,8 +230,7 @@ export default function TableCompletionRenderer({
         const outroLines = lines.slice(lastTableIndex + 1).join("\n").trim();
         
         // Parse table rows
-        const rows = [];
-        let isHeader = true;
+        const rawRows = [];
         for (const line of tableLines) {
             let cellParts = line.split("|");
             if (cellParts[0].trim() === "") cellParts.shift();
@@ -231,23 +239,53 @@ export default function TableCompletionRenderer({
             const cells = cellParts.map(c => c.trim());
             if (cells.length === 0) continue;
 
-            // Check for markdown alignment row (e.g. |---| or |:---|:---:|)
-            if (cells.every(c => /^:?-+:?$/.test(c))) {
-                isHeader = false;
-                continue;
-            }
-            rows.push({ cells, isHeader });
-            isHeader = false;
+            const isSep = cells.every(c => /^:?-+:?$/.test(c));
+            rawRows.push({ cells, isSep });
         }
+
+        const sepIdx = rawRows.findIndex(r => r.isSep);
+        const nonSepRows = rawRows.filter(r => !r.isSep);
+        const maxCols = Math.max(1, ...nonSepRows.map(r => r.cells.length));
+
+        const parsedRows = [];
+        if (sepIdx !== -1) {
+            let passedSep = false;
+            rawRows.forEach(r => {
+                if (r.isSep) {
+                    passedSep = true;
+                    return;
+                }
+                parsedRows.push({
+                    cells: r.cells,
+                    isHeader: !passedSep
+                });
+            });
+        } else {
+            const row0Cols = rawRows[0]?.cells.length || 0;
+            const hasSpanningTitle = row0Cols < maxCols && rawRows.length > 1;
+
+            rawRows.forEach((r, idx) => {
+                const isHeader = idx === 0 || (hasSpanningTitle && idx === 1);
+                parsedRows.push({
+                    cells: r.cells,
+                    isHeader
+                });
+            });
+        }
+
+        const headerRows = parsedRows.filter(r => r.isHeader);
+        const bodyRows = parsedRows.filter(r => !r.isHeader);
         
         return {
             introText: introLines,
-            tableRows: rows.length >= 1 ? rows : null,
+            headerRows,
+            bodyRows,
+            maxCols,
             outroText: outroLines
         };
     }, [instructions]);
 
-    if (!tableRows) {
+    if (!headerRows || (headerRows.length === 0 && bodyRows.length === 0)) {
         // Fallback if no valid table structure exists in instructions
         return (
             <div className="bg-amber-50 border border-amber-200 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
@@ -267,22 +305,37 @@ export default function TableCompletionRenderer({
             <div className="overflow-x-auto my-4 border border-slate-200 rounded-3xl bg-white shadow-xs">
                 <table className="w-full border-collapse text-sm text-left">
                     <thead>
-                        <tr className="bg-slate-900 border-b border-slate-700">
-                            {tableRows[0]?.cells.map((cell, ci) => (
-                                <th key={ci} className="text-white font-black text-xs uppercase tracking-widest px-5 py-4 border border-slate-700">
-                                    {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
-                                </th>
-                            ))}
-                        </tr>
+                        {headerRows.map((hRow, hIdx) => {
+                            const isSingleTitle = hRow.cells.length === 1 && maxCols > 1;
+                            return (
+                                <tr key={hIdx} className={hIdx === 0 ? "bg-slate-900 border-b border-slate-700" : "bg-slate-800 border-b border-slate-700"}>
+                                    {hRow.cells.map((cell, ci) => {
+                                        const colSpan = isSingleTitle ? maxCols : (ci === hRow.cells.length - 1 && hRow.cells.length < maxCols ? maxCols - hRow.cells.length + 1 : 1);
+                                        return (
+                                            <th
+                                                key={ci}
+                                                colSpan={colSpan}
+                                                className={`text-white font-black text-xs uppercase tracking-widest px-5 py-3.5 border border-slate-700 ${isSingleTitle ? "text-center text-sm py-4 bg-slate-950 tracking-wider font-bold" : "text-left"}`}
+                                            >
+                                                {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {tableRows.slice(1).map((row, ri) => (
+                        {bodyRows.map((row, ri) => (
                             <tr key={ri} className={ri % 2 === 1 ? "bg-slate-50/50 hover:bg-slate-50 transition-colors" : "bg-white hover:bg-slate-50 transition-colors"}>
-                                {row.cells.map((cell, ci) => (
-                                    <td key={ci} className="px-5 py-4 border border-slate-200 text-slate-700 leading-relaxed font-medium align-top">
-                                        {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
-                                    </td>
-                                ))}
+                                {row.cells.map((cell, ci) => {
+                                    const colSpan = (ci === row.cells.length - 1 && row.cells.length < maxCols) ? (maxCols - row.cells.length + 1) : 1;
+                                    return (
+                                        <td key={ci} colSpan={colSpan} className="px-5 py-4 border border-slate-200 text-slate-700 leading-relaxed font-medium align-top">
+                                            {renderCellContent(cell, allQuestions, answers, onAnswerChange, submitted, result, clickedOption, setClickedOption, offset, lastInteractionRef)}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                         ))}
                     </tbody>

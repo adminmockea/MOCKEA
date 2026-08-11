@@ -32,7 +32,14 @@ const convertInlineText = (text) => {
     return `<a href="${url}" target="_blank" rel="noreferrer noopener" class="underline decoration-primary/50 text-primary hover:text-primary-focus">${url}</a>`;
   }
 
-  const withImages = convertMarkdownImageLinks(text);
+  // Parse Markdown bold (**text**)
+  let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+  // Parse Markdown italic (*text*)
+  formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
+  // Parse Markdown bullet points (- or * or • at start of line)
+  formatted = formatted.replace(/^[-*•]\s+/gm, '<span class="text-primary font-black mr-1.5 select-none">•</span> ');
+
+  const withImages = convertMarkdownImageLinks(formatted);
   const withLinks = convertMarkdownLinks(withImages);
   return convertPlainUrlsToLinks(withLinks);
 };
@@ -80,9 +87,12 @@ export const convertMarkdownContentToHtml = (rawText) => {
   const text = rawText == null ? "" : String(rawText).trim();
   if (!text) return "";
 
+  const allowedTags = ["img", "th", "td", "tr", "thead", "tbody", "table", "div", "strong", "b", "em", "i", "span", "br", "p", "a", "ul", "li"];
+  const allowedAttrs = ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"];
+
   const hasHtmlTags = /<\/?[a-z][\s\S]*?>/i.test(text);
   if (hasHtmlTags) {
-    return DOMPurify.sanitize(text, { ADD_TAGS: ["img", "th", "td", "tr", "thead", "tbody", "table", "div"], ADD_ATTR: ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"] });
+    return DOMPurify.sanitize(text, { ADD_TAGS: allowedTags, ADD_ATTR: allowedAttrs });
   }
 
   const lines = text.split(/\r?\n/);
@@ -136,5 +146,5 @@ export const convertMarkdownContentToHtml = (rawText) => {
     htmlParts.push(`<p class="leading-relaxed">${paragraphText}</p>`);
   }
 
-  return DOMPurify.sanitize(htmlParts.join("\n"), { ADD_TAGS: ["img", "th", "td", "tr", "thead", "tbody", "table", "div"], ADD_ATTR: ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"] });
+  return DOMPurify.sanitize(htmlParts.join("\n"), { ADD_TAGS: allowedTags, ADD_ATTR: allowedAttrs });
 };

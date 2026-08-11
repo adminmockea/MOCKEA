@@ -326,11 +326,12 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     {(!formData.questions || formData.questions.length === 0) && (
                                         <span className="text-[10px] text-slate-400 italic select-none">Add questions below first, then click to insert gaps</span>
                                     )}
+                                    <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1 select-none">
+                                        <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
+                                        <span>📊 For tables, use <code>|</code> columns. For single top headers, put <code>| Title |</code> on row 1.</span>
+                                        <span>✨ Use <code>**bold text**</code> for bolding and <code>- </code> or <code>• </code> for bullet points in both passage text and table cells.</span>
+                                    </p>
                                 </div>
-                                <p className="text-[11px] text-slate-500 font-semibold mt-1 flex flex-col gap-1 select-none">
-                                    <span>💡 Click a <strong>QN</strong> button to insert a gap at your cursor position, then <strong>keep typing</strong> to add text after it.</span>
-                                    <span>📊 To create a table, use vertical bars (<code>|</code>) at the start and end of rows.</span>
-                                </p>
                             </div>
                         </div>
                     )}
@@ -701,6 +702,39 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     title="Insert flowchart arrow (↓) at cursor"
                                                 >
                                                     <span>↓</span> Arrow
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const ta = document.getElementById(`group-instructions-textarea-${gIdx}`);
+                                                        const startQ = Number(group.fromQuestion) || 1;
+                                                        const tpl = `| Responsibilities |\n| | Task 1 | Task 2 | Notes |\n|---|---|---|---|\n| Bakery section | Check sell by dates | Change price labels | Use ___${startQ}___ labels |`;
+                                                        if (ta) {
+                                                            const start = ta.selectionStart;
+                                                            const end = ta.selectionEnd;
+                                                            const text = group.instructions || "";
+                                                            const prefix = text && !text.endsWith("\n") ? "\n\n" : "";
+                                                            const newText = text.substring(0, start) + prefix + tpl + text.substring(end);
+                                                            
+                                                            const upd = [...(formData.questionGroups || [])];
+                                                            upd[gIdx] = { ...upd[gIdx], instructions: newText };
+                                                            patch({ questionGroups: upd });
+                                                            
+                                                            setTimeout(() => {
+                                                                ta.focus();
+                                                                ta.selectionStart = ta.selectionEnd = start + prefix.length + tpl.length;
+                                                            }, 0);
+                                                        } else {
+                                                            const upd = [...(formData.questionGroups || [])];
+                                                            upd[gIdx] = { ...upd[gIdx], instructions: (group.instructions || "") + "\n\n" + tpl };
+                                                            patch({ questionGroups: upd });
+                                                        }
+                                                    }}
+                                                    className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                                                    title="Insert single table head & multi-column structure"
+                                                >
+                                                    <span>📊</span> + Single Head Table
                                                 </button>
 
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-2 select-none">Gap:</span>

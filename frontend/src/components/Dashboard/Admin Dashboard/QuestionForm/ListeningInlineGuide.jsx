@@ -42,9 +42,9 @@ export default function ListeningInlineGuide({ listeningPart }) {
                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
                         3
                     </div>
-                    <h5 className="font-bold text-slate-700">Add Tables (Markdown)</h5>
+                    <h5 className="font-bold text-slate-700">Tables &amp; Single Headers</h5>
                     <p className="text-slate-500 leading-relaxed text-[11px]">
-                        Admins can add tables by typing columns separated by <code>|</code> characters. The student UI renders them beautifully.
+                        Add single header tables with <code>| Responsibilities |</code> on row 1, or standard tables with <code>|</code> columns.
                     </p>
                 </div>
 
@@ -52,9 +52,9 @@ export default function ListeningInlineGuide({ listeningPart }) {
                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-[10px]">
                         4
                     </div>
-                    <h5 className="font-bold text-slate-700">Inline Student View</h5>
+                    <h5 className="font-bold text-slate-700">Bullets &amp; Bold Text</h5>
                     <p className="text-slate-500 leading-relaxed text-[11px]">
-                        The student UI automatically renders text boxes directly inside the passage text and table cells.
+                        Use <code>**bold**</code> for bolding and <code>- </code> or <code>• </code> for bullet points in both passages and tables.
                     </p>
                 </div>
             </div>
@@ -62,32 +62,30 @@ export default function ListeningInlineGuide({ listeningPart }) {
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
                     <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
-                        <span>IELTS Table Completion Template</span>
+                        <span>Single Head Table &amp; Bullets Template</span>
                         <span className="text-[10px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded font-mono font-normal">Best for Parts 1 &amp; 4</span>
                     </div>
                     <div className="whitespace-pre">
-{`| GROUP TOUR | DETAILS |
-|---|---|
-| Beachcombers and Rock - ___l12___ | exploring rock pools away from the |
-| | ___l13___ |
-| Guided Forest walk | to catch lunch |
-| Beach Expedition | departs at ___l14___ |
-| Moonlight Forest Walk | departs at sundown |
-| the ___l15___ | |`}
+{`| Responsibilities |
+| | Task 1 | Task 2 | Notes |
+|---|---|---|---|
+| **Bakery section** | - Check sell by dates | - Change price labels | Use ___1___ labels |
+| **Sushi counter** | - Re-stock with ___2___ boxes | - Wipe prep area | Do **not** clean knives |`}
                     </div>
                 </div>
 
                 <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] space-y-2 overflow-x-auto border border-slate-800">
                     <div className="text-slate-400 border-b border-slate-800 pb-1.5 font-sans font-bold flex justify-between items-center">
-                        <span>Inline Passage Template</span>
+                        <span>Inline Passage &amp; Bullets Template</span>
                         <span className="text-[10px] text-amber-400 bg-amber-950 px-1.5 py-0.5 rounded font-mono font-normal">Best for Parts 2 &amp; 3</span>
                     </div>
                     <div className="whitespace-pre">
-{`The speaker explains that ___31___ is the
-main advantage. Participants should arrive
-at the ___32___ entrance by 9:30am. The
-session includes a tour of the ___33___
-and ends with lunch at the ___34___.`}
+{`**First day at work**
+
+- Name of supervisor: ___31___
+- Where to leave coat: use ___32___ in staffroom
+- See **Tiffany** in HR to collect ___33___ number
+- HR office: on ___34___ floor`}
                     </div>
                 </div>
             </div>
