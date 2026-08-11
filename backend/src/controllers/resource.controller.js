@@ -161,36 +161,21 @@ export const uploadResourceFile = async (req, res) => {
     const ext = req.file.originalname.split(".").pop().toLowerCase();
 
     // Determine Cloudinary resource_type dynamically:
-    // - Images: "image"
-    // - Audio/Video: "video"
-    // - PDFs, Documents & Raw Archives: "raw" (or "auto" with fallback)
+    // Cloudinary allows public unrestricted access to 'image' (which includes PDFs) and 'video'.
+    // Do NOT set 'raw' as default because Cloudinary restricts public delivery of 'raw' files (HTTP 401).
     let resourceType = "auto";
-    if (isCover || ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext)) {
+    if (isCover || ["png", "jpg", "jpeg", "webp", "gif", "svg", "pdf"].includes(ext)) {
       resourceType = "image";
     } else if (["mp3", "wav", "mp4", "webm", "m4a"].includes(ext)) {
       resourceType = "video";
-    } else if (["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "epub", "txt"].includes(ext)) {
-      resourceType = "raw";
     }
 
-    let uploadResult;
-    try {
-      uploadResult = await cloudinary.uploader.upload(req.file.path, {
-        folder: cloudinaryFolder,
-        resource_type: resourceType,
-        use_filename: true,
-        unique_filename: true,
-      });
-    } catch (primaryUploadErr) {
-      console.warn(`[uploadResourceFile] Primary upload with resource_type='${resourceType}' failed, retrying fallback...`, primaryUploadErr.message);
-      const fallbackType = resourceType === "raw" ? "auto" : "raw";
-      uploadResult = await cloudinary.uploader.upload(req.file.path, {
-        folder: cloudinaryFolder,
-        resource_type: fallbackType,
-        use_filename: true,
-        unique_filename: true,
-      });
-    }
+    const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+      folder: cloudinaryFolder,
+      resource_type: resourceType,
+      use_filename: true,
+      unique_filename: true,
+    });
 
     // Clean up local temporary file safely
     try {

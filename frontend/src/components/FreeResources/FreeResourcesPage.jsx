@@ -41,7 +41,18 @@ export default function FreeResourcesPage() {
 
   const handleDownload = (resource) => {
     downloadMutation.mutate(resource._id);
-    window.open(getFileUrl(resource.link), '_blank', 'noopener,noreferrer');
+    let downloadUrl = getFileUrl(resource.link);
+
+    if (downloadUrl.includes('res.cloudinary.com')) {
+      if (downloadUrl.includes('/raw/upload/')) {
+        downloadUrl = downloadUrl.replace('/raw/upload/', '/image/upload/');
+      }
+      if (downloadUrl.includes('/upload/') && !downloadUrl.includes('fl_attachment')) {
+        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+      }
+    }
+
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Filter Resources based on Search and Category

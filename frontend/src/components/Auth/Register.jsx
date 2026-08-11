@@ -40,7 +40,16 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
 
   const triggerBookDownload = async () => {
     if (!claimBook) return;
-    const fileLink = getFileUrl(featuredBook?.link || "/books/mockea-ultimate-prep-guide.pdf");
+    let fileLink = getFileUrl(featuredBook?.link || "/books/mockea-ultimate-prep-guide.pdf");
+
+    if (fileLink.includes('res.cloudinary.com')) {
+      if (fileLink.includes('/raw/upload/')) {
+        fileLink = fileLink.replace('/raw/upload/', '/image/upload/');
+      }
+      if (fileLink.includes('/upload/') && !fileLink.includes('fl_attachment')) {
+        fileLink = fileLink.replace('/upload/', '/upload/fl_attachment/');
+      }
+    }
 
     if (featuredBook?._id && featuredBook._id !== "default-book-id") {
       try {
