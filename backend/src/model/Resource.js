@@ -30,7 +30,6 @@ const resourceSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"],
       default: "General",
     },
     fileType: {
