@@ -33,6 +33,9 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const axiosInstance = useAxiosSecure();
+  const navigate = useNavigate();
+  const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
   const triggerBookDownload = async () => {
