@@ -62,14 +62,20 @@ export default function FreeBookRegisterCard({ claimBook, setClaimBook, onBookLo
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Book Cover Preview */}
-        <div className="relative group shrink-0 w-24 sm:w-28 aspect-[3/4] rounded-xl overflow-hidden shadow-lg border border-white/20 bg-slate-800">
+        <div className="relative group shrink-0 w-24 sm:w-28 aspect-[3/4] rounded-xl overflow-hidden shadow-lg border border-white/20 bg-slate-950 flex items-center justify-center p-1">
+          <img
+            src={coverImg}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover filter blur-sm opacity-40 pointer-events-none"
+            aria-hidden="true"
+          />
           <img
             src={coverImg}
             alt={defaultTitle}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="relative max-h-full max-w-full object-contain rounded-md z-1 group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <span className="absolute bottom-1 left-1 right-1 text-[9px] font-extrabold text-center bg-blue-600/90 text-white py-0.5 rounded uppercase tracking-wider backdrop-blur-xs">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-2 pointer-events-none" />
+          <span className="absolute bottom-1 left-1 right-1 text-[9px] font-extrabold text-center bg-blue-600/90 text-white py-0.5 rounded uppercase tracking-wider backdrop-blur-xs z-10">
             Free PDF
           </span>
         </div>
