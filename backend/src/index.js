@@ -33,23 +33,33 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
 
-const allowedOrigins = [
+const rawOrigins = [
   process.env.CLIENT_URL,
   process.env.CLIENT_URL2,
   process.env.DEV_URL,
   process.env.DEV_URL2,
-].filter(Boolean); // Filter out undefined values to prevent CORS bypass
+  "https://mockea.web.app",
+  "https://eco-stream-90d55.web.app",
+];
+
+const allowedOrigins = rawOrigins
+  .filter(Boolean)
+  .map((url) => url.trim().replace(/\/$/, ""));
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS policy"));
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.trim().replace(/\/$/, "");
+      if (allowedOrigins.includes(cleanOrigin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
   })
 );
 

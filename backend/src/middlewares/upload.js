@@ -2,14 +2,21 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Ensure destination directories exist
-const uploadDir = path.join(process.cwd(), "uploads");
+// Ensure destination directories exist safely (Vercel serverless filesystem is read-only except /tmp)
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const baseUploadDir = isServerless ? "/tmp/uploads" : path.join(process.cwd(), "uploads");
+
+const uploadDir = baseUploadDir;
 const resourcesDir = path.join(uploadDir, "resources");
 const coversDir = path.join(uploadDir, "covers");
 
 [uploadDir, resourcesDir, coversDir].forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn(`[upload] Could not create directory ${dir}:`, err.message);
   }
 });
 
