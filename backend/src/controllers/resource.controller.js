@@ -35,11 +35,54 @@ export const incrementDownload = async (req, res) => {
   }
 };
 
+export const getFeaturedBook = async (req, res) => {
+  try {
+    const { examType } = req.query;
+    let query = { status: "Approved" };
+    if (examType) {
+      query.examType = { $in: [examType, "Both"] };
+    }
+    
+    // First try to find explicit featured book
+    let featuredBook = await Resource.findOne({ ...query, isFeaturedOnRegister: true }).sort({ updatedAt: -1 });
+    
+    // Fallback to the latest approved book or resource
+    if (!featuredBook) {
+      featuredBook = await Resource.findOne(query).sort({ createdAt: -1 });
+    }
+
+    if (!featuredBook) {
+      // Default fallback object if DB has no books yet
+      featuredBook = {
+        _id: "default-book-id",
+        title: "Ultimate PTE & IELTS Academic Masterclass 2026",
+        description: "150+ Pages of certified vocabulary lists, high-scoring speaking templates, AI essay scoring formulas, and practice tips.",
+        ctaText: "Download Free E-Book",
+        link: "/books/mockea-ultimate-prep-guide.pdf",
+        imageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+        category: "General",
+        fileType: "PDF",
+        size: "14.8 MB",
+        downloadCount: 12450,
+        isFeaturedOnRegister: true,
+      };
+    }
+
+    res.status(200).json({ success: true, featuredBook });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const createResource = async (req, res) => {
   try {
     const resourceData = { ...req.body };
     resourceData.addedBy = req.user?.email || req.decoded_email || "system@mockea.com";
     resourceData.status = req.user?.role === "admin" ? "Approved" : "Pending";
+
+    if (resourceData.isFeaturedOnRegister) {
+      await Resource.updateMany({}, { isFeaturedOnRegister: false });
+    }
 
     const resource = new Resource(resourceData);
     await resource.save();
@@ -57,6 +100,10 @@ export const updateResource = async (req, res) => {
     if (req.user?.role === "instructor") {
       updateData.status = "Pending";
       updateData.addedBy = req.user.email;
+    }
+
+    if (updateData.isFeaturedOnRegister) {
+      await Resource.updateMany({ _id: { $ne: req.params.id } }, { isFeaturedOnRegister: false });
     }
 
     const resource = await Resource.findByIdAndUpdate(
@@ -84,3 +131,37 @@ export const deleteResource = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+};
+
+export const uploadResourceFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file was uploaded" });
+    }
+
+    const isCover = req.file.fieldname === "cover";
+    const folder = isCover ? "covers" : "resources";
+    const fileUrl = `/uploads/${folder}/${req.file.filename}`;
+
+    const ext = req.file.originalname.split(".").pop().toUpperCase();
+    const formattedSize = formatFileSize(req.file.size);
+
+    res.status(200).json({
+      success: true,
+      url: fileUrl,
+      fileType: ext,
+      size: formattedSize,
+      originalName: req.file.originalname,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

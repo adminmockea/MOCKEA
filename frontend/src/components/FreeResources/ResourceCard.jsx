@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router";
 import { FiDownload, FiBookOpen, FiFileText, FiMessageSquare, FiTrendingUp } from "react-icons/fi";
+import { getFileUrl } from "../../utils/apiConfig";
 
 const getCategoryIcon = (category) => {
   switch (category) {
@@ -18,9 +19,9 @@ const getCategoryIcon = (category) => {
 export default function ResourceCard({ item, onDownload }) {
   const title = item.title;
   const description = item.description || "";
-  const imageUrl = item.imageUrl || item.image;
+  const imageUrl = getFileUrl(item.imageUrl || item.image);
   const ctaText = item.ctaText || item.cta || "Download";
-  const link = item.link || item.href || "#";
+  const link = getFileUrl(item.link || item.href || "#");
   const category = item.category;
   const fileType = item.fileType;
   const size = item.size;

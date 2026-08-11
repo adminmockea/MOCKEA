@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FiPlus, FiX, FiExternalLink, FiBookOpen, FiCheck, FiSlash, FiAlertCircle } from 'react-icons/fi';
+import { FiPlus, FiX, FiExternalLink, FiBookOpen, FiCheck, FiSlash, FiAlertCircle, FiUpload, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import useAuth from '../../../hooks/useAuth';
@@ -12,6 +12,7 @@ import PageHeader from '../../Common/PageHeader';
 import TableShell from '../../Common/TableShell';
 import AdminModal from '../../Common/AdminModal';
 import HoverActions from '../../Common/HoverActions';
+import { getFileUrl } from '../../../utils/apiConfig';
 
 const CATEGORIES = ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"];
 
@@ -22,19 +23,83 @@ const ManageResources = () => {
   const { role, roleLoading } = useRole();
   const [editingResource, setEditingResource] = useState(null);
 
+  const resourceFileRef = useRef(null);
+  const coverFileRef = useRef(null);
+  const [uploadingResource, setUploadingResource] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
   const initialFormState = {
     title: '',
     description: '',
-    ctaText: '',
+    ctaText: 'Download Free E-Book',
     link: '',
     imageUrl: '',
     category: 'General',
     fileType: 'PDF',
     size: '',
-    status: 'Pending'
+    status: 'Pending',
+    isBook: true,
+    isFeaturedOnRegister: false,
+    examType: 'Both'
   };
 
   const { isOpen: isModalOpen, formData, setFormData, openModal, closeModal, handleChange } = useFormModal(initialFormState);
+
+  const handleFileUpload = async (e, fieldType) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isCover = fieldType === 'cover';
+    if (isCover) {
+      setUploadingCover(true);
+    } else {
+      setUploadingResource(true);
+    }
+
+    const uploadData = new FormData();
+    uploadData.append(isCover ? 'cover' : 'file', file);
+
+    try {
+      const res = await axiosSecure.post('/resources/upload', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success) {
+        if (isCover) {
+          setFormData(prev => ({ ...prev, imageUrl: res.data.url }));
+          toast.success(`Cover image "${res.data.originalName}" uploaded successfully!`);
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            link: res.data.url,
+            fileType: res.data.fileType || prev.fileType,
+            size: res.data.size || prev.size
+          }));
+          toast.success(`Resource file "${res.data.originalName}" uploaded successfully!`);
+        }
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to upload file to server');
+    } finally {
+      if (isCover) {
+        setUploadingCover(false);
+      } else {
+        setUploadingResource(false);
+      }
+      e.target.value = '';
+    }
+  };
+
+
+  // Toggle Featured Status Quick Action (Admin Only)
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: ({ id, isFeaturedOnRegister }) => axiosSecure.put(`/resources/${id}`, { isFeaturedOnRegister }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources-manage'] });
+      toast.success('Updated featured book for Registration page!');
+    },
+    onError: () => toast.error('Failed to update featured book status')
+  });
 
   // Fetch all resources for management (including pending/rejected)
   const { data: resources = [], isLoading } = useAdminQuery(
@@ -220,15 +285,22 @@ const ManageResources = () => {
                 <tr key={res._id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <img src={res.imageUrl} alt={res.title} className="w-10 h-10 object-cover rounded-lg shrink-0" />
+                      <img src={getFileUrl(res.imageUrl)} alt={res.title} className="w-10 h-10 object-cover rounded-lg shrink-0" />
                       <div>
-                        <span 
-                           className="font-bold text-slate-900 block line-clamp-1"
-                           onMouseEnter={(e) => handleShowTitleIfClipped(e, res.title)}
-                         >
-                           {res.title}
-                         </span>
-                        <a href={res.link} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline inline-flex items-center gap-0.5 mt-0.5">
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="font-bold text-slate-900 block line-clamp-1"
+                            onMouseEnter={(e) => handleShowTitleIfClipped(e, res.title)}
+                          >
+                            {res.title}
+                          </span>
+                          {res.isFeaturedOnRegister && (
+                            <span className="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-200 shrink-0">
+                              ⭐ Register Gift
+                            </span>
+                          )}
+                        </div>
+                        <a href={getFileUrl(res.link)} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline inline-flex items-center gap-0.5 mt-0.5">
                           View Resource <FiExternalLink className="w-3 h-3" />
                         </a>
                       </div>
@@ -331,13 +403,88 @@ const ManageResources = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Download / Resource Link *</label>
-              <input type="url" name="link" required value={formData.link} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="https://example.com/file.pdf" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700">Download / Resource Link or File *</label>
+                <button
+                  type="button"
+                  onClick={() => resourceFileRef.current?.click()}
+                  disabled={uploadingResource}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-cta-btn hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg border border-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {uploadingResource ? (
+                    <>
+                      <FiLoader className="w-3.5 h-3.5 animate-spin" /> Uploading File...
+                    </>
+                  ) : (
+                    <>
+                      <FiUpload className="w-3.5 h-3.5" /> Upload File to Server
+                    </>
+                  )}
+                </button>
+                <input
+                  type="file"
+                  ref={resourceFileRef}
+                  onChange={(e) => handleFileUpload(e, 'resource')}
+                  className="hidden"
+                />
+              </div>
+              <input
+                type="text"
+                name="link"
+                required
+                value={formData.link}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all text-slate-800"
+                placeholder="https://example.com/file.pdf or click 'Upload File to Server'"
+              />
+              {formData.link?.startsWith('/uploads/') && (
+                <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                  <FiCheckCircle className="w-3.5 h-3.5" /> File saved on server filesystem
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Cover Image URL *</label>
-              <input type="url" name="imageUrl" required value={formData.imageUrl} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="https://images.unsplash.com/photo-..." />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700">Cover Image URL or File *</label>
+                <button
+                  type="button"
+                  onClick={() => coverFileRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg border border-blue-200 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {uploadingCover ? (
+                    <>
+                      <FiLoader className="w-3.5 h-3.5 animate-spin" /> Uploading Cover...
+                    </>
+                  ) : (
+                    <>
+                      <FiUpload className="w-3.5 h-3.5" /> Upload Cover Image
+                    </>
+                  )}
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={coverFileRef}
+                  onChange={(e) => handleFileUpload(e, 'cover')}
+                  className="hidden"
+                />
+              </div>
+              <input
+                type="text"
+                name="imageUrl"
+                required
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all text-slate-800"
+                placeholder="https://images.unsplash.com/... or click 'Upload Cover Image'"
+              />
+              {formData.imageUrl?.startsWith('/uploads/') && (
+                <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                  <FiCheckCircle className="w-3.5 h-3.5" /> Cover image saved on server filesystem
+                </p>
+              )}
             </div>
 
             <div>
@@ -346,8 +493,31 @@ const ManageResources = () => {
             </div>
 
             <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Exam Target *</label>
+              <select name="examType" value={formData.examType || 'Both'} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all bg-white font-semibold">
+                <option value="Both">Both (PTE & IELTS)</option>
+                <option value="PTE">PTE Academic Only</option>
+                <option value="IELTS">IELTS Academic Only</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">File Size (Optional)</label>
               <input type="text" name="size" value={formData.size} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="e.g. 2.4 MB" />
+            </div>
+
+            <div className="md:col-span-2 bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <span className="block text-sm font-extrabold text-blue-900">⭐ Feature on Register Page</span>
+                <span className="text-xs text-blue-700">Display this book as the free download gift on the User Registration page.</span>
+              </div>
+              <input
+                type="checkbox"
+                name="isFeaturedOnRegister"
+                checked={!!formData.isFeaturedOnRegister}
+                onChange={(e) => setFormData(prev => ({ ...prev, isFeaturedOnRegister: e.target.checked }))}
+                className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer accent-blue-600 shrink-0"
+              />
             </div>
 
             {role === 'admin' ? (

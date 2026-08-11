@@ -1,4 +1,5 @@
 import express from "express"
+import path from "path"
 import "dotenv/config"
 import cors from "cors"
 import userRouter from "./routes/user.route.js";
@@ -26,6 +27,10 @@ const Port = process.env.PORT || 3000;
 
 
 const app = express();
+
+// Serve uploaded files statically
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 
 
 const allowedOrigins = [

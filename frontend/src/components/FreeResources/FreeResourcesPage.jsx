@@ -7,6 +7,7 @@ import Loader from '../Loader/Loader';
 import Error from '../Common/Error';
 import ResourceCard from './ResourceCard';
 import { useLocation } from 'react-router';
+import { getFileUrl } from '../../utils/apiConfig';
 
 const CATEGORIES = ["All", "Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips"];
 
@@ -40,7 +41,7 @@ export default function FreeResourcesPage() {
 
   const handleDownload = (resource) => {
     downloadMutation.mutate(resource._id);
-    window.open(resource.link, '_blank', 'noopener,noreferrer');
+    window.open(getFileUrl(resource.link), '_blank', 'noopener,noreferrer');
   };
 
   // Filter Resources based on Search and Category

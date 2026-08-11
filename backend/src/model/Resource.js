@@ -55,6 +55,19 @@ const resourceSchema = new mongoose.Schema(
       enum: ["Approved", "Pending", "Rejected"],
       default: "Approved",
     },
+    isBook: {
+      type: Boolean,
+      default: true,
+    },
+    isFeaturedOnRegister: {
+      type: Boolean,
+      default: false,
+    },
+    examType: {
+      type: String,
+      enum: ["PTE", "IELTS", "Both"],
+      default: "Both",
+    },
   },
   { timestamps: true }
 );
