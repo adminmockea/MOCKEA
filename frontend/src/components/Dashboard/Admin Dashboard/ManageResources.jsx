@@ -14,7 +14,27 @@ import AdminModal from '../../Common/AdminModal';
 import HoverActions from '../../Common/HoverActions';
 import { getFileUrl } from '../../../utils/apiConfig';
 
-const CATEGORIES = ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"];
+const CATEGORIES = [
+  "Vocabulary",
+  "Writing Guide",
+  "Writing Task 1",
+  "Writing Task 2",
+  "Speaking Templates",
+  "Speaking Part 1",
+  "Speaking Part 2",
+  "Speaking Part 3",
+  "Reading Guide",
+  "Reading Part 1",
+  "Reading Part 2",
+  "Reading Part 3",
+  "Listening Guide",
+  "Listening Part 1",
+  "Listening Part 2",
+  "Listening Part 3",
+  "Listening Part 4",
+  "Study Tips",
+  "General",
+];
 
 const FILE_TYPE_OPTIONS = [
   { value: "PDF", label: "PDF Document", defaultCta: "Download Free E-Book" },
@@ -428,8 +448,36 @@ const ManageResources = () => {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Category *</label>
-              <select name="category" required value={formData.category} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all bg-white">
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              <select name="category" required value={formData.category} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all bg-white font-medium text-slate-800">
+                <optgroup label="General & Vocabulary">
+                  <option value="Vocabulary">Vocabulary</option>
+                  <option value="Study Tips">Study Tips</option>
+                  <option value="General">General</option>
+                </optgroup>
+                <optgroup label="Writing Parts">
+                  <option value="Writing Guide">Writing Guide</option>
+                  <option value="Writing Task 1">Writing Task 1</option>
+                  <option value="Writing Task 2">Writing Task 2</option>
+                </optgroup>
+                <optgroup label="Speaking Parts">
+                  <option value="Speaking Templates">Speaking Templates</option>
+                  <option value="Speaking Part 1">Speaking Part 1</option>
+                  <option value="Speaking Part 2">Speaking Part 2</option>
+                  <option value="Speaking Part 3">Speaking Part 3</option>
+                </optgroup>
+                <optgroup label="Reading Parts">
+                  <option value="Reading Guide">Reading Guide</option>
+                  <option value="Reading Part 1">Reading Part 1</option>
+                  <option value="Reading Part 2">Reading Part 2</option>
+                  <option value="Reading Part 3">Reading Part 3</option>
+                </optgroup>
+                <optgroup label="Listening Parts">
+                  <option value="Listening Guide">Listening Guide</option>
+                  <option value="Listening Part 1">Listening Part 1</option>
+                  <option value="Listening Part 2">Listening Part 2</option>
+                  <option value="Listening Part 3">Listening Part 3</option>
+                  <option value="Listening Part 4">Listening Part 4</option>
+                </optgroup>
               </select>
             </div>
 
