@@ -33,43 +33,13 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
   } = useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const axiosInstance = useAxiosSecure();
-  const navigate = useNavigate();
-  const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
   const triggerBookDownload = async () => {
     if (!claimBook) return;
-    let fileLink = getFileUrl(featuredBook?.link || "/books/mockea-ultimate-prep-guide.pdf");
-
-    if (fileLink.includes('res.cloudinary.com')) {
-      if (fileLink.includes('/raw/upload/')) {
-        fileLink = fileLink.replace('/raw/upload/', '/image/upload/');
-      }
-      if (fileLink.includes('/upload/') && !fileLink.includes('fl_attachment')) {
-        fileLink = fileLink.replace('/upload/', '/upload/fl_attachment/');
-      }
-    }
-
-    if (featuredBook?._id && featuredBook._id !== "default-book-id") {
-      try {
-        await axiosInstance.post(`/resources/${featuredBook._id}/download`);
-      } catch (e) {
-        console.warn("Failed to increment download count:", e);
-      }
-    }
-
-    const a = document.createElement("a");
-    a.href = fileLink;
-    a.download = featuredBook?.title
-      ? `${featuredBook.title.toLowerCase().replace(/[^a-z0-9]/g, "-")}.pdf`
-      : "mockea-ultimate-prep-guide.pdf";
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    toast.info("📥 Your Free E-Book download has started!", { autoClose: 4500 });
+    const link = getFileUrl(featuredBook?.link || "/books/mockea-ultimate-prep-guide.pdf");
+    window.open(link, '_blank', 'noopener,noreferrer');
+    toast.info("📥 Free E-Book opening in a new tab!", { autoClose: 4000 });
   };
 
   const password = watch("password");

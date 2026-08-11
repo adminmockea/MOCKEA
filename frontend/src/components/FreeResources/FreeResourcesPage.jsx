@@ -7,7 +7,7 @@ import Loader from '../Loader/Loader';
 import Error from '../Common/Error';
 import ResourceCard from './ResourceCard';
 import { useLocation } from 'react-router';
-import { getFileUrl } from '../../utils/apiConfig';
+import { API_BASE_URL, getFileUrl } from '../../utils/apiConfig';
 
 const CATEGORIES = ["All", "Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips"];
 
@@ -41,18 +41,8 @@ export default function FreeResourcesPage() {
 
   const handleDownload = (resource) => {
     downloadMutation.mutate(resource._id);
-    let downloadUrl = getFileUrl(resource.link);
-
-    if (downloadUrl.includes('res.cloudinary.com')) {
-      if (downloadUrl.includes('/raw/upload/')) {
-        downloadUrl = downloadUrl.replace('/raw/upload/', '/image/upload/');
-      }
-      if (downloadUrl.includes('/upload/') && !downloadUrl.includes('fl_attachment')) {
-        downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
-      }
-    }
-
-    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+    const link = getFileUrl(resource.link);
+    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   // Filter Resources based on Search and Category

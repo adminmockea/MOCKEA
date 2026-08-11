@@ -9,10 +9,12 @@ if (!API_BASE_URL) {
 export function getFileUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
-        if (pathOrUrl.includes('res.cloudinary.com') && pathOrUrl.includes('/image/upload/') && !pathOrUrl.includes('/f_auto')) {
-            return pathOrUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+        let url = pathOrUrl;
+        const isDoc = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|epub|txt|mp3|mp4)$/i.test(url.split('?')[0]);
+        if (!isDoc && url.includes('res.cloudinary.com') && url.includes('/image/upload/') && !url.includes('/f_auto')) {
+            url = url.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
         }
-        return pathOrUrl;
+        return url;
     }
     const serverRoot = (API_BASE_URL || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
     const cleanPath = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`;
