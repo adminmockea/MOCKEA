@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FiPlus, FiX, FiExternalLink, FiBookOpen, FiCheck, FiSlash, FiAlertCircle, FiUpload, FiLoader, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiX, FiExternalLink, FiBookOpen, FiCheck, FiSlash, FiAlertCircle, FiUpload, FiLoader, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useAxiosSecure from '../../../hooks/useAxiosSecure';
 import useAuth from '../../../hooks/useAuth';
@@ -439,31 +439,7 @@ const ManageResources = () => {
             </div>
 
             <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-semibold text-slate-700">Download / Resource Link or File *</label>
-                <button
-                  type="button"
-                  onClick={() => resourceFileRef.current?.click()}
-                  disabled={uploadingResource}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-cta-btn hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg border border-red-200 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {uploadingResource ? (
-                    <>
-                      <FiLoader className="w-3.5 h-3.5 animate-spin" /> Uploading to Cloudinary...
-                    </>
-                  ) : (
-                    <>
-                      <FiUpload className="w-3.5 h-3.5" /> Upload File to Cloudinary
-                    </>
-                  )}
-                </button>
-                <input
-                  type="file"
-                  ref={resourceFileRef}
-                  onChange={(e) => handleFileUpload(e, 'resource')}
-                  className="hidden"
-                />
-              </div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Resource Link or Google Drive URL *</label>
               <input
                 type="text"
                 name="link"
@@ -471,13 +447,15 @@ const ManageResources = () => {
                 value={formData.link}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all text-slate-800"
-                placeholder="https://res.cloudinary.com/... or click 'Upload File to Cloudinary'"
+                placeholder="e.g. https://drive.google.com/file/d/.../view?usp=sharing"
               />
-              {(formData.link?.includes('res.cloudinary.com') || formData.link?.startsWith('/uploads/')) && (
-                <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                  <FiCheckCircle className="w-3.5 h-3.5" /> File hosted on Cloudinary CDN
-                </p>
-              )}
+              <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 flex items-start gap-2.5 mt-2">
+                <FiInfo className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block mb-0.5">💡 PDF & File Storage Instructions:</span>
+                  Please upload your PDF or study guide to <strong>Google Drive</strong> (or Dropbox / OneDrive), set sharing permission to <strong>"Anyone with the link can view"</strong>, and paste the shareable URL above.
+                </div>
+              </div>
             </div>
 
             <div className="md:col-span-2">
