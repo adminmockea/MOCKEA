@@ -9,21 +9,20 @@ import {
   FiPlayCircle, 
   FiMusic, 
   FiExternalLink, 
-  FiEye 
+  FiEye,
+  FiHeadphones
 } from "react-icons/fi";
 import { getFileUrl } from "../../utils/apiConfig";
 
 const getCategoryIcon = (category) => {
-  switch (category) {
-    case "Vocabulary":
-      return <FiBookOpen className="w-4 h-4 text-blue-500" />;
-    case "Writing Guide":
-      return <FiFileText className="w-4 h-4 text-purple-500" />;
-    case "Speaking Templates":
-      return <FiMessageSquare className="w-4 h-4 text-green-500" />;
-    default:
-      return <FiTrendingUp className="w-4 h-4 text-orange-500" />;
-  }
+  if (!category) return <FiTrendingUp className="w-4 h-4 text-orange-500" />;
+  const cat = category.toLowerCase();
+  if (cat.includes("writing")) return <FiFileText className="w-4 h-4 text-purple-500" />;
+  if (cat.includes("speaking")) return <FiMessageSquare className="w-4 h-4 text-green-500" />;
+  if (cat.includes("reading")) return <FiBookOpen className="w-4 h-4 text-indigo-500" />;
+  if (cat.includes("listening")) return <FiHeadphones className="w-4 h-4 text-emerald-500" />;
+  if (cat.includes("vocab")) return <FiBookOpen className="w-4 h-4 text-blue-500" />;
+  return <FiTrendingUp className="w-4 h-4 text-orange-500" />;
 };
 
 const getFileTypeDetails = (fileType) => {

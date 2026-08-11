@@ -9,7 +9,28 @@ import ResourceCard from './ResourceCard';
 import { useLocation } from 'react-router';
 import { API_BASE_URL, getFileUrl } from '../../utils/apiConfig';
 
-const CATEGORIES = ["All", "Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips"];
+const CATEGORIES = [
+  "All",
+  "Vocabulary",
+  "Writing Guide",
+  "Writing Task 1",
+  "Writing Task 2",
+  "Speaking Templates",
+  "Speaking Part 1",
+  "Speaking Part 2",
+  "Speaking Part 3",
+  "Reading Guide",
+  "Reading Part 1",
+  "Reading Part 2",
+  "Reading Part 3",
+  "Listening Guide",
+  "Listening Part 1",
+  "Listening Part 2",
+  "Listening Part 3",
+  "Listening Part 4",
+  "Study Tips",
+  "General",
+];
 
 export default function FreeResourcesPage() {
   const axiosPublic = useAxios();
@@ -47,8 +68,10 @@ export default function FreeResourcesPage() {
 
   // Filter Resources based on Search and Category
   const filteredResources = resources.filter(res => {
-    const matchesSearch = res.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          res.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = res.title.toLowerCase().includes(term) || 
+                          res.description.toLowerCase().includes(term) ||
+                          (res.category && res.category.toLowerCase().includes(term));
     const matchesCategory = selectedCategory === "All" || res.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
