@@ -1,18 +1,29 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate, useOutletContext } from "react-router";
 import { getAuth, deleteUser } from "firebase/auth";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "react-toastify";
 import SocialLoginButton from "./SocialLoginButton";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
+import FreeBookRegisterCard from "./FreeBookRegisterCard";
 import { PiEye, PiEyeSlash } from "react-icons/pi";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
+import { getFileUrl } from "../../utils/apiConfig";
 
 const Register = ({ onSuccess, isModal, onToggleAuth }) => {
   const { register: registerUser, setLoading } = useAuth();
+  const outletContext = useOutletContext();
   const [show, isShow] = useState(false);
   const [show2, isShow2] = useState(false);
+  
+  const [localClaimBook, setLocalClaimBook] = useState(true);
+  const [localFeaturedBook, setLocalFeaturedBook] = useState(null);
+
+  const claimBook = isModal ? localClaimBook : (outletContext?.claimBook ?? localClaimBook);
+  const setClaimBook = isModal ? setLocalClaimBook : (outletContext?.setClaimBook ?? setLocalClaimBook);
+  const featuredBook = isModal ? localFeaturedBook : (outletContext?.featuredBook ?? localFeaturedBook);
+  const setFeaturedBook = isModal ? setLocalFeaturedBook : (outletContext?.setFeaturedBook ?? setLocalFeaturedBook);
   const {
     register,
     handleSubmit,
@@ -26,6 +37,31 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
+
+  const triggerBookDownload = async () => {
+    if (!claimBook) return;
+    const fileLink = getFileUrl(featuredBook?.link || "/books/mockea-ultimate-prep-guide.pdf");
+
+    if (featuredBook?._id && featuredBook._id !== "default-book-id") {
+      try {
+        await axiosInstance.post(`/resources/${featuredBook._id}/download`);
+      } catch (e) {
+        console.warn("Failed to increment download count:", e);
+      }
+    }
+
+    const a = document.createElement("a");
+    a.href = fileLink;
+    a.download = featuredBook?.title
+      ? `${featuredBook.title.toLowerCase().replace(/[^a-z0-9]/g, "-")}.pdf`
+      : "mockea-ultimate-prep-guide.pdf";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    toast.info("📥 Your Free E-Book download has started!", { autoClose: 4500 });
+  };
 
   const password = watch("password");
   const confirmPassword = watch("confirmPassword");
@@ -106,6 +142,12 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
         await axiosInstance.post("/user/auth/register", data);
         toast.success("User Created Successfully");
         setIsLoading(false);
+
+        // Trigger free book download if enabled
+        if (claimBook) {
+          triggerBookDownload();
+        }
+
         if (onSuccess) {
           onSuccess();
         } else {
@@ -154,132 +196,150 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className={isModal ? "space-y-4" : "space-y-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200"}
+        className={isModal ? "space-y-4" : "space-y-4.5 bg-white p-6 sm:p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100"}
       >
+        {/* Free E-Book Registration Feature Card (only in modal view) */}
+        {isModal && (
+          <FreeBookRegisterCard 
+            claimBook={claimBook} 
+            setClaimBook={setClaimBook} 
+            onBookLoaded={setFeaturedBook} 
+          />
+        )}
+
         {/* Social Login */}
-        <SocialLoginButton onSuccess={onSuccess} />
+        <SocialLoginButton onSuccess={(result) => {
+          if (claimBook) triggerBookDownload();
+          if (onSuccess) onSuccess(result);
+        }} />
 
         {/* Divider */}
-        <div className="relative">
+        <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-slate-200"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500 font-medium">
+          <div className="relative flex justify-center text-xs uppercase tracking-wider">
+            <span className="px-3 bg-white text-slate-400 font-semibold">
               Or sign up with email
             </span>
           </div>
         </div>
 
-        {/* Full Name */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            placeholder="John Doe"
-            className={`w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none ${
-              errors.name
-                ? "border-red-500 focus:border-red-500 focus:bg-red-50"
-                : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
-            }`}
-            {...register("name", { required: "Full Name is required" })}
-          />
-          {errors.name && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
-              {errors.name.message}
-            </span>
-          )}
-        </div>
-
-        {/* Targeted Exam Preference */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Target Exam Program
-          </label>
-          <select
-            className="w-full px-4 py-2.5 border-2 rounded-lg border-gray-200 focus:border-blue-600 focus:bg-blue-50 focus:outline-none text-sm font-semibold"
-            {...register("targetExam", { required: "Please select your target exam program" })}
-          >
-            <option value="IELTS">IELTS Preparation</option>
-            <option value="PTE">PTE Academic Preparation</option>
-          </select>
-          {errors.targetExam && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
-              {errors.targetExam.message}
-            </span>
-          )}
-        </div>
-
-        {/* Gender */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Gender
-          </label>
-          <select
-            className={`w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none text-sm font-semibold ${
-              errors.gender
-                ? "border-red-500 focus:border-red-500 focus:bg-red-50"
-                : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
-            }`}
-            defaultValue=""
-            {...register("gender", { required: "Gender is required" })}
-          >
-            <option value="" disabled>Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            <option value="Prefer not to say">Prefer not to say</option>
-          </select>
-          {errors.gender && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
-              {errors.gender.message}
-            </span>
-          )}
-        </div>
-
-        {/* Institution Code (Optional) */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-bold text-gray-700">
-              Institution Code <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+        {/* Row 1: Full Name & Target Exam Program */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+          {/* Full Name */}
+          <div>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+              Full Name
             </label>
-            {instStatus.loading && (
-              <span className="text-xs text-blue-600 animate-pulse font-medium">Validating code...</span>
-            )}
-            {instStatus.valid === true && (
-              <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                ✓ {instStatus.name}
+            <input
+              type="text"
+              placeholder="John Doe"
+              className={`w-full px-3.5 py-2.5 text-xs sm:text-sm border-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                errors.name
+                  ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-rose-50/30"
+                  : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
+              }`}
+              {...register("name", { required: "Full Name is required" })}
+            />
+            {errors.name && (
+              <span className="text-rose-500 text-xs mt-1 block font-semibold">
+                {errors.name.message}
               </span>
             )}
-            {instStatus.valid === false && (
-              <span className="text-xs text-rose-600 font-medium">✕ Invalid or inactive code</span>
+          </div>
+
+          {/* Targeted Exam Preference */}
+          <div>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+              Target Exam Program
+            </label>
+            <select
+              className="w-full px-3 py-2.5 text-xs sm:text-sm font-semibold border-2 rounded-xl transition-all duration-200 focus:outline-none border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white cursor-pointer truncate"
+              {...register("targetExam", { required: "Please select your target exam program" })}
+            >
+              <option value="IELTS">IELTS Preparation</option>
+              <option value="PTE">PTE Academic Prep</option>
+            </select>
+            {errors.targetExam && (
+              <span className="text-rose-500 text-xs mt-1 block font-semibold">
+                {errors.targetExam.message}
+              </span>
             )}
           </div>
-          <input
-            type="text"
-            placeholder="e.g. OXFORD2026"
-            className="w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none uppercase font-mono font-semibold border-gray-200 focus:border-blue-600 focus:bg-blue-50"
-            {...register("institutionCode")}
-          />
-          <p className="text-[11px] text-gray-400 mt-1">
-            If your institution or academy gave you a code, enter it here so your instructors can review your tests.
-          </p>
+        </div>
+
+        {/* Row 2: Gender & Institution Code (Optional) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+          {/* Gender */}
+          <div>
+            <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+              Gender
+            </label>
+            <select
+              className={`w-full px-3 py-2.5 text-xs sm:text-sm font-semibold border-2 rounded-xl transition-all duration-200 focus:outline-none cursor-pointer ${
+                errors.gender
+                  ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-rose-50/30"
+                  : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
+              }`}
+              defaultValue=""
+              {...register("gender", { required: "Gender is required" })}
+            >
+              <option value="" disabled>Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+            {errors.gender && (
+              <span className="text-rose-500 text-xs mt-1 block font-semibold">
+                {errors.gender.message}
+              </span>
+            )}
+          </div>
+
+          {/* Institution Code (Optional) */}
+          <div>
+            <div className="flex items-center justify-between mb-1 min-h-[20px]">
+              <label className="block text-xs sm:text-sm font-bold text-slate-700">
+                Institution Code <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+              </label>
+              {instStatus.loading && (
+                <span className="text-[11px] text-blue-600 animate-pulse font-medium shrink-0">Validating...</span>
+              )}
+              {instStatus.valid === true && (
+                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200 shrink-0">
+                  ✓ {instStatus.name}
+                </span>
+              )}
+              {instStatus.valid === false && (
+                <span className="text-[11px] text-rose-600 font-medium shrink-0">✕ Invalid code</span>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="E.G. OXFORD2026"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm border-2 rounded-xl transition-all duration-200 focus:outline-none uppercase font-mono font-bold border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
+              {...register("institutionCode")}
+            />
+            <p className="text-[11px] text-slate-400 mt-1 leading-tight">
+              If your institution gave you a code, enter it here.
+            </p>
+          </div>
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
             Email Address
           </label>
           <input
             type="email"
             placeholder="you@example.com"
-            className={`w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none ${
+            className={`w-full px-3.5 py-2.5 text-xs sm:text-sm border-2 rounded-xl transition-all duration-200 focus:outline-none ${
               errors.email
-                ? "border-red-500 focus:border-red-500 focus:bg-red-50"
-                : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
+                ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-rose-50/30"
+                : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
             }`}
             {...register("email", {
               required: "Email is required",
@@ -290,106 +350,112 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
             })}
           />
           {errors.email && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
+            <span className="text-rose-500 text-xs mt-1 block font-semibold">
               {errors.email.message}
             </span>
           )}
         </div>
 
-        {/* Password */}
+        {/* Row 3: Password & Confirm Password */}
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={show ? "text" : "password"}
-              placeholder="••••••••"
-              className={`w-full px-4 py-2.5 border-2 rounded-lg transition-colors focus:outline-none pr-12 ${
-                errors.password
-                  ? "border-red-500 focus:border-red-500 focus:bg-red-50"
-                  : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
-              }`}
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
-                },
-                pattern: {
-                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                  message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-                },
-              })}
-            />
-            <button
-              type="button"
-              onClick={() => isShow(!show)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
-            >
-              {show ? (
-                <PiEyeSlash className="w-5 h-5" />
-              ) : (
-                <PiEye className="w-5 h-5" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+            {/* Password */}
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={show ? "text" : "password"}
+                  placeholder="••••••••"
+                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm border-2 rounded-xl transition-all duration-200 focus:outline-none pr-12 ${
+                    errors.password
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-rose-50/30"
+                      : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
+                  }`}
+                  {...register("password", {
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters",
+                    },
+                    pattern: {
+                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                      message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+                    },
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => isShow(!show)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                >
+                  {show ? (
+                    <PiEyeSlash className="w-5 h-5" />
+                  ) : (
+                    <PiEye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <span className="text-rose-500 text-xs mt-1 block font-semibold">
+                  {errors.password.message}
+                </span>
               )}
-            </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={show2 ? "text" : "password"}
+                  placeholder="••••••••"
+                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm border-2 rounded-xl transition-all duration-200 focus:outline-none pr-12 ${
+                    errors.confirmPassword
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-rose-50/30"
+                      : "border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10 bg-slate-50/40 hover:bg-white focus:bg-white"
+                  }`}
+                  {...register("confirmPassword", {
+                    required: "Please confirm your password",
+                    validate: (value) =>
+                      value === password || "Passwords do not match",
+                  })}
+                />
+                <button
+                  type="button"
+                  onClick={() => isShow2(!show2)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                >
+                  {show2 ? (
+                    <PiEyeSlash className="w-5 h-5" />
+                  ) : (
+                    <PiEye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <span className="text-rose-500 text-xs mt-1 block font-semibold">
+                  {errors.confirmPassword.message}
+                </span>
+              )}
+            </div>
           </div>
-          {errors.password && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
-              {errors.password.message}
-            </span>
-          )}
           <PasswordStrengthIndicator password={password} />
         </div>
 
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Confirm Password
-          </label>
-          <div className="relative">
-            <input
-              type={show2 ? "text" : "password"}
-              placeholder="••••••••"
-              className={`w-full px-4 py-3 border-2 rounded-lg transition-colors focus:outline-none pr-12 ${
-                errors.confirmPassword
-                  ? "border-red-500 focus:border-red-500 focus:bg-red-50"
-                  : "border-gray-200 focus:border-blue-600 focus:bg-blue-50"
-              }`}
-              {...register("confirmPassword", {
-                required: "Please confirm your password",
-                validate: (value) =>
-                  value === password || "Passwords do not match",
-              })}
-            />
-            <button
-              type="button"
-              onClick={() => isShow2(!show2)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1"
-            >
-              {show2 ? (
-                <PiEyeSlash className="w-5 h-5" />
-              ) : (
-                <PiEye className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-          {errors.confirmPassword && (
-            <span className="text-red-500 text-xs mt-2 block font-semibold">
-              {errors.confirmPassword.message}
-            </span>
-          )}
-        </div>
-
         {/* Terms Agreement */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5 pt-1">
           <input
             type="checkbox"
+            id="agreeToTermsCheck"
             checked={agreeToTerms}
             onChange={(e) => setAgreeToTerms(e.target.checked)}
-            className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
           />
-          <label className="text-sm text-gray-600 cursor-pointer">
+          <label htmlFor="agreeToTermsCheck" className="text-xs text-slate-600 cursor-pointer leading-tight select-none">
             I agree to the{" "}
             <a href="#" className="text-blue-600 font-semibold hover:underline">
               Terms of Service
@@ -405,7 +471,7 @@ const Register = ({ onSuccess, isModal, onToggleAuth }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition duration-200 ease-out transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base mt-2"
         >
           {isLoading ? (
             <>
