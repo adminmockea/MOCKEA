@@ -208,4 +208,79 @@ export const uploadResourceFile = async (req, res) => {
   }
 };
 
+export const downloadResourceFileStream = async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+    if (!resource || !resource.link) {
+      return res.status(404).json({ success: false, message: "Resource or file not found" });
+    }
+
+    // Increment download count
+    await Resource.findByIdAndUpdate(req.params.id, { $inc: { downloadCount: 1 } });
+
+    const fileUrl = resource.link;
+
+    // If it's a non-cloudinary URL or external web link, redirect directly
+    if (!fileUrl.includes("res.cloudinary.com") || resource.fileType === "LINK") {
+      return res.redirect(fileUrl);
+    }
+
+    const ext = resource.fileType ? resource.fileType.toLowerCase() : "pdf";
+    const filename = `${resource.title.toLowerCase().replace(/[^a-z0-9]/g, "_")}.${ext}`;
+
+    const mimeTypes = {
+      pdf: "application/pdf",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      zip: "application/zip",
+      epub: "application/epub+zip",
+      mp3: "audio/mpeg",
+      mp4: "video/mp4",
+      jpg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+    };
+
+    const contentType = mimeTypes[ext] || "application/octet-stream";
+
+    // Clean any auto format / transformation flags from Cloudinary URL
+    let cleanUrl = fileUrl
+      .replace(/\/f_auto,q_auto\/?/g, "/")
+      .replace(/\/f_auto\/?/g, "/")
+      .replace(/\/q_auto\/?/g, "/")
+      .replace(/\/fl_attachment\/?/g, "/");
+
+    let fileResponse = await fetch(cleanUrl);
+    
+    // Fallback try if cleanUrl returned non-200 (e.g. raw path variant)
+    if (!fileResponse.ok && cleanUrl.includes("/image/upload/")) {
+      const rawUrl = cleanUrl.replace("/image/upload/", "/raw/upload/");
+      const rawResponse = await fetch(rawUrl);
+      if (rawResponse.ok) {
+        fileResponse = rawResponse;
+      }
+    } else if (!fileResponse.ok && cleanUrl.includes("/raw/upload/")) {
+      const imgUrl = cleanUrl.replace("/raw/upload/", "/image/upload/");
+      const imgResponse = await fetch(imgUrl);
+      if (imgResponse.ok) {
+        fileResponse = imgResponse;
+      }
+    }
+
+    if (!fileResponse.ok) {
+      return res.redirect(cleanUrl);
+    }
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (error) {
+    console.error("[downloadResourceFileStream] Error:", error);
+    res.status(500).json({ success: false, message: "Failed to download resource file" });
+  }
+};
+
 

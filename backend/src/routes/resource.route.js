@@ -11,6 +11,7 @@ import {
   deleteResource,
   getAllResourcesForManagement,
   uploadResourceFile,
+  downloadResourceFileStream,
 } from "../controllers/resource.controller.js";
 
 const resourceRouter = express.Router();
@@ -18,6 +19,7 @@ const resourceRouter = express.Router();
 // Public routes
 resourceRouter.get("/", getAllResources);
 resourceRouter.get("/featured-book", getFeaturedBook);
+resourceRouter.get("/:id/file", downloadResourceFileStream);
 resourceRouter.post("/:id/download", incrementDownload);
 
 // Secure admin/instructor routes
