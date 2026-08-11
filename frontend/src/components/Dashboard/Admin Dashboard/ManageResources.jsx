@@ -16,6 +16,18 @@ import { getFileUrl } from '../../../utils/apiConfig';
 
 const CATEGORIES = ["Vocabulary", "Writing Guide", "Speaking Templates", "Study Tips", "General"];
 
+const FILE_TYPE_OPTIONS = [
+  { value: "PDF", label: "PDF Document", defaultCta: "Download Free E-Book" },
+  { value: "VIDEO", label: "Video Tutorial", defaultCta: "Proceed To Video" },
+  { value: "AUDIO", label: "Audio Guide / MP3", defaultCta: "Listen to Audio" },
+  { value: "DOCX", label: "Word Document (DOCX)", defaultCta: "Download Document" },
+  { value: "XLSX", label: "Excel Sheet (XLSX)", defaultCta: "Download Sheet" },
+  { value: "PPTX", label: "PowerPoint (PPTX)", defaultCta: "Download Presentation" },
+  { value: "ZIP", label: "ZIP Archive", defaultCta: "Download Package" },
+  { value: "EPUB", label: "EPUB E-Book", defaultCta: "Download E-Book" },
+  { value: "LINK", label: "External Web Link", defaultCta: "Visit Resource Link" },
+];
+
 const ManageResources = () => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
@@ -27,6 +39,19 @@ const ManageResources = () => {
   const coverFileRef = useRef(null);
   const [uploadingResource, setUploadingResource] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  const handleFileTypeSelect = (e) => {
+    const selectedType = e.target.value;
+    const match = FILE_TYPE_OPTIONS.find((opt) => opt.value === selectedType);
+    setFormData((prev) => ({
+      ...prev,
+      fileType: selectedType,
+      ctaText:
+        !prev.ctaText || FILE_TYPE_OPTIONS.some((o) => o.defaultCta === prev.ctaText)
+          ? match?.defaultCta || prev.ctaText
+          : prev.ctaText,
+    }));
+  };
 
   const initialFormState = {
     title: '',
@@ -67,7 +92,7 @@ const ManageResources = () => {
       if (res.data.success) {
         if (isCover) {
           setFormData(prev => ({ ...prev, imageUrl: res.data.url }));
-          toast.success(`Cover image "${res.data.originalName}" uploaded successfully!`);
+          toast.success(`Cover image "${res.data.originalName}" uploaded to Cloudinary successfully!`);
         } else {
           setFormData(prev => ({
             ...prev,
@@ -75,11 +100,11 @@ const ManageResources = () => {
             fileType: res.data.fileType || prev.fileType,
             size: res.data.size || prev.size
           }));
-          toast.success(`Resource file "${res.data.originalName}" uploaded successfully!`);
+          toast.success(`Resource file "${res.data.originalName}" uploaded to Cloudinary successfully!`);
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to upload file to server');
+      toast.error(err.response?.data?.message || 'Failed to upload file to Cloudinary');
     } finally {
       if (isCover) {
         setUploadingCover(false);
@@ -274,6 +299,7 @@ const ManageResources = () => {
               <tr>
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">Added By</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Downloads</th>
@@ -309,6 +335,16 @@ const ManageResources = () => {
                   <td className="px-6 py-4">
                     <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold uppercase">
                       {res.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${
+                      res.fileType === 'VIDEO' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      res.fileType === 'AUDIO' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      res.fileType === 'LINK' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      'bg-slate-100 text-slate-700 border-slate-200'
+                    }`}>
+                      {res.fileType || 'PDF'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -413,11 +449,11 @@ const ManageResources = () => {
                 >
                   {uploadingResource ? (
                     <>
-                      <FiLoader className="w-3.5 h-3.5 animate-spin" /> Uploading File...
+                      <FiLoader className="w-3.5 h-3.5 animate-spin" /> Uploading to Cloudinary...
                     </>
                   ) : (
                     <>
-                      <FiUpload className="w-3.5 h-3.5" /> Upload File to Server
+                      <FiUpload className="w-3.5 h-3.5" /> Upload File to Cloudinary
                     </>
                   )}
                 </button>
@@ -435,11 +471,11 @@ const ManageResources = () => {
                 value={formData.link}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all text-slate-800"
-                placeholder="https://example.com/file.pdf or click 'Upload File to Server'"
+                placeholder="https://res.cloudinary.com/... or click 'Upload File to Cloudinary'"
               />
-              {formData.link?.startsWith('/uploads/') && (
+              {(formData.link?.includes('res.cloudinary.com') || formData.link?.startsWith('/uploads/')) && (
                 <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                  <FiCheckCircle className="w-3.5 h-3.5" /> File saved on server filesystem
+                  <FiCheckCircle className="w-3.5 h-3.5" /> File hosted on Cloudinary CDN
                 </p>
               )}
             </div>
@@ -459,7 +495,7 @@ const ManageResources = () => {
                     </>
                   ) : (
                     <>
-                      <FiUpload className="w-3.5 h-3.5" /> Upload Cover Image
+                      <FiUpload className="w-3.5 h-3.5" /> Upload Cover to Cloudinary
                     </>
                   )}
                 </button>
@@ -478,18 +514,30 @@ const ManageResources = () => {
                 value={formData.imageUrl}
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all text-slate-800"
-                placeholder="https://images.unsplash.com/... or click 'Upload Cover Image'"
+                placeholder="https://res.cloudinary.com/... or click 'Upload Cover to Cloudinary'"
               />
-              {formData.imageUrl?.startsWith('/uploads/') && (
+              {(formData.imageUrl?.includes('res.cloudinary.com') || formData.imageUrl?.startsWith('/uploads/')) && (
                 <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                  <FiCheckCircle className="w-3.5 h-3.5" /> Cover image saved on server filesystem
+                  <FiCheckCircle className="w-3.5 h-3.5" /> Cover image hosted on Cloudinary CDN
                 </p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">File Type *</label>
-              <input type="text" name="fileType" required value={formData.fileType} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all" placeholder="e.g. PDF" />
+              <select
+                name="fileType"
+                required
+                value={formData.fileType || 'PDF'}
+                onChange={handleFileTypeSelect}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cta-btn focus:ring-2 focus:ring-cta-btn/20 outline-none transition-all bg-white font-semibold text-slate-800"
+              >
+                {FILE_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label} ({opt.value})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
