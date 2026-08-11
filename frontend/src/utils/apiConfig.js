@@ -1,7 +1,7 @@
 // live server
-export const API_BASE_URL = import.meta.env.VITE_live_url || import.meta.env.VITE_live_url2;
+// export const API_BASE_URL = import.meta.env.VITE_live_url || import.meta.env.VITE_live_url2;
 //local server
-// export const API_BASE_URL = import.meta.env.VITE_local_url;
+export const API_BASE_URL = import.meta.env.VITE_local_url;
 if (!API_BASE_URL) {
     console.error("API_BASE_URL is not defined");
 }
@@ -9,6 +9,9 @@ if (!API_BASE_URL) {
 export function getFileUrl(pathOrUrl) {
     if (!pathOrUrl) return '';
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
+        if (pathOrUrl.includes('res.cloudinary.com') && pathOrUrl.includes('/image/upload/') && !pathOrUrl.includes('/f_auto')) {
+            return pathOrUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+        }
         return pathOrUrl;
     }
     const serverRoot = (API_BASE_URL || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
