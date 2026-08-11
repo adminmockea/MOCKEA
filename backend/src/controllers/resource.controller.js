@@ -12,7 +12,10 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
 
 export const getAllResources = async (req, res) => {
   try {
-    const resources = await Resource.find({ status: "Approved" }).sort({ createdAt: -1 });
+    const resources = await Resource.find({ 
+      status: "Approved", 
+      isFeaturedOnRegister: { $ne: true } 
+    }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, resources });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

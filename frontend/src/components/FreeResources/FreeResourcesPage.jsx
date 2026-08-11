@@ -66,8 +66,9 @@ export default function FreeResourcesPage() {
     window.open(link, '_blank', 'noopener,noreferrer');
   };
 
-  // Filter Resources based on Search and Category
+  // Filter Resources based on Search and Category (and exclude registration featured resources)
   const filteredResources = resources.filter(res => {
+    if (res.isFeaturedOnRegister) return false;
     const term = searchTerm.toLowerCase();
     const matchesSearch = res.title.toLowerCase().includes(term) || 
                           res.description.toLowerCase().includes(term) ||
