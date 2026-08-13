@@ -40,7 +40,8 @@ const WIZARD_STEPS = [
     { id: "listening", label: "Listening Audio", short: "Listening", icon: <PiEar /> },
     { id: "writing", label: "Writing Tasks", short: "Writing", icon: <PiPencilLine /> },
     { id: "speaking", label: "Speaking Prompts", short: "Speaking", icon: <PiMicrophoneStage /> },
-    { id: "review", label: "Review & Publish", short: "Review", icon: <PiListChecks /> }
+    { id: "review", label: "Review & Publish", short: "Review", icon: <PiListChecks /> },
+    { id: "all", label: "All Sections View", short: "All Sections", icon: <PiFiles /> }
 ];
 
 const CreateMockTest = () => {
