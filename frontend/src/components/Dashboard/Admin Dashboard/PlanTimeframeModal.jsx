@@ -66,7 +66,7 @@ const PlanTimeframeModal = ({ isOpen, onClose, user, targetPlan, onConfirm, load
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-base-300 bg-base-100 p-6 shadow-2xl transition-all">
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-base-200">

@@ -24,7 +24,7 @@ const MockTestPreviewModal = ({ test, onClose }) => {
     if (!test) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-base-200">
                 {/* Header */}
                 <div className="p-6 bg-gradient-to-r from-base-100 to-base-200 border-b border-base-200 flex items-center justify-between">
@@ -34,7 +34,7 @@ const MockTestPreviewModal = ({ test, onClose }) => {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h2 className="text-xl font-bold text-base-content">{test.title}</h2>
+                                <h2 className="text-xl font-bold text-base-content" title={test.title}>{test.title}</h2>
                                 <span className={`badge badge-sm font-semibold uppercase ${
                                     test.isPublic ? "badge-success text-white" : "badge-warning"
                                 }`}>
@@ -119,7 +119,7 @@ const MockTestPreviewModal = ({ test, onClose }) => {
                                                 {sectionQuestions.map((q, idx) => (
                                                     <li key={q._id || idx} className="truncate flex items-center gap-2">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
-                                                        <span className="font-medium text-base-content truncate">
+                                                        <span className="font-medium text-base-content truncate" title={q.title || `Question Set #${idx + 1}`}>
                                                             {q.title || `Question Set #${idx + 1}`}
                                                         </span>
                                                         {q.subType && (

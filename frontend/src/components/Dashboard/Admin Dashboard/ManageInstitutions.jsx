@@ -388,7 +388,7 @@ const ManageInstitutions = () => {
 
       {/* Create Institution Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -499,7 +499,7 @@ const ManageInstitutions = () => {
 
       {/* Edit Institution Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <h3 className="font-bold text-lg">Edit Institution</h3>
@@ -579,7 +579,7 @@ const ManageInstitutions = () => {
 
       {/* Assign User Modal */}
       {showAssignModal && selectedInst && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
             <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
               <div>

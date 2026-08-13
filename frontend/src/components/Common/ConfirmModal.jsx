@@ -15,7 +15,7 @@ export default function ConfirmModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-gray-700">
                 <div className="flex items-center space-x-4 mb-4">
                     <div className={`p-3 rounded-2xl ${isDanger ? "bg-red-50 text-red-500 dark:bg-red-950/40" : "bg-blue-50 text-blue-500 dark:bg-blue-950/40"}`}>
