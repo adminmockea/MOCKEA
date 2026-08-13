@@ -83,7 +83,7 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
                             <span className="h-1.5 w-8 rounded-full bg-primary/20" />
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-base-content/30">Official Mock Module</p>
                         </div>
-                        <h3 className="text-3xl font-black tracking-tighter group-hover:text-primary transition-colors">
+                        <h3 className="text-3xl font-black tracking-tighter group-hover:text-primary transition-colors" title={test.title || `Mock Assessment ${index}`}>
                             {test.title || `Mock Assessment ${index}`}
                         </h3>
                         <div className="flex items-center gap-4 text-[10px] font-bold text-base-content/40 uppercase tracking-widest">

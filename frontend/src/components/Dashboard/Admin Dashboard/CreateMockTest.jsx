@@ -624,7 +624,7 @@ const CreateMockTest = () => {
                                             >
                                                 <div className="space-y-3">
                                                     <div className="flex items-start justify-between gap-3">
-                                                        <h4 className="font-bold text-sm text-slate-900 line-clamp-2 flex-1 group-hover:text-indigo-600 transition-colors">
+                                                        <h4 className="font-bold text-sm text-slate-900 line-clamp-2 flex-1 group-hover:text-indigo-600 transition-colors" title={q.title}>
                                                             {q.title}
                                                         </h4>
                                                         
@@ -813,7 +813,7 @@ const CreateMockTest = () => {
                         {/* Title Preview */}
                         <div className="space-y-1">
                             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Test Title</span>
-                            <p className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2">
+                            <p className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2" title={formData.title || "Untitled Mock Test"}>
                                 {formData.title || <span className="italic text-slate-400">Untitled Mock Test</span>}
                             </p>
                         </div>

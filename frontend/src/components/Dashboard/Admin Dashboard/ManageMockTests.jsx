@@ -434,7 +434,7 @@ const ManageMockTests = () => {
                                                 <PiFiles />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-lg text-base-content group-hover:text-primary transition-colors line-clamp-1">
+                                                <h3 className="font-bold text-lg text-base-content group-hover:text-primary transition-colors line-clamp-1" title={test.title}>
                                                     {test.title}
                                                 </h3>
                                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -603,7 +603,7 @@ const ManageMockTests = () => {
                                                     </button>
                                                 </td>
                                                 <td>
-                                                    <div className="font-bold text-sm text-base-content">{test.title}</div>
+                                                    <div className="font-bold text-sm text-base-content" title={test.title}>{test.title}</div>
                                                     <div className="text-[10px] text-base-content/40">
                                                         Updated: {new Date(test.updatedAt || test.createdAt).toLocaleDateString()}
                                                     </div>
