@@ -14,7 +14,10 @@ import {
     getAllResults,
     getResultDetail,
     lockMockResult,
-    deleteMockResult
+    deleteMockResult,
+    cloneMockTest,
+    togglePublicStatus,
+    bulkManageMockTests
 } from '../controllers/mockTest.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
 import verifyUserRole from '../middlewares/verifyUserRole.js';
@@ -44,6 +47,9 @@ mockTestRouter.delete('/results/:id', verifyUserRole(['admin']), deleteMockResul
 
 // Admin-Only Management Routes (Double-check role)
 mockTestRouter.post('/create', verifyUserRole(['admin']), createMockTest);
+mockTestRouter.post('/bulk', verifyUserRole(['admin']), bulkManageMockTests);
+mockTestRouter.post('/:id/clone', verifyUserRole(['admin']), cloneMockTest);
+mockTestRouter.patch('/:id/toggle-public', verifyUserRole(['admin']), togglePublicStatus);
 mockTestRouter.put('/:id', verifyUserRole(['admin']), updateMockTest);
 mockTestRouter.delete('/:id', verifyUserRole(['admin']), deleteMockTest);
 

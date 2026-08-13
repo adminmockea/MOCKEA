@@ -94,6 +94,7 @@ export const getAllMockTests = async (req, res) => {
         // Admins see ALL mock tests regardless of examType
         // Students see tests matching their preference, or legacy tests without examType
         if (userRole !== "admin") {
+            filter.isPublic = true;
             if (examPreference === "IELTS") {
                 filter.$or = [
                     { examType: { $in: ["IELTS", "BOTH"] } },
@@ -117,6 +118,35 @@ export const getAllMockTests = async (req, res) => {
             .populate('sections.speaking', 'title category subType testType duration')
             .lean();
 
+        let enrichedTests = tests;
+        if (userRole === "admin") {
+            const attemptStats = await MockTestResult.aggregate([
+                {
+                    $group: {
+                        _id: "$testId",
+                        attemptsCount: { $sum: 1 },
+                        lastAttemptAt: { $max: "$createdAt" }
+                    }
+                }
+            ]);
+
+            const statsMap = {};
+            attemptStats.forEach(stat => {
+                if (stat._id) {
+                    statsMap[stat._id.toString()] = {
+                        attemptsCount: stat.attemptsCount,
+                        lastAttemptAt: stat.lastAttemptAt
+                    };
+                }
+            });
+
+            enrichedTests = tests.map(test => ({
+                ...test,
+                attemptsCount: statsMap[test._id.toString()]?.attemptsCount || 0,
+                lastAttemptAt: statsMap[test._id.toString()]?.lastAttemptAt || null
+            }));
+        }
+
         // Check if standard user took a test today
         let todayMockTestTaken = false;
         if (userRole !== "admin" && userRole !== "instructor" && userPlan === "standard" && userId) {
@@ -132,7 +162,7 @@ export const getAllMockTests = async (req, res) => {
             }
         }
 
-        res.status(200).json({ success: true, tests, todayMockTestTaken });
+        res.status(200).json({ success: true, tests: enrichedTests, todayMockTestTaken });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -696,3 +726,83 @@ export const deleteMockResult = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const cloneMockTest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const originalTest = await MockTest.findById(id);
+        if (!originalTest) {
+            return res.status(404).json({ success: false, message: 'Mock test not found' });
+        }
+
+        const cloneData = originalTest.toObject();
+        delete cloneData._id;
+        delete cloneData.createdAt;
+        delete cloneData.updatedAt;
+        cloneData.title = `${originalTest.title} (Copy)`;
+        cloneData.isPublic = false;
+
+        const newTest = new MockTest(cloneData);
+        await newTest.save();
+
+        res.status(201).json({ success: true, test: newTest, message: 'Mock test cloned successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const togglePublicStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const test = await MockTest.findById(id);
+        if (!test) {
+            return res.status(404).json({ success: false, message: 'Mock test not found' });
+        }
+
+        test.isPublic = !test.isPublic;
+        await test.save();
+        await cache.del(`mocktest:${id}`);
+
+        res.status(200).json({ 
+            success: true, 
+            test, 
+            message: `Mock test set to ${test.isPublic ? 'Public' : 'Draft'}` 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const bulkManageMockTests = async (req, res) => {
+    try {
+        const { action, ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: 'No test IDs provided' });
+        }
+
+        if (action === 'delete') {
+            await MockTest.deleteMany({ _id: { $in: ids } });
+            for (const id of ids) {
+                await cache.del(`mocktest:${id}`);
+            }
+            return res.status(200).json({ success: true, message: `${ids.length} mock test(s) deleted successfully` });
+        } else if (action === 'publish') {
+            await MockTest.updateMany({ _id: { $in: ids } }, { $set: { isPublic: true } });
+            for (const id of ids) {
+                await cache.del(`mocktest:${id}`);
+            }
+            return res.status(200).json({ success: true, message: `${ids.length} mock test(s) published` });
+        } else if (action === 'unpublish') {
+            await MockTest.updateMany({ _id: { $in: ids } }, { $set: { isPublic: false } });
+            for (const id of ids) {
+                await cache.del(`mocktest:${id}`);
+            }
+            return res.status(200).json({ success: true, message: `${ids.length} mock test(s) set to draft` });
+        }
+
+        return res.status(400).json({ success: false, message: 'Invalid bulk action' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
