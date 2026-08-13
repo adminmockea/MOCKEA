@@ -196,12 +196,12 @@ const CreateMockTest = () => {
     // Recommended section target counts
     const recommendedCounts = useMemo(() => {
         if (formData.examType === "IELTS") {
-            return { reading: 3, listening: 4, writing: 2, speaking: 1 };
+            return { reading: 3, listening: 4, writing: 1, speaking: 1 };
         }
         if (formData.examType === "PTE") {
-            return { reading: 5, listening: 8, writing: 2, speaking: 5 };
+            return { reading: 5, listening: 8, writing: 1, speaking: 5 };
         }
-        return { reading: 3, listening: 4, writing: 2, speaking: 1 };
+        return { reading: 3, listening: 4, writing: 1, speaking: 1 };
     }, [formData.examType]);
 
     // Calculate aggregated question metrics
