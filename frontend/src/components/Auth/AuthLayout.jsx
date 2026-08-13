@@ -30,9 +30,9 @@ const AuthLayout = () => {
     <>
       <Navbar />
       <div className="min-h-[calc(100vh-64px)] flex items-center py-8 px-4 sm:px-6">
-        <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-start gap-8">
+        <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center gap-8">
           {/* Left side - Hero Section & Book Promo */}
-          <div className="hidden lg:flex lg:w-1/2 h-fit bg-bc-navy text-white p-8 xl:p-10 flex-col rounded-2xl shadow-xl border border-blue-900/40">
+          <div className="hidden lg:flex  lg:w-1/2 h-fit bg-bc-navy text-white p-8 xl:p-10 flex-col rounded-2xl shadow-xl border border-blue-900/40">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
