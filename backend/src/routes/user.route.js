@@ -16,7 +16,9 @@ import {
   removeFcmToken,
   joinInstitution,
   adminUpdateUserInstitution,
+} from "../controllers/user.controller.js";
 import { restoreImpersonationSession } from "../controllers/superAdmin.controller.js";
+
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
 import apiRateLimiter from "../middlewares/apiRateLimiter.js";
