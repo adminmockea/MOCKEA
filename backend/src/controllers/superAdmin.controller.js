@@ -13,6 +13,36 @@ import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
 import { cache } from "../utils/cache.js";
 import BlacklistedIp from "../model/blacklistedIp.js";
+import crypto from "crypto";
+
+const GET_TICKET_SECRET = () => process.env.IMPERSONATION_SECRET || process.env.JWT_SECRET || "mockea_superadmin_restore_secret_2026";
+
+export const generateRestoreTicket = (impersonatorEmail, targetEmail) => {
+  const payload = {
+    impersonatorEmail: impersonatorEmail.toLowerCase().trim(),
+    targetEmail: targetEmail.toLowerCase().trim(),
+    exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours validity
+  };
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto.createHmac("sha256", GET_TICKET_SECRET()).update(data).digest("base64url");
+  return `${data}.${signature}`;
+};
+
+export const verifyRestoreTicket = (ticket) => {
+  if (!ticket || typeof ticket !== "string" || !ticket.includes(".")) return null;
+  const [data, signature] = ticket.split(".");
+  const expectedSignature = crypto.createHmac("sha256", GET_TICKET_SECRET()).update(data).digest("base64url");
+  if (signature !== expectedSignature) return null;
+
+  try {
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString("utf-8"));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch (err) {
+    return null;
+  }
+};
+
 
 // Log action helper
 const logAction = async (actorEmail, actorRole, action, targetType, targetId, ipAddress, userAgent, details = {}) => {
@@ -117,6 +147,7 @@ export const impersonateUser = async (req, res) => {
 
     // Generate Firebase Custom Token for impersonation
     const customToken = await admin.auth().createCustomToken(firebaseUser.uid);
+    const restoreTicket = generateRestoreTicket(req.user.email, cleanEmail);
 
     await logAction(
       req.user.email,
@@ -133,12 +164,65 @@ export const impersonateUser = async (req, res) => {
       success: true,
       message: `Impersonation token generated for ${cleanEmail}`,
       customToken,
+      restoreTicket,
       targetUser,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 3.5. Restore Impersonation Session
+export const restoreImpersonationSession = async (req, res) => {
+  try {
+    const { restoreTicket } = req.body;
+    if (!restoreTicket) {
+      return res.status(400).json({ success: false, message: "Restore ticket is required" });
+    }
+
+    const payload = verifyRestoreTicket(restoreTicket);
+    if (!payload) {
+      return res.status(401).json({ success: false, message: "Invalid or expired restore ticket" });
+    }
+
+    // Verify impersonator is still an active Super Admin
+    const superAdmin = await User.findOne({ email: payload.impersonatorEmail, role: "superadmin" });
+    if (!superAdmin) {
+      return res.status(403).json({ success: false, message: "Super Admin account not found or privileges revoked" });
+    }
+
+    // Get Firebase user for Super Admin
+    let firebaseUser;
+    try {
+      firebaseUser = await admin.auth().getUserByEmail(payload.impersonatorEmail);
+    } catch (fbError) {
+      return res.status(404).json({ success: false, message: `Firebase user not found: ${fbError.message}` });
+    }
+
+    const customToken = await admin.auth().createCustomToken(firebaseUser.uid);
+
+    await logAction(
+      superAdmin.email,
+      superAdmin.role,
+      "RESTORE_SUPERADMIN_SESSION",
+      "User",
+      superAdmin._id.toString(),
+      req.ip,
+      req.headers["user-agent"],
+      { impersonatedUser: payload.targetEmail }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Super Admin session token restored successfully",
+      customToken,
+    });
+  } catch (error) {
+    console.error("Error restoring impersonation session:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 // 4. Fetch Audit Logs
 export const getAuditLogs = async (req, res) => {

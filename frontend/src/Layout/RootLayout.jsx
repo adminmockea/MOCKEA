@@ -75,22 +75,58 @@ export default function RootLayout() {
   };
 
   const isImpersonating = sessionStorage.getItem("isImpersonating") === "true";
+  const adminRestoreTicket = sessionStorage.getItem("adminRestoreTicket");
   const adminRestoreToken = sessionStorage.getItem("adminRestoreToken");
 
+  const clearImpersonationSession = () => {
+    sessionStorage.removeItem("isImpersonating");
+    sessionStorage.removeItem("impersonatorEmail");
+    sessionStorage.removeItem("adminRestoreTicket");
+    sessionStorage.removeItem("adminRestoreToken");
+  };
+
   const handleExitImpersonation = async () => {
-    if (!adminRestoreToken) return;
-    try {
-      toast.info("Restoring Super Admin session...");
-      await signInWithCustomToken(auth, adminRestoreToken);
-      sessionStorage.removeItem("isImpersonating");
-      sessionStorage.removeItem("impersonatorEmail");
-      sessionStorage.removeItem("adminRestoreToken");
-      toast.success("Super Admin session restored!");
-      window.location.href = "/dashboard/superadmin/console";
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to restore Super Admin session. Please log in again.");
+    toast.info("Restoring Super Admin session...");
+    let tokenToSignIn = null;
+
+    // 1. Attempt fresh custom token generation via 24-hour restore ticket
+    if (adminRestoreTicket) {
+      try {
+        const cleanBaseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+        const res = await axios.post(`${cleanBaseUrl}/user/auth/restore-impersonation`, {
+          restoreTicket: adminRestoreTicket,
+        });
+
+        if (res.data?.success && res.data?.customToken) {
+          tokenToSignIn = res.data.customToken;
+        }
+      } catch (ticketErr) {
+        console.warn("Restore ticket exchange failed, attempting fallback token if available:", ticketErr);
+      }
     }
+
+    // 2. Fallback to legacy static token if available
+    if (!tokenToSignIn && adminRestoreToken) {
+      tokenToSignIn = adminRestoreToken;
+    }
+
+    // 3. Sign in to Firebase with custom token
+    if (tokenToSignIn) {
+      try {
+        await signInWithCustomToken(auth, tokenToSignIn);
+        clearImpersonationSession();
+        toast.success("Super Admin session restored!");
+        window.location.href = "/dashboard/superadmin/console";
+        return;
+      } catch (authErr) {
+        console.error("Firebase custom token sign-in failed:", authErr);
+      }
+    }
+
+    // 4. Graceful cleanup and redirect if session restoration fails
+    clearImpersonationSession();
+    toast.error("Session restore token expired or invalid. Please log in again.");
+    window.location.href = "/auth/login";
   };
 
   if (maintenance.mode && roleLoading) {
@@ -116,7 +152,7 @@ export default function RootLayout() {
       <Outlet context={{ maintenanceMessage: maintenance.message }} />
 
       {/* Floating Exit Impersonation Bar */}
-      {isImpersonating && adminRestoreToken && (
+      {isImpersonating && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900 border border-slate-700 text-white rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 animate-bounce">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>

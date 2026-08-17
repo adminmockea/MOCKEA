@@ -16,7 +16,7 @@ import {
   removeFcmToken,
   joinInstitution,
   adminUpdateUserInstitution,
-} from "../controllers/user.controller.js";
+import { restoreImpersonationSession } from "../controllers/superAdmin.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
 import apiRateLimiter from "../middlewares/apiRateLimiter.js";
@@ -25,8 +25,10 @@ const userRouter = express.Router();
 
 userRouter.get("/verifyEmail/:email", verifyEmail);
 userRouter.post("/auth/register", apiRateLimiter("authLimit", 60 * 1000), postUser);
+userRouter.post("/auth/restore-impersonation", restoreImpersonationSession);
 
 userRouter.use(verifyUserToken);
+
 
 // Authenticated user routes
 userRouter.patch("/join-institution", joinInstitution);
