@@ -22,6 +22,7 @@ import settingsRouter from "./routes/settings.route.js";
 import ipBlocker from "./middlewares/ipBlocker.js";
 import bookingRouter from "./routes/booking.route.js";
 import institutionRouter from "./routes/institution.route.js";
+import { getPublicSystemConfig } from "./controllers/superAdmin.controller.js";
 
 const Port = process.env.PORT || 3000;
 
@@ -38,8 +39,6 @@ const rawOrigins = [
   process.env.CLIENT_URL2,
   process.env.DEV_URL,
   process.env.DEV_URL2,
-  "https://mockea.web.app",
-  "https://eco-stream-90d55.web.app",
 ];
 
 const allowedOrigins = rawOrigins
@@ -85,7 +84,6 @@ app.use('/api/submissions', sRouter);
 app.use('/api/error-logs', errorLogRouter);
 
 app.use("/api/analytics", analyticsRouter);
-import { getPublicSystemConfig } from "./controllers/superAdmin.controller.js";
 
 app.use("/api/settings/logs", errorLogRouter);
 app.use("/api/settings", settingsRouter);
