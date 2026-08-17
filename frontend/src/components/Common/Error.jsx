@@ -55,7 +55,7 @@ const Error = () => {
       : (error.data?.message || error.statusText || `Route error ${error.status}`);
     stackText = error.data?.stack || `React Router caught status ${error.status} (${error.statusText || 'No status text'})`;
 
-  } else if (error instanceof Error) {
+  } else if (error instanceof globalThis.Error) {
     const message = error.message || '';
     isChunkError =
       message.includes('Failed to fetch dynamically imported module') ||
