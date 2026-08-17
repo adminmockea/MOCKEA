@@ -185,13 +185,13 @@ export default function TableCompletionRenderer({
 }) {
     const lastInteractionRef = useRef(new Map());
 
-    const { introText, tableRows, outroText } = useMemo(() => {
-        if (!instructions) return { introText: "", tableRows: null, outroText: "" };
+    const { introText, headerRows, bodyRows, maxCols, outroText } = useMemo(() => {
+        if (!instructions) return { introText: "", headerRows: [], bodyRows: [], maxCols: 0, outroText: "" };
         
         const lines = instructions.split(/\r?\n/);
         const tableStartIndex = lines.findIndex(l => l.trim().startsWith("|"));
         if (tableStartIndex === -1) {
-            return { introText: instructions, tableRows: null, outroText: "" };
+            return { introText: instructions, headerRows: [], bodyRows: [], maxCols: 0, outroText: "" };
         }
         
         const introLines = lines.slice(0, tableStartIndex).join("\n").trim();
@@ -288,9 +288,10 @@ export default function TableCompletionRenderer({
     if (!headerRows || (headerRows.length === 0 && bodyRows.length === 0)) {
         // Fallback if no valid table structure exists in instructions
         return (
-            <div className="bg-amber-50 border border-amber-200 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
-                {instructions}
-            </div>
+            <div 
+                className="bg-amber-50 border border-amber-200 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs"
+                dangerouslySetInnerHTML={{ __html: convertMarkdownContentToHtml(instructions) }}
+            />
         );
     }
 
