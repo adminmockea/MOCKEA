@@ -266,9 +266,12 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {q.type === 'true-false' && (
+            {(q.type === 'true-false' || q.type === 'yes-no') && (
                 <div className="flex flex-wrap gap-2 ml-14">
-                    {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+                    {(q.options && q.options.filter(Boolean).length > 0
+                        ? q.options.filter(Boolean)
+                        : (q.type === 'yes-no' ? ['YES', 'NO', 'NOT GIVEN'] : ['TRUE', 'FALSE', 'NOT GIVEN'])
+                    ).map((opt) => (
                         <button 
                             key={opt}
                             type="button"
@@ -506,7 +509,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 );
             })()}
 
-            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop || isPteFillBlanks || isPteReorder) && (
+            {!(q.type === 'true-false' || q.type === 'yes-no' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop || isPteFillBlanks || isPteReorder) && (
                 <div className="ml-14">
                     <input 
                         type="text" 

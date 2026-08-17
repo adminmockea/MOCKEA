@@ -795,9 +795,12 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div className="space-y-4">
-            {q.type === 'true-false' && (
+            {(q.type === 'true-false' || q.type === 'yes-no') && (
                 <div className="flex flex-wrap gap-2">
-                    {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+                    {(q.options && q.options.filter(Boolean).length > 0
+                        ? q.options.filter(Boolean)
+                        : (q.type === 'yes-no' ? ['YES', 'NO', 'NOT GIVEN'] : ['TRUE', 'FALSE', 'NOT GIVEN'])
+                    ).map((opt) => (
                         <button 
                             key={opt}
                             type="button"
@@ -894,7 +897,7 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 </div>
             )}
 
-            {!(q.type === 'true-false' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop) && (
+            {!(q.type === 'true-false' || q.type === 'yes-no' || q.type === 'multiple-choice' || q.type === 'matching' || q.type === 'heading-matching' || isDragDrop) && (
                 <div>
                     {q.type === "pte-summarize-spoken-text" ? (
                         <div className="relative">
