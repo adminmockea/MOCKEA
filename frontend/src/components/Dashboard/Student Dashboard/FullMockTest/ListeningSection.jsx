@@ -6,10 +6,42 @@ import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 
 const EMPTY_ARRAY = [];
 
-const findQuestion = (questions, matchKey, offset = 0) => {
+const findQuestion = (questions, matchKey, offset = 0, header = null, placeholderIdx = 0, usedQuestionIds = null) => {
     if (!questions || !matchKey) return null;
+
+    const fromQ = header?.fromQuestion ? Number(header.fromQuestion) : null;
+    const toQ = header?.toQuestion ? Number(header.toQuestion) : null;
+
+    if (fromQ !== null && toQ !== null && !isNaN(fromQ) && !isNaN(toQ)) {
+        const groupQuestions = questions.filter((item, idx) => {
+            const questionNum = offset + idx + 1;
+            return questionNum >= fromQ && questionNum <= toQ;
+        });
+
+        if (groupQuestions.length > 0) {
+            const exactMatch = groupQuestions.find((item) => {
+                const qIdx = questions.indexOf(item);
+                const questionNum = offset + qIdx + 1;
+                return (
+                    item.id === matchKey ||
+                    (item.id && item.id.toLowerCase() === matchKey.toLowerCase()) ||
+                    questionNum.toString() === matchKey
+                );
+            });
+            if (exactMatch && (!usedQuestionIds || !usedQuestionIds.has(exactMatch.id))) {
+                return exactMatch;
+            }
+
+            const unusedInGroup = groupQuestions.filter(item => !usedQuestionIds || !usedQuestionIds.has(item.id));
+            if (unusedInGroup.length > 0) {
+                return unusedInGroup[0];
+            }
+        }
+    }
+
     const cleanKey = matchKey.toLowerCase().replace(/^[a-z]+/, "");
     return questions.find((item, idx) => {
+        if (usedQuestionIds && usedQuestionIds.has(item.id)) return false;
         const questionNum = offset + idx + 1;
         const localIndex = idx + 1;
         const cleanId = (item.id || "").toLowerCase().replace(/^[a-z]+/, "");
@@ -185,7 +217,7 @@ const formatFlowChartPassage = (text) => {
 
 const DEBOUNCE_MS = 400;
 
-const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
+const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submitted, result, offset, header, clickedOption, setClickedOption, className = "leading-relaxed text-slate-700 whitespace-pre-line" }) => {
     const containerRef = useRef(null);
     const lastInteractionRef = useRef(new Map());
 
@@ -200,9 +232,14 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
             return text;
         }
 
+        const usedQuestionIds = new Set();
+        let placeholderIdx = 0;
+
         return text.replace(/___([\w-]+)___/g, (match, matchKey) => {
-            const q = findQuestion(questions, matchKey, offset);
+            const currentIdx = placeholderIdx++;
+            const q = findQuestion(questions, matchKey, offset, header, currentIdx, usedQuestionIds);
             if (!q) return match;
+            usedQuestionIds.add(q.id);
 
             const qIndexInSet = questions.indexOf(q);
             const labelNum = offset + qIndexInSet + 1;
@@ -1118,6 +1155,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                                         answers={answers}
                                         onAnswerChange={onAnswerChange}
                                         offset={offset}
+                                        header={header}
                                         clickedOption={clickedOption}
                                         setClickedOption={setClickedOption}
                                     />
