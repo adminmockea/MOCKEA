@@ -8,6 +8,7 @@ import useUserProfile from "../../../../hooks/useUserProfile.jsx";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
+import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import Loader from "../../../Loader/Loader.jsx";
 import { motion } from "framer-motion";
 import { 
@@ -664,9 +665,10 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                         )}
                     </div>
                     {header.instructions && !hideInstructions && (
-                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
-                            {header.instructions}
-                        </div>
+                        <div 
+                            className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs"
+                            dangerouslySetInnerHTML={{ __html: convertMarkdownContentToHtml(header.instructions) }}
+                        />
                     )}
                 </div>
             )}

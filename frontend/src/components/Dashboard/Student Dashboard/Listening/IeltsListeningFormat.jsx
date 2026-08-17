@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, memo, useState } from "react";
 import { motion } from "framer-motion";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
+import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 
 const EMPTY_ARRAY = [];
 import {
@@ -106,6 +107,10 @@ const convertMarkdownTablesToHtml = (text) => {
         const formatInlineBullets = (str) => {
             if (!str) return str;
             let formatted = str.trim();
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-slate-900">$1</strong>');
+            formatted = formatted.replace(/<b>(.*?)<\/b>/gi, '<strong class="font-black text-slate-900">$1</strong>');
+            formatted = formatted.replace(/<strong>(.*?)<\/strong>/gi, '<strong class="font-black text-slate-900">$1</strong>');
+            formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
             formatted = formatted.replace(/^[-*]\s+/, '<span class="text-primary font-black mr-1">•</span> ');
             formatted = formatted.replace(/\s*[,;\n]\s*[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
             formatted = formatted.replace(/\s+[-*]\s+/g, '<br/><span class="text-primary font-black mr-1">•</span> ');
@@ -1367,9 +1372,10 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
                         )}
                     </div>
                     {header.instructions && !hideInstructions && (
-                        <div className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs">
-                            {header.instructions}
-                        </div>
+                        <div 
+                            className="bg-amber-50 border border-amber-200/60 px-5 py-3.5 rounded-2xl text-sm text-slate-700 leading-relaxed shadow-xs"
+                            dangerouslySetInnerHTML={{ __html: convertMarkdownContentToHtml(header.instructions) }}
+                        />
                     )}
                 </div>
             )}

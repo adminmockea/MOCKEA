@@ -36,8 +36,11 @@ const convertInlineText = (text) => {
   let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
   // Parse Markdown italic (*text*)
   formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
-  // Parse Markdown bullet points (- or * or • at start of line)
+
+  // Parse Markdown bullet points (- or * or • at start of line or separated by spaces/punctuation)
   formatted = formatted.replace(/^[-*•]\s+/gm, '<span class="text-primary font-black mr-1.5 select-none">•</span> ');
+  formatted = formatted.replace(/\s*[,;\n]\s*[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
+  formatted = formatted.replace(/\s+[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
 
   const withImages = convertMarkdownImageLinks(formatted);
   const withLinks = convertMarkdownLinks(withImages);
@@ -90,9 +93,16 @@ export const convertMarkdownContentToHtml = (rawText) => {
   const allowedTags = ["img", "th", "td", "tr", "thead", "tbody", "table", "div", "strong", "b", "em", "i", "span", "br", "p", "a", "ul", "li"];
   const allowedAttrs = ["class", "src", "alt", "href", "target", "rel", "colspan", "rowspan"];
 
-  const hasHtmlTags = /<\/?[a-z][\s\S]*?>/i.test(text);
-  if (hasHtmlTags) {
-    return DOMPurify.sanitize(text, { ADD_TAGS: allowedTags, ADD_ATTR: allowedAttrs });
+  // Check if input originally contains structural HTML layout elements (like <table>, <ul>, <p>)
+  const containsStructuralHtml = /<\/?(table|thead|tbody|tr|td|th|ul|ol|li|p|h[1-6])[^>]*>/i.test(text);
+  if (containsStructuralHtml) {
+    let formatted = text;
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+    formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em class="italic">$1</em>');
+    formatted = formatted.replace(/^[-*•]\s+/gm, '<span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    formatted = formatted.replace(/\s*[,;\n]\s*[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    formatted = formatted.replace(/\s+[-*•]\s+/g, '<br/><span class="text-primary font-black mr-1.5 select-none">•</span> ');
+    return DOMPurify.sanitize(formatted, { ADD_TAGS: allowedTags, ADD_ATTR: allowedAttrs });
   }
 
   const lines = text.split(/\r?\n/);
