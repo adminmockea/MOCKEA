@@ -3,6 +3,9 @@ import { PiMagnifyingGlass, PiFunnel, PiSquaresFour, PiList, PiPlus } from "reac
 import PageHeader from "../../../Common/PageHeader";
 
 const QuestionsToolbar = ({
+    activeTab = "IELTS",
+    setActiveTab,
+    counts,
     searchQuery,
     setSearchQuery,
     isFilterOpen,
@@ -21,11 +24,15 @@ const QuestionsToolbar = ({
     selectedIds,
     handleBulkAction
 }) => {
+    const subtitleText = activeTab === "ALL" 
+        ? "Manage all IELTS and PTE Academic questions across different sections." 
+        : `Manage all ${activeTab === "PTE" ? "PTE Academic" : "IELTS"} questions across different sections.`;
+
     return (
         <div className="space-y-4">
             <PageHeader
                 title="Question Bank"
-                subtitle="Manage all IELTS questions across different sections."
+                subtitle={subtitleText}
                 action={
                     <div className="flex items-center gap-3">
                         <div className="relative">
@@ -146,6 +153,68 @@ const QuestionsToolbar = ({
                     </div>
                 }
             />
+
+            {/* Exam Switcher Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 p-1.5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab && setActiveTab("IELTS")}
+                        className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+                            activeTab === "IELTS"
+                                ? "bg-white text-primary shadow-sm border border-slate-200/60"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                    >
+                        <span>🎓 IELTS Questions</span>
+                        {counts?.ielts !== undefined && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                activeTab === "IELTS" ? "bg-primary/10 text-primary" : "bg-slate-200 text-slate-600"
+                            }`}>
+                                {counts.ielts}
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab && setActiveTab("PTE")}
+                        className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+                            activeTab === "PTE"
+                                ? "bg-white text-emerald-600 shadow-sm border border-slate-200/60"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                    >
+                        <span>📘 PTE Academic</span>
+                        {counts?.pte !== undefined && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                activeTab === "PTE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+                            }`}>
+                                {counts.pte}
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab && setActiveTab("ALL")}
+                        className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+                            activeTab === "ALL"
+                                ? "bg-white text-slate-800 shadow-sm border border-slate-200/60"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                    >
+                        <span>🌐 All Exams</span>
+                        {counts?.all !== undefined && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                activeTab === "ALL" ? "bg-slate-200 text-slate-800" : "bg-slate-200 text-slate-600"
+                            }`}>
+                                {counts.all}
+                            </span>
+                        )}
+                    </button>
+                </div>
+            </div>
 
             {selectedIds.length > 0 && (
                 <div className="bg-primary/5 border border-primary/20 p-3 rounded-2xl flex items-center justify-between">

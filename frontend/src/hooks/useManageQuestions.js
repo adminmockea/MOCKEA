@@ -8,6 +8,7 @@ export const useManageQuestions = () => {
     const axiosSecure = useAxiosSecure();
     const queryClient = useQueryClient();
 
+    const [activeTab, setActiveTab] = useState("IELTS"); // "IELTS", "PTE", or "ALL"
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
     const [filterType, setFilterType] = useState("all");
@@ -18,11 +19,27 @@ export const useManageQuestions = () => {
     const [selectedIds, setSelectedIds] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Primary question query filtered by activeTab parameter
     const { data: questions = [], isLoading, isError, refetch } = useAdminQuery(
-        ["admin-questions"],
-        "/questions",
+        ["admin-questions", activeTab],
+        `/questions?examType=${activeTab}`,
         "questions"
     );
+
+    // All questions query to maintain counts across tabs
+    const { data: allQuestions = [] } = useAdminQuery(
+        ["admin-questions-all"],
+        "/questions?examType=ALL",
+        "questions"
+    );
+
+    const counts = useMemo(() => {
+        const pool = allQuestions.length > 0 ? allQuestions : questions;
+        const ielts = pool.filter((q) => !q.examType || q.examType === "IELTS" || q.examType === "BOTH").length;
+        const pte = pool.filter((q) => q.examType === "PTE" || q.examType === "BOTH").length;
+        const all = pool.length;
+        return { ielts, pte, all };
+    }, [allQuestions, questions]);
 
     const uniqueTypes = useMemo(() => {
         const types = [...new Set(questions.map((q) => q.testType).filter(Boolean))];
@@ -31,6 +48,9 @@ export const useManageQuestions = () => {
 
     const filteredQuestions = useMemo(() => {
         return questions.filter((q) => {
+            const matchesExamTab = activeTab === "ALL" ||
+                (activeTab === "IELTS" ? (!q.examType || q.examType === "IELTS" || q.examType === "BOTH") :
+                (activeTab === "PTE" ? (q.examType === "PTE" || q.examType === "BOTH") : true));
             const matchesType = filterType === "all" || q.testType === filterType;
             const matchesPlan = filterPlan === "all" || q.forPlanType === filterPlan;
             const matchesStatus = filterStatus === "all" ||
@@ -47,15 +67,16 @@ export const useManageQuestions = () => {
                     matchesSearch = q.title?.toLowerCase().includes(searchQuery.toLowerCase());
                 }
             }
-            return matchesType && matchesPlan && matchesStatus && matchesMockStatus && matchesSearch;
+            return matchesExamTab && matchesType && matchesPlan && matchesStatus && matchesMockStatus && matchesSearch;
         });
-    }, [questions, filterType, filterPlan, filterStatus, filterMockStatus, searchQuery]);
+    }, [questions, activeTab, filterType, filterPlan, filterStatus, filterMockStatus, searchQuery]);
 
     const toggleStatusMutation = useMutation({
         mutationFn: ({ id, isActive }) => axiosSecure.put(`/questions/${id}`, { isActive }),
         onSuccess: () => {
             alerts.success("Status Updated", "The question set status has been updated.");
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-all"] });
             queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
             refetch();
         },
@@ -73,6 +94,7 @@ export const useManageQuestions = () => {
         onSuccess: () => {
             alerts.success("Deleted!", "The question has been removed from the bank.");
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-all"] });
             queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
             refetch();
         }
@@ -107,6 +129,7 @@ export const useManageQuestions = () => {
             alerts.success("Success", res.data.message || "Bulk operation completed.");
             setSelectedIds([]);
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-questions-all"] });
             queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
             refetch();
         },
@@ -124,6 +147,9 @@ export const useManageQuestions = () => {
     };
 
     return {
+        activeTab,
+        setActiveTab,
+        counts,
         questions,
         filteredQuestions,
         uniqueTypes,

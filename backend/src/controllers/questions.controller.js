@@ -168,7 +168,7 @@ export const getFreeTierDailyQuestions = async (email, type, questions) => {
 
 export const getQuestions = async (req, res) => {
     try {
-        const { type } = req.query;
+        const { type, examType } = req.query;
         
         // Fetch student targeted exam track to dynamically segment available modules
         const email = req.decoded_email;
@@ -195,8 +195,24 @@ export const getQuestions = async (req, res) => {
         const filter = type 
             ? { testType: type.toLowerCase(), isLatest: { $ne: false } } 
             : { isLatest: { $ne: false } };
+
+        // Explicit examType query parameter filtering (for Admin / Instructor tabs)
+        if (examType && (userRole === "admin" || userRole === "instructor")) {
+            const normalizedExam = examType.toUpperCase();
+            if (normalizedExam === "IELTS") {
+                filter.$or = [
+                    { examType: { $in: ["IELTS", "BOTH"] } },
+                    { examType: { $exists: false } },
+                    { examType: null }
+                ];
+            } else if (normalizedExam === "PTE") {
+                filter.$or = [
+                    { examType: { $in: ["PTE", "BOTH"] } }
+                ];
+            }
+        }
         
-        // Admins and Instructors see ALL questions regardless of plan & examType
+        // Admins and Instructors see ALL questions matching filter regardless of student plan limits
         // Students see only questions matching their exam preference & tier limits
         if (userRole !== "admin" && userRole !== "instructor") {
             filter.isActive = { $ne: false };

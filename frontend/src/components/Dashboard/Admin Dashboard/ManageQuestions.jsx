@@ -9,6 +9,9 @@ import QuestionDetailModal from "./ManageQuestions/QuestionDetailModal";
 const ManageQuestions = () => {
     const navigate = useNavigate();
     const {
+        activeTab,
+        setActiveTab,
+        counts,
         filteredQuestions,
         uniqueTypes,
         isLoading,
@@ -42,6 +45,9 @@ const ManageQuestions = () => {
     return (
         <div className="space-y-6">
             <QuestionsToolbar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                counts={counts}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 isFilterOpen={isFilterOpen}
