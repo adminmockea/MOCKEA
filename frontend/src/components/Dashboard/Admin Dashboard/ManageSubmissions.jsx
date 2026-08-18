@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -13,6 +13,7 @@ import {
   PiArrowClockwise,
   PiWarning,
   PiBookOpen,
+  PiCheckSquareOffset,
 } from "react-icons/pi";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
@@ -41,6 +42,12 @@ const ManageSubmissions = () => {
   const [skillFilter, setSkillFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [mockStatusFilter, setMockStatusFilter] = useState("all");
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // Auto-clear selection state when tab or filters change
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab, searchTerm, skillFilter, statusFilter, mockStatusFilter]);
 
   // 1. Fetch standalone submissions
   const {
@@ -82,6 +89,7 @@ const ManageSubmissions = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-submissions"] });
+      setSelectedIds((prev) => prev.filter((item) => item !== data.id));
       toast.success(data.message || "Submission deleted successfully");
     },
     onError: (error) => {
@@ -97,10 +105,43 @@ const ManageSubmissions = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["admin-mock-results"] });
+      setSelectedIds((prev) => prev.filter((item) => item !== data.id));
       toast.success(data.message || "Mock test result deleted successfully");
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to delete mock test result");
+    },
+  });
+
+  // 5. Standalone bulk delete mutation
+  const bulkDeleteStandaloneMutation = useMutation({
+    mutationFn: async (ids) => {
+      const res = await axiosSecure.post("/submissions/bulk-delete", { ids });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-submissions"] });
+      setSelectedIds([]);
+      toast.success(data.message || "Submissions deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete submissions");
+    },
+  });
+
+  // 6. Mock result bulk delete mutation
+  const bulkDeleteMockMutation = useMutation({
+    mutationFn: async (ids) => {
+      const res = await axiosSecure.post("/mock-tests/results/bulk-delete", { ids });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-mock-results"] });
+      setSelectedIds([]);
+      toast.success(data.message || "Mock test results deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete mock test results");
     },
   });
 
@@ -177,7 +218,52 @@ const ManageSubmissions = () => {
     });
   }, [mockResults, searchTerm, mockStatusFilter]);
 
+  // Selection helpers
+  const currentFilteredItems = activeTab === "standalone" ? filteredSubmissions : filteredMockResults;
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedIds(currentFilteredItems.map((item) => item._id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    const count = selectedIds.length;
+    const typeLabel = activeTab === "standalone" ? "standalone submission(s)" : "mock test result(s)";
+    Swal.fire({
+      title: "Are you sure?",
+      text: `You are about to delete ${count} selected ${typeLabel}. This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: `Yes, delete ${count} item${count > 1 ? "s" : ""}`,
+      customClass: {
+        popup: "rounded-[2.5rem] p-8",
+        confirmButton: "rounded-xl px-6 py-3 font-bold btn btn-error text-white border-none mx-2",
+        cancelButton: "rounded-xl px-6 py-3 font-bold btn btn-ghost border border-slate-200 text-slate-500 hover:bg-slate-50 mx-2"
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (activeTab === "standalone") {
+          bulkDeleteStandaloneMutation.mutate(selectedIds);
+        } else {
+          bulkDeleteMockMutation.mutate(selectedIds);
+        }
+      }
+    });
+  };
+
   const handleRefresh = () => {
+    setSelectedIds([]);
     if (activeTab === "standalone") {
       refetchStandalone();
     } else {
@@ -319,6 +405,34 @@ const ManageSubmissions = () => {
         )}
       </div>
 
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center bg-primary/10 dark:bg-primary/20 border border-primary/20 p-4 px-6 rounded-2xl gap-3 animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <PiCheckSquareOffset className="w-6 h-6 text-primary" />
+            <span className="text-sm font-black text-gray-800 dark:text-white">
+              {selectedIds.length} item{selectedIds.length > 1 ? "s" : ""} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="btn btn-ghost btn-xs font-bold text-gray-600 dark:text-gray-300 rounded-xl px-3"
+            >
+              Deselect All
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteStandaloneMutation.isPending || bulkDeleteMockMutation.isPending}
+              className="btn btn-error btn-sm font-bold text-white rounded-xl flex items-center gap-1.5 px-4 shadow-xs"
+            >
+              <PiTrash className="w-4 h-4" />
+              Delete Selected ({selectedIds.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table Container */}
       <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -328,7 +442,15 @@ const ManageSubmissions = () => {
             <table className="table w-full text-left">
               <thead>
                 <tr className="bg-gray-50/70 dark:bg-gray-900/40 text-gray-550 border-b border-gray-100 dark:border-gray-700">
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Student</th>
+                  <th className="pl-8 pr-3 py-5 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                      checked={filteredSubmissions.length > 0 && filteredSubmissions.every((sub) => selectedIds.includes(sub._id))}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Student</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Skill</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Task Title</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Submitted At</th>
@@ -340,19 +462,19 @@ const ManageSubmissions = () => {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {isTabLoading ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center">
+                    <td colSpan="8" className="py-20 text-center">
                       <span className="loading loading-spinner loading-lg text-primary" />
                     </td>
                   </tr>
                 ) : isTabError ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center text-error font-extrabold">
+                    <td colSpan="8" className="py-20 text-center text-error font-extrabold">
                       Failed to load standalone submissions.
                     </td>
                   </tr>
                 ) : filteredSubmissions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center text-gray-400 italic font-semibold">
+                    <td colSpan="8" className="py-20 text-center text-gray-400 italic font-semibold">
                       No standalone submissions found.
                     </td>
                   </tr>
@@ -367,14 +489,29 @@ const ManageSubmissions = () => {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
+                    const isSelected = selectedIds.includes(sub._id);
 
                     return (
                       <tr
                         key={sub._id}
-                        className="group hover:bg-gray-50/50 dark:hover:bg-gray-755/30 transition-colors"
+                        className={`group transition-colors ${
+                          isSelected
+                            ? "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10"
+                            : "hover:bg-gray-50/50 dark:hover:bg-gray-755/30"
+                        }`}
                       >
+                        {/* Checkbox */}
+                        <td className="pl-8 pr-3 py-5 text-center">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                            checked={isSelected}
+                            onChange={() => handleSelectRow(sub._id)}
+                          />
+                        </td>
+
                         {/* Student */}
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-black uppercase text-base">
                               {sub.userName?.charAt(0) || "?"}
@@ -482,7 +619,15 @@ const ManageSubmissions = () => {
             <table className="table w-full text-left">
               <thead>
                 <tr className="bg-gray-50/70 dark:bg-gray-900/40 text-gray-550 border-b border-gray-100 dark:border-gray-700">
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest">Student</th>
+                  <th className="pl-8 pr-3 py-5 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                      checked={filteredMockResults.length > 0 && filteredMockResults.every((res) => selectedIds.includes(res._id))}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Student</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Type</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Mock Test Title</th>
                   <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest">Attempt Date</th>
@@ -494,19 +639,19 @@ const ManageSubmissions = () => {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {isTabLoading ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center">
+                    <td colSpan="8" className="py-20 text-center">
                       <span className="loading loading-spinner loading-lg text-primary" />
                     </td>
                   </tr>
                 ) : isTabError ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center text-error font-extrabold">
+                    <td colSpan="8" className="py-20 text-center text-error font-extrabold">
                       Failed to load mock test results.
                     </td>
                   </tr>
                 ) : filteredMockResults.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-20 text-center text-gray-400 italic font-semibold">
+                    <td colSpan="8" className="py-20 text-center text-gray-400 italic font-semibold">
                       No mock test results found.
                     </td>
                   </tr>
@@ -524,6 +669,7 @@ const ManageSubmissions = () => {
                       hour: "2-digit",
                       minute: "2-digit",
                     });
+                    const isSelected = selectedIds.includes(res._id);
 
                     // Collect evaluated by names from the section results
                     const graders = res.sectionResults
@@ -535,10 +681,24 @@ const ManageSubmissions = () => {
                     return (
                       <tr
                         key={res._id}
-                        className="group hover:bg-gray-50/50 dark:hover:bg-gray-755/30 transition-colors"
+                        className={`group transition-colors ${
+                          isSelected
+                            ? "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10"
+                            : "hover:bg-gray-50/50 dark:hover:bg-gray-755/30"
+                        }`}
                       >
+                        {/* Checkbox */}
+                        <td className="pl-8 pr-3 py-5 text-center">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-xs checkbox-primary cursor-pointer"
+                            checked={isSelected}
+                            onChange={() => handleSelectRow(res._id)}
+                          />
+                        </td>
+
                         {/* Student */}
-                        <td className="px-8 py-5">
+                        <td className="px-6 py-5">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-secondary/10 dark:bg-secondary/20 flex items-center justify-center text-secondary font-black uppercase text-base">
                               {studentName.charAt(0)}
