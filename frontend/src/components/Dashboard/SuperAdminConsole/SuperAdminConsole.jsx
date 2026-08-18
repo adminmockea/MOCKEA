@@ -10,23 +10,19 @@ import {
   PiGear,
   PiUsersThree,
   PiBug,
-  PiTrash,
-  PiCaretDown,
-  PiCaretUp,
-  PiCopy,
   PiDatabase,
   PiEnvelopeSimple,
-  PiDownloadSimple,
-  PiPlay,
-  PiEye,
-  PiPencilSimple,
-  PiNotebook,
-  PiQuestion,
-  PiFileText,
-  PiArrowsClockwise,
   PiRobot,
-  PiSliders,
 } from "react-icons/pi";
+
+import MetricsTab from "./tabs/MetricsTab";
+import AuditLogsTab from "./tabs/AuditLogsTab";
+import ErrorAnalyticsTab from "./tabs/ErrorAnalyticsTab";
+import DatabaseManagerTab from "./tabs/DatabaseManagerTab";
+import EmailBroadcastTab from "./tabs/EmailBroadcastTab";
+import CacheManagerTab from "./tabs/CacheManagerTab";
+import AiTutorConfigTab from "./tabs/AiTutorConfigTab";
+import SecurityBlacklistTab from "./tabs/SecurityBlacklistTab";
 
 const SuperAdminConsole = () => {
   const queryClient = useQueryClient();
@@ -637,7 +633,7 @@ const SuperAdminConsole = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Nav */}
       <div className="tabs tabs-boxed bg-base-100 p-1 rounded-2xl border border-base-300 flex overflow-x-auto shrink-0">
         <button
           onClick={() => setActiveTab("metrics")}
@@ -733,1421 +729,129 @@ const SuperAdminConsole = () => {
 
       {/* Tab Panels */}
       <div className="space-y-6">
-        {/* Panel 1: Metrics */}
-        {activeTab === "metrics" && metrics && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-                <PiChartBar className="w-5 h-5 text-green-500" /> Database Health
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Status:</span>
-                  <span className="font-bold text-green-600">{metrics.database?.status}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Collections:</span>
-                  <span className="font-bold">{metrics.database?.collectionsCount}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-                <PiGear className="w-5 h-5 text-blue-500" /> Server Performance
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Node CPU / Heap:</span>
-                  <span className="font-bold text-blue-600">{metrics.server?.memory?.heapUsed}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Uptime:</span>
-                  <span className="font-bold">{Math.round(metrics.server?.uptime / 60)} mins</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-                <PiChartBar className="w-5 h-5 text-orange-500" /> Site Metrics
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Total Active Users:</span>
-                  <span className="font-bold">{metrics.counts?.users}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Total Audit Logs:</span>
-                  <span className="font-bold">{metrics.counts?.auditLogs}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        {(activeTab === "metrics" || activeTab === "flags") && (
+          <MetricsTab
+            metrics={metrics}
+            config={config}
+            updating={updating}
+            handleToggleMaintenance={handleToggleMaintenance}
+            handleToggleFlag={handleToggleFlag}
+            handleUpdateNotice={handleUpdateNotice}
+            activeSubTab={activeTab}
+          />
         )}
 
-        {/* Panel 2: Feature Flags */}
-        {activeTab === "flags" && config && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Flags card */}
-            <div className="card bg-base-100 border border-base-300 p-6 md:p-8 rounded-[2rem] shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Module Controls (Feature Flags)</h2>
-              <p className="text-xs text-slate-400 mb-6">Toggling flags is instant and applies to all active sessions immediately.</p>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-base-200 pb-3">
-                  <div>
-                    <h4 className="font-bold text-sm">AI evaluation engine</h4>
-                    <p className="text-xs text-slate-500">Grading of IELTS essays using OpenAI models.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={config.featureFlags?.aiGrading}
-                    onChange={() => handleToggleFlag("aiGrading")}
-                    disabled={updating}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-b border-base-200 pb-3">
-                  <div>
-                    <h4 className="font-bold text-sm">Anti-Cheat tab switch monitoring</h4>
-                    <p className="text-xs text-slate-500">Submits test automatically when tab changes.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={config.featureFlags?.antiCheatTabSwitch}
-                    onChange={() => handleToggleFlag("antiCheatTabSwitch")}
-                    disabled={updating}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-b border-base-200 pb-3">
-                  <div>
-                    <h4 className="font-bold text-sm">IELTS Speaking Beta module</h4>
-                    <p className="text-xs text-slate-500">Enable voice processing laboratories.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={config.featureFlags?.speakingPracticeBeta}
-                    onChange={() => handleToggleFlag("speakingPracticeBeta")}
-                    disabled={updating}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Announcement Notices Form */}
-            <div className="card bg-base-100 border border-base-300 p-6 md:p-8 rounded-[2rem] shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Broadcast System Notice</h2>
-              
-              <form onSubmit={handleUpdateNotice} className="space-y-4">
-                <div className="form-control w-full">
-                  <label className="label">
-                    <span className="label-text">Notice Status</span>
-                  </label>
-                  <select name="noticeActive" defaultValue={config.systemNotice?.active?.toString()} className="select select-bordered rounded-2xl w-full">
-                    <option value="true">Active (Visible Sitewide)</option>
-                    <option value="false">Inactive (Hidden)</option>
-                  </select>
-                </div>
-
-                <div className="form-control w-full">
-                  <label className="label">
-                    <span className="label-text">Notice Style</span>
-                  </label>
-                  <select name="noticeType" defaultValue={config.systemNotice?.type || "info"} className="select select-bordered rounded-2xl w-full">
-                    <option value="info">Information (Blue)</option>
-                    <option value="warning">Warning (Orange)</option>
-                    <option value="error">Critical (Red)</option>
-                  </select>
-                </div>
-
-                <div className="form-control w-full">
-                  <label className="label">
-                    <span className="label-text">Broadcast Message</span>
-                  </label>
-                  <textarea
-                    name="noticeMessage"
-                    defaultValue={config.systemNotice?.message || ""}
-                    placeholder="Enter announcement text..."
-                    className="textarea textarea-bordered rounded-2xl w-full h-24 focus:outline-none"
-                    required
-                  ></textarea>
-                </div>
-
-                <button type="submit" disabled={updating} className="btn btn-primary rounded-2xl w-full font-bold">
-                  {updating ? "Saving Changes..." : "Publish Broadcast"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Panel 3: Impersonation */}
         {activeTab === "impersonate" && (
           <div className="max-w-xl mx-auto">
             <ImpersonationTool />
           </div>
         )}
 
-        {/* Panel 4: Audit Trail */}
         {activeTab === "audit" && (
-          <div className="card bg-base-100 border border-base-300 rounded-[2rem] overflow-hidden shadow-sm p-4 md:p-6">
-            <h2 className="text-xl font-bold mb-4">Platform Audit Trail Log</h2>
-            <div className="overflow-x-auto shrink-0 mb-4">
-              <table className="table w-full">
-                <thead>
-                  <tr className="bg-base-200">
-                    <th>Admin / Actor</th>
-                    <th>Action Event</th>
-                    <th>Target Model</th>
-                    <th>IP Address</th>
-                    <th>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="text-center py-6 text-slate-400">
-                        No audit records found.
-                      </td>
-                    </tr>
-                  ) : (
-                    auditLogs.map((log) => (
-                      <tr key={log._id}>
-                        <td>
-                          <div className="font-semibold text-sm">{log.actorEmail}</div>
-                          <div className="text-xs badge badge-secondary">{log.actorRole}</div>
-                        </td>
-                        <td>
-                          <span className="font-mono text-xs font-bold text-red-600 bg-red-50 dark:bg-red-950/20 px-2 py-1 rounded">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td>{log.targetType}</td>
-                        <td className="text-xs text-slate-500 font-mono">{log.ipAddress}</td>
-                        <td className="text-xs text-slate-500">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {auditLogsTotalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
-                <button
-                  onClick={() => setAuditLogsPage((p) => Math.max(p - 1, 1))}
-                  disabled={auditLogsPage === 1}
-                  className="btn btn-sm btn-outline rounded-xl"
-                >
-                  Previous
-                </button>
-                <span className="self-center text-xs font-semibold px-4">
-                  Page {auditLogsPage} of {auditLogsTotalPages}
-                </span>
-                <button
-                  onClick={() => setAuditLogsPage((p) => Math.min(p + 1, auditLogsTotalPages))}
-                  disabled={auditLogsPage === auditLogsTotalPages}
-                  className="btn btn-sm btn-outline rounded-xl"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
+          <AuditLogsTab
+            auditLogs={auditLogs}
+            auditLogsPage={auditLogsPage}
+            auditLogsTotalPages={auditLogsTotalPages}
+            setAuditLogsPage={setAuditLogsPage}
+          />
         )}
 
-        {/* Panel 5: System Error Aggregation */}
         {activeTab === "errors" && (
-          <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-base-200 pb-4">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <PiBug className="text-red-500 w-6 h-6" /> Detailed Backend Error Aggregation
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Clusters backend error stack traces automatically, calculated from the latest 5,000 occurrences.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Sort control */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-500">Sort by:</span>
-                  <select
-                    value={errorSortBy}
-                    onChange={(e) => setErrorSortBy(e.target.value)}
-                    className="select select-sm select-bordered rounded-xl text-xs font-medium focus:outline-none"
-                  >
-                    <option value="count">Total Count</option>
-                    <option value="countLastHour">Last 1 Hour</option>
-                    <option value="countLast24Hours">Last 24 Hours</option>
-                  </select>
-                </div>
-
-                {/* Action buttons */}
-                <button
-                  onClick={fetchErrorAnalytics}
-                  disabled={loadingErrors}
-                  className="btn btn-sm btn-outline rounded-xl font-semibold"
-                >
-                  {loadingErrors ? "Loading..." : "Refresh"}
-                </button>
-
-                <button
-                  onClick={handleClearErrorLogs}
-                  disabled={clearingErrors}
-                  className="btn btn-sm btn-error btn-outline rounded-xl font-semibold gap-1"
-                >
-                  <PiTrash className="w-4 h-4" />
-                  Flush Error Logs
-                </button>
-              </div>
-            </div>
-
-            {loadingErrors ? (
-              <div className="flex justify-center items-center py-12">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
-              </div>
-            ) : errorClusters.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                <PiBug className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                No aggregated backend error logs found.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {[...errorClusters]
-                  .sort((a, b) => b[errorSortBy] - a[errorSortBy])
-                  .map((cluster) => {
-                    const isExpanded = expandedErrorSig === cluster.signature;
-                    return (
-                      <div
-                        key={cluster.signature}
-                        className="border border-base-200 rounded-2xl overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition"
-                      >
-                        {/* Summary Header Row */}
-                        <div
-                          onClick={() => setExpandedErrorSig(isExpanded ? null : cluster.signature)}
-                          className="bg-base-50/50 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer select-none"
-                        >
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {/* Representative Status code badges */}
-                              {Object.keys(cluster.statuses).map((status) => (
-                                <span
-                                  key={status}
-                                  className={`badge badge-sm font-mono font-bold ${
-                                    status.startsWith("5")
-                                      ? "badge-error text-white"
-                                      : "badge-warning"
-                                  }`}
-                                >
-                                  {status}
-                                </span>
-                              ))}
-                              {/* Paths / routes */}
-                              <span className="font-semibold font-mono text-xs text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded">
-                                {Object.keys(cluster.paths)[0] || "Client / Background"}
-                              </span>
-                              {Object.keys(cluster.paths).length > 1 && (
-                                <span className="text-[10px] text-slate-400 font-semibold bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 px-1 rounded">
-                                  +{Object.keys(cluster.paths).length - 1} more routes
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate">
-                              {cluster.message}
-                            </h3>
-                          </div>
-
-                          {/* Stats Badges */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="text-center">
-                              <span className="block text-[10px] uppercase font-bold text-slate-400">Total</span>
-                              <span className="badge badge-neutral font-mono font-semibold">{cluster.count}</span>
-                            </div>
-                            {cluster.countLast24Hours > 0 && (
-                              <div className="text-center">
-                                <span className="block text-[10px] uppercase font-bold text-orange-400">24h</span>
-                                <span className="badge badge-warning font-mono font-semibold text-white">{cluster.countLast24Hours}</span>
-                              </div>
-                            )}
-                            {cluster.countLastHour > 0 && (
-                              <div className="text-center">
-                                <span className="block text-[10px] uppercase font-bold text-red-500">1h</span>
-                                <span className="badge badge-error font-mono font-semibold text-white">{cluster.countLastHour}</span>
-                              </div>
-                            )}
-                            <div className="pl-2">
-                              {isExpanded ? <PiCaretUp className="w-5 h-5" /> : <PiCaretDown className="w-5 h-5" />}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Collapsible Details Body */}
-                        {isExpanded && (
-                          <div className="p-4 border-t border-base-200 bg-base-100 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                              {/* Metadata breakdown */}
-                              <div className="space-y-3">
-                                <div>
-                                  <h4 className="font-bold text-slate-400 uppercase text-[10px]">Impact & Timing</h4>
-                                  <div className="grid grid-cols-2 gap-2 mt-1">
-                                    <div className="bg-base-50 p-2 rounded-xl border border-base-200">
-                                      <span className="text-[10px] text-slate-500 block">First Seen</span>
-                                      <span className="font-medium">{new Date(cluster.firstSeen).toLocaleString()}</span>
-                                    </div>
-                                    <div className="bg-base-50 p-2 rounded-xl border border-base-200">
-                                      <span className="text-[10px] text-slate-500 block">Last Seen</span>
-                                      <span className="font-medium">{new Date(cluster.lastSeen).toLocaleString()}</span>
-                                    </div>
-                                    <div className="bg-base-50 p-2 rounded-xl border border-base-200 col-span-2">
-                                      <span className="text-[10px] text-slate-500 block">Affected Users ({cluster.uniqueUsersCount} total)</span>
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {cluster.users.length === 0 ? (
-                                          <span className="text-slate-400 font-medium italic">Anonymous / Client logs</span>
-                                        ) : (
-                                          cluster.users.map((email) => (
-                                            <span key={email} className="badge badge-ghost font-mono text-[10px]">{email}</span>
-                                          ))
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <h4 className="font-bold text-slate-400 uppercase text-[10px]">Affected API Endpoints</h4>
-                                  <div className="mt-1 space-y-1 max-h-32 overflow-y-auto pr-1">
-                                    {Object.entries(cluster.paths).map(([path, cnt]) => (
-                                      <div key={path} className="flex justify-between bg-base-50 px-2.5 py-1.5 rounded-lg border border-base-200 font-mono text-[11px]">
-                                        <span className="text-slate-700 dark:text-slate-300 truncate">{path}</span>
-                                        <span className="font-bold text-slate-500">{cnt}x</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Stack Trace display */}
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <h4 className="font-bold text-slate-400 uppercase text-[10px]">Stack Trace & Signature</h4>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(cluster.stack || cluster.signature);
-                                    toast.success("Stack trace copied to clipboard.");
-                                  }}
-                                  className="btn btn-xs btn-outline rounded-lg flex items-center gap-1 font-semibold text-[10px] py-1 px-2"
-                                >
-                                  <PiCopy className="w-3 h-3" />
-                                  Copy Trace
-                                </button>
-                              </div>
-                              <pre className="mockup-code bg-slate-900 text-slate-200 p-4 rounded-xl text-[11px] font-mono overflow-x-auto select-text max-h-[300px] border border-slate-800">
-                                <code>{cluster.stack || cluster.signature}</code>
-                              </pre>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-          </div>
+          <ErrorAnalyticsTab
+            errorClusters={errorClusters}
+            errorSortBy={errorSortBy}
+            setErrorSortBy={setErrorSortBy}
+            expandedErrorSig={expandedErrorSig}
+            setExpandedErrorSig={setExpandedErrorSig}
+            loadingErrors={loadingErrors}
+            clearingErrors={clearingErrors}
+            fetchErrorAnalytics={fetchErrorAnalytics}
+            handleClearErrorLogs={handleClearErrorLogs}
+          />
         )}
-        {/* Panel 6: Database Engine */}
+
         {activeTab === "database" && (
-          <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <PiDatabase className="text-primary w-6 h-6" /> Database Seed & Export Engine
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Export database collections to CSV or JSON, download specific student information spreadsheets, or trigger database seeders to populate mock tests.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Collection list and export controls */}
-              <div className="lg:col-span-2 space-y-4">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Available Collections</h3>
-                {loadingCollections ? (
-                  <div className="flex justify-center items-center py-8">
-                    <span className="loading loading-spinner loading-md text-primary"></span>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      { key: "users", label: "Users Collection", api: "users", icon: PiUsersThree, color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/20" },
-                      { key: "mockTests", label: "Mock Tests", api: "mocktests", icon: PiNotebook, color: "text-amber-500 bg-amber-50 dark:bg-amber-950/20" },
-                      { key: "questions", label: "Questions", api: "questions", icon: PiQuestion, color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20" },
-                      { key: "submissions", label: "Submissions", api: "submissions", icon: PiFileText, color: "text-blue-500 bg-blue-50 dark:bg-blue-950/20" },
-                      { key: "auditLogs", label: "Platform Audit", api: "auditlogs", icon: PiShieldWarning, color: "text-purple-500 bg-purple-50 dark:bg-purple-950/20" },
-                      { key: "errorLogs", label: "System Errors", api: "errorlogs", icon: PiBug, color: "text-rose-500 bg-rose-50 dark:bg-rose-950/20" },
-                    ].map((col) => {
-                      const IconComponent = col.icon;
-                      return (
-                        <div key={col.key} className="bg-base-100 hover:bg-base-200/40 transition duration-300 p-5 rounded-3xl border border-base-300 flex flex-col justify-between gap-4 shadow-sm hover:shadow-md">
-                          <div className="flex justify-between items-start gap-3">
-                            <div className="flex gap-3 items-center min-w-0">
-                              <div className={`p-2.5 rounded-2xl shrink-0 ${col.color}`}>
-                                <IconComponent className="w-5 h-5" />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="font-bold text-slate-800 dark:text-white text-sm block truncate">{col.label}</span>
-                                <span className="text-[10px] text-slate-400 font-mono mt-0.5 block truncate">/api/superadmin/export/{col.api}</span>
-                              </div>
-                            </div>
-                            <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-full text-xs font-mono font-bold flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                              {collectionCounts ? collectionCounts[col.key] || 0 : "0"} docs
-                            </span>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => handleExport(col.api, "csv")}
-                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
-                            >
-                              <PiDownloadSimple className="w-3 h-3" /> CSV
-                            </button>
-                            <button
-                              onClick={() => handleExport(col.api, "xlsx")}
-                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
-                            >
-                              <PiDownloadSimple className="w-3 h-3" /> Excel
-                            </button>
-                            <button
-                              onClick={() => handleExport(col.api, "json")}
-                              className="btn btn-xs btn-outline hover:btn-primary rounded-xl flex-1 font-bold flex items-center justify-center gap-1 py-1.5 h-auto min-h-0 cursor-pointer text-[10px]"
-                            >
-                              <PiDownloadSimple className="w-3 h-3" /> JSON
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Special actions card */}
-              <div className="space-y-6">
-                {/* Download student info */}
-                <div className="card bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-100 dark:border-indigo-900/50 p-6 rounded-3xl shadow-sm space-y-4">
-                  <h4 className="font-bold text-indigo-900 dark:text-indigo-200 text-sm flex items-center gap-2">
-                    <PiDownloadSimple className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Student Analytics Export
-                  </h4>
-                  <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                    Instantly download the complete list of students including their registration email, plan subscription tier (Free/Standard/Premium), last active timestamp, exam type, gender, and status.
-                  </p>
-                  <div className="flex flex-col gap-2 pt-2">
-                    <button
-                      onClick={() => handleExport("students-info", "csv")}
-                      className="btn btn-sm btn-primary rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer w-full"
-                    >
-                      <PiDownloadSimple className="w-4 h-4" /> Download Students CSV
-                    </button>
-                    <button
-                      onClick={() => handleExport("students-info", "xlsx")}
-                      className="btn btn-sm btn-outline rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-transparent hover:bg-indigo-600 hover:text-white transition duration-200 cursor-pointer w-full"
-                    >
-                      <PiDownloadSimple className="w-4 h-4" /> Download Students Excel
-                    </button>
-                    <button
-                      onClick={() => handleExport("students-info", "json")}
-                      className="btn btn-sm btn-outline rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-transparent hover:bg-indigo-600 hover:text-white transition duration-200 cursor-pointer w-full"
-                    >
-                      <PiDownloadSimple className="w-4 h-4" /> Download Students JSON
-                    </button>
-                  </div>
-                </div>
-
-                {/* DB Seeder */}
-                <div className="card bg-base-200/30 border border-base-300 p-6 rounded-3xl shadow-sm space-y-4">
-                  <h4 className="font-bold text-sm flex items-center gap-2">
-                    <PiPlay className="w-5 h-5 text-emerald-500" /> Database Seeder Engine
-                  </h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Need to populate mock tests during a server spin-up or testing cycles? Spin up default IELTS mock test sets, reading passages, speaking files, and questions in one-click.
-                  </p>
-                  <div className="pt-2">
-                    <button
-                      onClick={handleRunSeeder}
-                      disabled={seeding}
-                      className="btn btn-sm rounded-xl font-bold w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0 transition duration-300 shadow-sm hover:shadow-md cursor-pointer h-10"
-                    >
-                      {seeding ? "Running Seeders..." : "Run Database Seeder"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DatabaseManagerTab
+            collectionCounts={collectionCounts}
+            loadingCollections={loadingCollections}
+            seeding={seeding}
+            handleExport={handleExport}
+            handleRunSeeder={handleRunSeeder}
+          />
         )}
 
-        {/* Panel 7: Notification Broadcast */}
-        {activeTab === "email" && (
-          <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <PiEnvelopeSimple className="text-primary w-6 h-6" /> Interactive Notification Broadcast
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Compose styled system updates and promotional notifications, verify targeting parameters, and broadcast them directly to specific cohorts of users.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Compose form */}
-              <div className="card border border-base-300 p-6 rounded-3xl bg-base-50/50 space-y-4">
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">Compose New Broadcast</h3>
-                <form onSubmit={handleSendBroadcast} className="space-y-4">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-semibold">Target Cohort</span>
-                    </label>
-                    <select
-                      value={emailCohort}
-                      onChange={(e) => setEmailCohort(e.target.value)}
-                      className="select select-bordered rounded-2xl w-full"
-                    >
-                      <option value="all">All Registered Students</option>
-                      <option value="free">Free Tier Subscribers</option>
-                      <option value="standard">Standard Tier Subscribers</option>
-                      <option value="premium">Premium Tier Subscribers</option>
-                      <option value="inactive">Inactive Students (No activity in 30 days)</option>
-                    </select>
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-semibold">Subject / Title</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={emailSubject}
-                      onChange={(e) => setEmailSubject(e.target.value)}
-                      placeholder="e.g. Upgrade to Pro & Save 30%!"
-                      className="input input-bordered rounded-2xl w-full"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-semibold">Notification Content (Supports Markdown)</span>
-                    </label>
-                    <textarea
-                      value={emailContent}
-                      onChange={(e) => setEmailContent(e.target.value)}
-                      placeholder="Write your notification message here... Use markdown for headers (#), bold (**), or bullet lists."
-                      className="textarea textarea-bordered rounded-2xl w-full h-48 focus:outline-none font-mono text-sm"
-                      required
-                    ></textarea>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={sendingBroadcast}
-                    className="btn btn-primary rounded-2xl w-full font-bold"
-                  >
-                    {sendingBroadcast ? "Sending Broadcast..." : "Send Notification Broadcast"}
-                  </button>
-                </form>
-              </div>
-
-              {/* Preview & info */}
-              <div className="flex flex-col gap-6">
-                <div className="card border border-base-300 p-6 rounded-3xl flex-1 flex flex-col min-h-[300px]">
-                  <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-2">Live Template Preview</h3>
-                  <div className="flex-1 bg-white dark:bg-slate-900 border border-base-200 dark:border-slate-800 rounded-2xl p-4 overflow-y-auto max-h-[400px]">
-                    {emailSubject ? (
-                      <h4 className="text-lg font-black text-slate-800 dark:text-white border-b pb-2 mb-3">
-                        {emailSubject}
-                      </h4>
-                    ) : (
-                      <span className="text-slate-400 italic text-sm block mb-3">Enter subject to preview...</span>
-                    )}
-
-                    {emailContent ? (
-                      <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                        {/* Super simple markdown parsing for safety & visual wow */}
-                        {emailContent
-                          .replace(/^#\s+(.+)$/gm, '<h2 class="text-xl font-bold mt-4 mb-2 text-primary">$1</h2>')
-                          .replace(/^##\s+(.+)$/gm, '<h3 class="text-lg font-bold mt-3 mb-1">$1</h3>')
-                          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                          .split("\n")
-                          .map((line, idx) => {
-                            if (line.startsWith("<h") || line.startsWith("<strong>")) {
-                              return <div key={idx} dangerouslySetInnerHTML={{ __html: line }} />;
-                            }
-                            return <p key={idx} className="mb-2">{line}</p>;
-                          })
-                        }
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 italic text-sm block">Write content to preview output...</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Broadcast history list */}
-            <div className="border-t border-base-200 pt-6">
-              <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300 mb-4">Past Broadcast History</h3>
-              {loadingBroadcasts ? (
-                <div className="flex justify-center items-center py-6">
-                  <span className="loading loading-spinner loading-md text-primary"></span>
-                </div>
-              ) : broadcasts.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-sm">
-                  No past notification broadcasts found.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="table w-full text-xs">
-                    <thead>
-                      <tr className="bg-base-200">
-                        <th>Subject</th>
-                        <th>Target Cohort</th>
-                        <th>Recipients</th>
-                        <th>Sent By</th>
-                        <th>Date Sent</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {broadcasts.map((b) => (
-                        <tr key={b._id}>
-                          <td className="font-semibold text-slate-800 dark:text-white">{b.subject}</td>
-                          <td>
-                            <span className="badge badge-sm badge-secondary capitalize">{b.cohort}</span>
-                          </td>
-                          <td className="font-mono font-bold text-primary">{b.recipientCount} users</td>
-                          <td>{b.sentBy}</td>
-                          <td>{new Date(b.createdAt).toLocaleString()}</td>
-                          <td>
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => setSelectedBroadcast(b)}
-                                className="btn btn-xs btn-outline rounded-lg flex items-center gap-1"
-                              >
-                                <PiEye /> View
-                              </button>
-                              <button
-                                onClick={() => handleStartEditBroadcast(b)}
-                                className="btn btn-xs btn-outline btn-info rounded-lg flex items-center gap-1"
-                              >
-                                <PiPencilSimple /> Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteBroadcast(b._id)}
-                                className="btn btn-xs btn-outline btn-error rounded-lg flex items-center gap-1"
-                              >
-                                <PiTrash /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Modal for viewing details */}
-            {selectedBroadcast && (
-              <div className="modal modal-open">
-                <div className="modal-box max-w-2xl rounded-3xl">
-                  <h3 className="font-black text-xl mb-2">{selectedBroadcast.subject}</h3>
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    <span className="badge badge-neutral">Cohort: {selectedBroadcast.cohort.toUpperCase()}</span>
-                    <span className="badge badge-primary">{selectedBroadcast.recipientCount} Recipients</span>
-                    <span className="badge badge-ghost text-xs">Sent {new Date(selectedBroadcast.createdAt).toLocaleString()}</span>
-                  </div>
-                  <div className="border border-base-300 bg-base-100 p-4 rounded-2xl max-h-[300px] overflow-y-auto whitespace-pre-wrap font-mono text-xs">
-                    {selectedBroadcast.content}
-                  </div>
-                  <div className="modal-action">
-                    <button onClick={() => setSelectedBroadcast(null)} className="btn btn-sm rounded-xl">
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Modal for editing broadcast */}
-            {editingBroadcast && (
-              <div className="modal modal-open">
-                <div className="modal-box max-w-2xl rounded-3xl">
-                  <h3 className="font-black text-xl mb-4">Edit Notification Broadcast</h3>
-                  <form onSubmit={handleUpdateBroadcast} className="space-y-4">
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text font-semibold">Target Cohort</span>
-                      </label>
-                      <select
-                        value={editCohort}
-                        onChange={(e) => setEditCohort(e.target.value)}
-                        className="select select-bordered rounded-2xl w-full"
-                      >
-                        <option value="all">All Registered Students</option>
-                        <option value="free">Free Tier Subscribers</option>
-                        <option value="standard">Standard Tier Subscribers</option>
-                        <option value="premium">Premium Tier Subscribers</option>
-                        <option value="inactive">Inactive Students (No activity in 30 days)</option>
-                      </select>
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text font-semibold">Subject / Title</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editSubject}
-                        onChange={(e) => setEditSubject(e.target.value)}
-                        placeholder="e.g. Upgrade to Pro & Save 30%!"
-                        className="input input-bordered rounded-2xl w-full"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text font-semibold">Notification Content (Supports Markdown)</span>
-                      </label>
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="Write your notification message here..."
-                        className="textarea textarea-bordered rounded-2xl w-full h-48 focus:outline-none font-mono text-sm"
-                        required
-                      ></textarea>
-                    </div>
-
-                    <div className="modal-action gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingBroadcast(null)}
-                        className="btn btn-sm btn-ghost rounded-xl"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isUpdatingBroadcast}
-                        className="btn btn-sm btn-primary rounded-xl font-bold"
-                      >
-                        {isUpdatingBroadcast ? "Saving..." : "Save Changes"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Panel 8: Cache Manager */}
         {activeTab === "cache" && (
-          <div className="card bg-base-100 border border-base-300 p-6 md:p-8 rounded-[2rem] shadow-sm space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <PiDatabase className="text-primary w-6 h-6" /> Memory & Redis Cache Engine
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Inspect connection status, key counts, and selectively clear mock tests or practice lab cached questions.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={fetchCacheStats}
-                  disabled={loadingCache}
-                  className="btn btn-outline btn-sm rounded-xl gap-2 font-bold"
-                >
-                  <PiArrowsClockwise className={`w-4 h-4 ${loadingCache ? "animate-spin" : ""}`} />
-                  Refresh
-                </button>
-                <button
-                  onClick={() => handleClearCache(null)}
-                  disabled={clearingCache || loadingCache}
-                  className="btn btn-error btn-sm rounded-xl gap-2 font-bold text-white"
-                >
-                  <PiTrash className="w-4 h-4" />
-                  Flush Entire Cache
-                </button>
-              </div>
-            </div>
-
-            {/* Cache Stats Grid */}
-            {cacheStats && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="card bg-base-200 border border-base-300 p-6 rounded-2xl shadow-inner flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Connection Status</h4>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3.5 h-3.5 rounded-full ${cacheStats.connected ? "bg-green-500 animate-pulse" : "bg-red-500 animate-pulse"}`} />
-                      <span className="font-black text-lg text-slate-800 dark:text-white">
-                        {cacheStats.connected ? "Online & Ready" : "Offline / Local"}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400 mt-4">Redis backend client health status.</span>
-                </div>
-
-                <div className="card bg-base-200 border border-base-300 p-6 rounded-2xl shadow-inner flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Cache Storage Type</h4>
-                    <span className="font-black text-lg text-slate-800 dark:text-white capitalize">
-                      {cacheStats.type === "redis" ? "Redis Cluster Caching" : "In-Memory Fallback Map"}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 mt-4">Local Map fallback active if REDIS_URL is unconfigured.</span>
-                </div>
-
-                <div className="card bg-base-200 border border-base-300 p-6 rounded-2xl shadow-inner flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Active Keys</h4>
-                    <span className="font-mono font-black text-2xl text-primary">
-                      {cacheStats.keysCount} <span className="text-xs font-normal text-slate-500">entries</span>
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 mt-4">Total number of records currently cached in memory or Redis.</span>
-                </div>
-              </div>
-            )}
-
-            {/* Quick-Clear Module Cache */}
-            <div className="border border-base-200 bg-base-200/30 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Quick-Evict Modules</h3>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => handleClearCache("mocktest:*")}
-                  disabled={clearingCache}
-                  className="btn btn-sm btn-secondary rounded-xl font-bold"
-                >
-                  Clear Mock Test Cache (`mocktest:*`)
-                </button>
-                <button
-                  onClick={() => handleClearCache("question:*")}
-                  disabled={clearingCache}
-                  className="btn btn-sm btn-secondary rounded-xl font-bold"
-                >
-                  Clear Practice Labs Cache (`question:*`)
-                </button>
-              </div>
-            </div>
-
-            {/* Daily Questions Cycle Manager */}
-            <div className="border border-base-200 bg-base-200/30 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Free Tier Daily Questions Cycle Manager</h3>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                Force reset the daily selected questions and seen questions history for a student or reset the cycle globally for all free tier users.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 items-end">
-                <div className="flex-1 w-full space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target Student Email</label>
-                  <input
-                    type="email"
-                    placeholder="student@example.com"
-                    className="input input-bordered rounded-xl w-full h-10 text-xs font-semibold bg-white"
-                    value={resetCycleEmail}
-                    onChange={(e) => setResetCycleEmail(e.target.value)}
-                  />
-                </div>
-                <button
-                  onClick={() => handleResetDailyQuestionsCycle(resetCycleEmail)}
-                  disabled={resettingCycle || !resetCycleEmail}
-                  className="btn btn-sm btn-primary rounded-xl font-bold h-10"
-                >
-                  Reset User Daily Questions Cycle
-                </button>
-                <button
-                  onClick={() => handleResetDailyQuestionsCycle(null)}
-                  disabled={resettingCycle}
-                  className="btn btn-sm btn-error text-white rounded-xl font-bold h-10"
-                >
-                  Reset Cycle Globally (All Users)
-                </button>
-              </div>
-            </div>
-
-            {/* Cache Keys Table */}
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">Cached Keys Index</h3>
-                <input
-                  type="text"
-                  placeholder="Filter cache keys..."
-                  className="input input-sm input-bordered rounded-xl max-w-xs w-full"
-                  value={cacheKeySearch}
-                  onChange={(e) => setCacheKeySearch(e.target.value)}
-                />
-              </div>
-
-              {loadingCache ? (
-                <div className="flex justify-center items-center py-12">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
-                </div>
-              ) : !cacheStats || cacheStats.keys.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-base-300 rounded-2xl">
-                  No active keys found in the cache database.
-                </div>
-              ) : (
-                <div className="overflow-x-auto border border-base-300 rounded-2xl">
-                  <table className="table w-full text-xs">
-                    <thead>
-                      <tr className="bg-base-200">
-                        <th>Key Name</th>
-                        <th className="text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cacheStats.keys
-                        .filter((key) => key.toLowerCase().includes(cacheKeySearch.toLowerCase()))
-                        .map((key) => (
-                          <tr key={key} className="hover:bg-base-200/50">
-                            <td className="font-mono font-bold text-slate-700 dark:text-slate-300">{key}</td>
-                            <td className="text-right">
-                              <button
-                                onClick={() => handleClearCache(key)}
-                                disabled={clearingCache}
-                                className="btn btn-ghost btn-xs text-error rounded-lg"
-                                title="Evict Key"
-                              >
-                                <PiTrash className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}        {/* Panel 9: AI Tutor Configurator */}
-        {activeTab === "chatbot" && (
-          <div className="card bg-base-100 border border-base-300 p-6 md:p-8 rounded-[2rem] shadow-sm space-y-8 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-base-200 pb-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-                  <PiRobot className="text-primary w-7 h-7" /> AI Tutor & LLM Configurator
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Adjust chatbot instructions, model providers, creativity settings, and usage limits across tiers.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={fetchChatbotSettings}
-                disabled={loadingChatbot}
-                className="btn btn-outline btn-sm rounded-xl gap-2 font-bold px-4 hover:bg-primary hover:text-white"
-              >
-                <PiArrowsClockwise className={`w-4 h-4 ${loadingChatbot ? "animate-spin" : ""}`} />
-                Refresh Configuration
-              </button>
-            </div>
-
-            {loadingChatbot || !chatbotSettings ? (
-              <div className="flex justify-center items-center py-20">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
-              </div>
-            ) : (
-              <form onSubmit={handleUpdateChatbotSettings} className="space-y-8">
-                
-                {/* Active Status & Basic Greeting */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="card bg-base-200 border border-base-300 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Service Availability</h4>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="toggle toggle-primary toggle-md"
-                          checked={chatbotSettings.isActive}
-                          onChange={(e) => setChatbotSettings({ ...chatbotSettings, isActive: e.target.checked })}
-                        />
-                        <span className="font-extrabold text-sm text-slate-700 dark:text-slate-300">
-                          {chatbotSettings.isActive ? "Online / Active" : "Disabled / Offline"}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-slate-400 mt-4 block">When off, students see a maintenance card.</span>
-                  </div>
-
-                  <div className="card bg-base-200 border border-base-300 p-6 rounded-2xl shadow-sm lg:col-span-2 flex flex-col gap-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Greeting Welcome Message</span>
-                    <input
-                      type="text"
-                      className="input input-bordered rounded-xl w-full bg-base-100 focus:input-primary text-sm font-medium py-3"
-                      value={chatbotSettings.welcomeMessage || ""}
-                      onChange={(e) => setChatbotSettings({ ...chatbotSettings, welcomeMessage: e.target.value })}
-                    />
-                    <span className="text-[10px] text-slate-400">First message displayed to users upon opening the study buddy dialog.</span>
-                  </div>
-                </div>
-
-                {/* Quotas & Limits */}
-                <div className="card border border-base-300 p-6 rounded-2xl shadow-sm space-y-4">
-                  <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <PiSliders className="text-primary w-5 h-5" /> Daily Message Quotas
-                  </h3>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Guest Tier</span>
-                      <input
-                        type="number"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                        value={chatbotSettings.guestLimit || 0}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, guestLimit: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Free User Tier</span>
-                      <input
-                        type="number"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                        value={chatbotSettings.freeLimit || 0}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, freeLimit: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Standard User Tier</span>
-                      <input
-                        type="number"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                        value={chatbotSettings.standardLimit || 0}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, standardLimit: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Premium User Tier</span>
-                      <input
-                        type="number"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                        value={chatbotSettings.premiumLimit || 0}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, premiumLimit: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Model Configuration */}
-                <div className="card border border-base-300 p-6 rounded-2xl shadow-sm space-y-6">
-                  <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <PiSliders className="text-primary w-5 h-5" /> Large Language Model (LLM) Integration
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">API Provider Format</span>
-                      <select
-                        className="select select-bordered rounded-xl w-full focus:select-primary font-medium"
-                        value={chatbotSettings.apiFormat || "gemini"}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, apiFormat: e.target.value })}
-                      >
-                        <option value="gemini">Google Gemini API Format</option>
-                        <option value="openai">OpenAI / Custom Compatible Format</option>
-                      </select>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Model Name Identifier</span>
-                      <input
-                        type="text"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-medium"
-                        value={chatbotSettings.modelName || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, modelName: e.target.value })}
-                        placeholder="e.g. gemini-2.5-flash or gpt-4o"
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Temperature (Creativity): <span className="font-mono text-primary font-bold text-xs">{chatbotSettings.temperature ?? 0.7}</span>
-                      </span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        className="range range-primary range-sm mt-1"
-                        value={chatbotSettings.temperature ?? 0.7}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, temperature: parseFloat(e.target.value) })}
-                      />
-                      <div className="w-full flex justify-between text-[9px] px-1 text-slate-400 mt-1">
-                        <span>Strict (0.0)</span>
-                        <span>Balanced (0.5)</span>
-                        <span>Creative (1.0)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Advanced Endpoint and Key override fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-base-200 pt-6">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">API Call Endpoint URL</span>
-                      <input
-                        type="text"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-mono text-xs"
-                        value={chatbotSettings.apiEndpoint || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, apiEndpoint: e.target.value })}
-                        placeholder="e.g., https://api.openai.com/v1/chat/completions"
-                      />
-                      <span className="text-[10px] text-slate-400">Allows pointing to custom gateway routers, Azure endpoints, or local models.</span>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">API Key Environment Variable Name</span>
-                      <input
-                        type="text"
-                        className="input input-bordered rounded-xl w-full focus:input-primary font-mono text-xs"
-                        value={chatbotSettings.apiKeyEnvName || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, apiKeyEnvName: e.target.value })}
-                        placeholder="e.g. GEMINI_API_KEY"
-                      />
-                      <span className="text-[10px] text-slate-400">Specifies which environment variable on the server holds the authorization secret.</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Custom Prompts Configuration */}
-                <div className="card border border-base-300 p-6 rounded-2xl shadow-sm space-y-6">
-                  <div>
-                    <h3 className="text-sm font-black text-slate-700 dark:text-slate-300">AI Persona Instructions & Prompts</h3>
-                    <p className="text-xs text-slate-500 mt-1">Define the strict system instructions loaded into LLM prompts for each chat agent role.</p>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        1. IELTS Tutor & Study Buddy Persona Prompt
-                      </span>
-                      <textarea
-                        rows={6}
-                        className="textarea textarea-bordered rounded-2xl w-full font-mono text-xs leading-relaxed focus:textarea-primary bg-base-200/30"
-                        value={chatbotSettings.tutorPrompt || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, tutorPrompt: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        2. TIMED Strict IELTS Examiner Persona Prompt
-                      </span>
-                      <textarea
-                        rows={6}
-                        className="textarea textarea-bordered rounded-2xl w-full font-mono text-xs leading-relaxed focus:textarea-primary bg-base-200/30"
-                        value={chatbotSettings.examinerPrompt || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, examinerPrompt: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        3. MOCKEA Application Site Assistant Persona Prompt
-                      </span>
-                      <textarea
-                        rows={6}
-                        className="textarea textarea-bordered rounded-2xl w-full font-mono text-xs leading-relaxed focus:textarea-primary bg-base-200/30"
-                        value={chatbotSettings.assistantPrompt || ""}
-                        onChange={(e) => setChatbotSettings({ ...chatbotSettings, assistantPrompt: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <button
-                    type="submit"
-                    disabled={savingChatbot}
-                    className="btn btn-primary rounded-2xl font-bold px-10 btn-md"
-                  >
-                    {savingChatbot ? "Saving AI Settings..." : "Save AI Configuration"}
-                  </button>
-                </div>
-
-              </form>
-            )}
-          </div>
+          <CacheManagerTab
+            cacheStats={cacheStats}
+            loadingCache={loadingCache}
+            clearingCache={clearingCache}
+            cacheKeySearch={cacheKeySearch}
+            setCacheKeySearch={setCacheKeySearch}
+            resetCycleEmail={resetCycleEmail}
+            setResetCycleEmail={setResetCycleEmail}
+            resettingCycle={resettingCycle}
+            fetchCacheStats={fetchCacheStats}
+            handleClearCache={handleClearCache}
+            handleResetDailyQuestionsCycle={handleResetDailyQuestionsCycle}
+          />
         )}
 
-        {/* Panel 10: Security Control */}
+        {activeTab === "chatbot" && (
+          <AiTutorConfigTab
+            chatbotSettings={chatbotSettings}
+            setChatbotSettings={setChatbotSettings}
+            loadingChatbot={loadingChatbot}
+            savingChatbot={savingChatbot}
+            fetchChatbotSettings={fetchChatbotSettings}
+            handleUpdateChatbotSettings={handleUpdateChatbotSettings}
+          />
+        )}
+
         {activeTab === "security" && (
-          <div className="card bg-base-100 border border-base-300 p-6 md:p-8 rounded-[2rem] shadow-sm space-y-8 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-base-200 pb-6">
-              <div>
-                <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-                  <PiShieldWarning className="text-error w-7 h-7" /> Security & Access Controls
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  Manage IP address blacklisting and dynamically configure API rate limit thresholds to prevent abuse.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={fetchBlacklist}
-                disabled={loadingBlacklist}
-                className="btn btn-outline btn-sm rounded-xl gap-2 font-bold px-4 hover:bg-primary hover:text-white"
-              >
-                <PiArrowsClockwise className={`w-4 h-4 ${loadingBlacklist ? "animate-spin" : ""}`} />
-                Refresh Logs
-              </button>
-            </div>
+          <SecurityBlacklistTab
+            config={config}
+            blacklistedIps={blacklistedIps}
+            loadingBlacklist={loadingBlacklist}
+            savingBlacklist={savingBlacklist}
+            newIpAddress={newIpAddress}
+            setNewIpAddress={setNewIpAddress}
+            newIpReason={newIpReason}
+            setNewIpReason={setNewIpReason}
+            savingRateLimits={savingRateLimits}
+            fetchBlacklist={fetchBlacklist}
+            handleBlacklistIp={handleBlacklistIp}
+            handleRemoveBlacklistedIp={handleRemoveBlacklistedIp}
+            handleSaveRateLimits={handleSaveRateLimits}
+          />
+        )}
 
-            {/* Part 1: Dynamic Rate Limiting Limits */}
-            {config && (
-              <form onSubmit={handleSaveRateLimits} className="card border border-base-300 p-6 rounded-2xl shadow-sm space-y-6">
-                <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                  <PiSliders className="text-primary w-5 h-5" /> Dynamic API Rate Limits
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Define requests-per-minute rate ceilings for active NAT gateways and client users. Modifying takes effect within 15 seconds.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Global API Limit (req/min)</span>
-                    <input
-                      type="number"
-                      name="globalLimit"
-                      className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                      defaultValue={config.rateLimits?.globalLimit ?? 60}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Auth Register Limit (req/min)</span>
-                    <input
-                      type="number"
-                      name="authLimit"
-                      className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                      defaultValue={config.rateLimits?.authLimit ?? 10}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Practice Submission Limit (req/min)</span>
-                    <input
-                      type="number"
-                      name="submitLimit"
-                      className="input input-bordered rounded-xl w-full focus:input-primary font-semibold text-sm"
-                      defaultValue={config.rateLimits?.submitLimit ?? 5}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end border-t border-base-200 pt-4">
-                  <button
-                    type="submit"
-                    disabled={savingRateLimits}
-                    className="btn btn-primary rounded-xl font-bold px-6 btn-sm text-white"
-                  >
-                    {savingRateLimits ? "Updating..." : "Save Rate Limits"}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Part 2: Blacklist IP Form */}
-            <form onSubmit={handleBlacklistIp} className="card border border-base-300 p-6 rounded-2xl shadow-sm space-y-6">
-              <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <PiTrash className="text-error w-5 h-5" /> Ban Abusive IP Address
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex flex-col gap-1.5 md:col-span-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target IP Address</span>
-                  <input
-                    type="text"
-                    className="input input-bordered rounded-xl w-full focus:input-primary text-sm font-semibold"
-                    placeholder="e.g. 198.51.100.42"
-                    value={newIpAddress}
-                    onChange={(e) => setNewIpAddress(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ban Reason / Notes</span>
-                  <input
-                    type="text"
-                    className="input input-bordered rounded-xl w-full focus:input-primary text-sm font-medium"
-                    placeholder="e.g. DDOS flood / Spamming essay submission endpoint"
-                    value={newIpReason}
-                    onChange={(e) => setNewIpReason(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end border-t border-base-200 pt-4">
-                <button
-                  type="submit"
-                  disabled={savingBlacklist}
-                  className="btn btn-error rounded-xl font-bold px-6 btn-sm text-white"
-                >
-                  {savingBlacklist ? "Banning..." : "Blacklist IP Address"}
-                </button>
-              </div>
-            </form>
-
-            {/* Part 3: IP Blacklist Table */}
-            <div className="space-y-4">
-              <h3 className="font-black text-sm text-slate-700 dark:text-slate-300">Currently Blacklisted IPs</h3>
-              
-              {loadingBlacklist ? (
-                <div className="flex justify-center items-center py-12">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
-                </div>
-              ) : blacklistedIps.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm border border-dashed border-base-300 rounded-2xl">
-                  No IP addresses are currently blacklisted.
-                </div>
-              ) : (
-                <div className="overflow-x-auto border border-base-300 rounded-2xl shadow-sm">
-                  <table className="table w-full text-xs">
-                    <thead>
-                      <tr className="bg-base-200">
-                        <th>IP Address</th>
-                        <th>Reason</th>
-                        <th>Blocked By</th>
-                        <th>Blocked Date</th>
-                        <th className="text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {blacklistedIps.map((block) => (
-                        <tr key={block._id} className="hover:bg-base-200/50">
-                          <td className="font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">{block.ip}</td>
-                          <td className="text-slate-500 font-medium">{block.reason}</td>
-                          <td className="font-semibold text-primary">{block.blockedBy}</td>
-                          <td>{new Date(block.createdAt).toLocaleString()}</td>
-                          <td className="text-right">
-                            <button
-                              onClick={() => handleRemoveBlacklistedIp(block._id)}
-                              className="btn btn-ghost btn-xs text-error rounded-lg"
-                              title="Unban IP"
-                            >
-                              Unban
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
+        {activeTab === "email" && (
+          <EmailBroadcastTab
+            broadcasts={broadcasts}
+            loadingBroadcasts={loadingBroadcasts}
+            sendingBroadcast={sendingBroadcast}
+            selectedBroadcast={selectedBroadcast}
+            setSelectedBroadcast={setSelectedBroadcast}
+            emailCohort={emailCohort}
+            setEmailCohort={setEmailCohort}
+            emailSubject={emailSubject}
+            setEmailSubject={setEmailSubject}
+            emailContent={emailContent}
+            setEmailContent={setEmailContent}
+            editingBroadcast={editingBroadcast}
+            setEditingBroadcast={setEditingBroadcast}
+            editSubject={editSubject}
+            setEditSubject={setEditSubject}
+            editContent={editContent}
+            setEditContent={setEditContent}
+            editCohort={editCohort}
+            setEditCohort={setEditCohort}
+            isUpdatingBroadcast={isUpdatingBroadcast}
+            handleSendBroadcast={handleSendBroadcast}
+            handleStartEditBroadcast={handleStartEditBroadcast}
+            handleUpdateBroadcast={handleUpdateBroadcast}
+            handleDeleteBroadcast={handleDeleteBroadcast}
+          />
         )}
       </div>
     </div>
