@@ -6,6 +6,7 @@ import {
     reviewSubmission,
     lockSubmission,
     deleteSubmission,
+    bulkDeleteSubmissions,
     getUploadSignature
 } from '../controllers/submissions.controller.js';
 import verifyUserToken from '../middlewares/verifyUserToken.js';
@@ -23,6 +24,7 @@ sRouter.get('/upload-signature', verifyUserToken, getUploadSignature);
 sRouter.get('/', verifyUserToken, verifyUserRole(['admin', 'instructor']), getSubmissions);
 sRouter.patch('/review/:id', verifyUserToken, verifyUserRole(['admin', 'instructor']), reviewSubmission);
 sRouter.patch('/lock/:id', verifyUserToken, verifyUserRole(['admin', 'instructor']), lockSubmission);
+sRouter.post('/bulk-delete', verifyUserToken, verifyUserRole(['admin']), bulkDeleteSubmissions);
 sRouter.delete('/:id', verifyUserToken, verifyUserRole(['admin']), deleteSubmission);
 
 export default sRouter;

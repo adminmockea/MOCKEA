@@ -15,6 +15,7 @@ import {
     getResultDetail,
     lockMockResult,
     deleteMockResult,
+    bulkDeleteMockResults,
     cloneMockTest,
     togglePublicStatus,
     bulkManageMockTests
@@ -43,6 +44,7 @@ mockTestRouter.post('/finalize', finalizeTest);
 // Instructor/Admin Routes for Manual Grading
 mockTestRouter.patch('/grade-section', verifyUserRole(['admin', 'instructor']), gradeSection);
 mockTestRouter.patch('/lock/:id', verifyUserRole(['admin', 'instructor']), lockMockResult);
+mockTestRouter.post('/results/bulk-delete', verifyUserRole(['admin']), bulkDeleteMockResults);
 mockTestRouter.delete('/results/:id', verifyUserRole(['admin']), deleteMockResult);
 
 // Admin-Only Management Routes (Double-check role)

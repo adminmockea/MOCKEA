@@ -280,6 +280,23 @@ export const deleteSubmission = async (req, res) => {
     }
 };
 
+export const bulkDeleteSubmissions = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: 'No submission IDs provided' });
+        }
+        const result = await PracticeSubmission.deleteMany({ _id: { $in: ids } });
+        res.status(200).json({
+            success: true,
+            message: `${result.deletedCount} submission(s) deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const getUploadSignature = async (req, res) => {
     try {
         if (!process.env.CLOUDINARY_API_SECRET) {

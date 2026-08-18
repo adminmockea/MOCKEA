@@ -727,6 +727,23 @@ export const deleteMockResult = async (req, res) => {
     }
 };
 
+export const bulkDeleteMockResults = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: 'No result IDs provided' });
+        }
+        const result = await MockTestResult.deleteMany({ _id: { $in: ids } });
+        res.status(200).json({
+            success: true,
+            message: `${result.deletedCount} mock test result(s) deleted successfully`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 export const cloneMockTest = async (req, res) => {
     try {
         const { id } = req.params;
