@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 import { logErrorToBackend } from '../../utils/errorLogger';
 
-const Error = () => {
+const ErrorPage = () => {
   const navigate = useNavigate();
   const error = useRouteError();
   const [showDetails, setShowDetails] = useState(false);
@@ -55,7 +55,7 @@ const Error = () => {
       : (error.data?.message || error.statusText || `Route error ${error.status}`);
     stackText = error.data?.stack || `React Router caught status ${error.status} (${error.statusText || 'No status text'})`;
 
-  } else if (error instanceof globalThis.Error) {
+  } else if (error && (error instanceof window.Error || typeof error.message === 'string' || error.name)) {
     const message = error.message || '';
     isChunkError =
       message.includes('Failed to fetch dynamically imported module') ||
@@ -227,5 +227,5 @@ const Error = () => {
   );
 };
 
-export default Error;
+export default ErrorPage;
 

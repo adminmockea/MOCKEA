@@ -144,8 +144,9 @@ const ReviewMatchingGrid = ({ items, options }) => {
     );
 };
 
-const groupReviewAnswers = (answers, currentSectionData, activeTab, activePassageTab, isSectionTab = false) => {
-    const mapped = answers.map((ans, idx) => {
+const groupReviewAnswers = (answers = [], currentSectionData, activeTab, activePassageTab, isSectionTab = false) => {
+    const safeAnswers = Array.isArray(answers) ? answers : [];
+    const mapped = safeAnswers.map((ans, idx) => {
         const parts = ans.questionId.split('_');
         const isScoped = parts.length > 1 && currentSectionData?._id && parts[0] === currentSectionData._id.toString();
         const localQId = isScoped ? parts.slice(1).join('_') : ans.questionId;
@@ -805,7 +806,7 @@ const ReviewDetail = () => {
     const groupedItems = useMemo(() => {
         if (!currentSectionResult || !currentSectionData) return [];
         const isSectionTab = sectionsList.length > 1;
-        const groups = groupReviewAnswers(currentSectionResult.answers, currentSectionData, activeTab, activePassageTab, isSectionTab);
+        const groups = groupReviewAnswers(currentSectionResult?.answers || [], currentSectionData, activeTab, activePassageTab, isSectionTab);
         return groupVisualsByQuestionGroups(groups, currentSectionData?.questionGroups);
     }, [currentSectionResult, currentSectionData, activeTab, activePassageTab, sectionsList]);
 
@@ -1249,7 +1250,7 @@ const ReviewDetail = () => {
                                             Your Submission
                                         </h3>
                                         {activeTab === 'speaking' ? (() => {
-                                            const speakingAnswer = currentSectionResult.answers.find(ans => 
+                                            const speakingAnswer = (currentSectionResult?.answers || []).find(ans => 
                                                 ans.questionId === currentSectionData?._id?.toString() ||
                                                 ans.questionId === currentSectionData?.id ||
                                                 (ans.userAnswer && (ans.userAnswer.includes("--- Part ") || ans.userAnswer.includes("Answer:")))
@@ -1373,7 +1374,7 @@ const ReviewDetail = () => {
                                                 </div>
                                             );
                                         })() : (() => {
-                                            const writingAnswer = currentSectionResult.answers.find(ans => 
+                                            const writingAnswer = (currentSectionResult?.answers || []).find(ans => 
                                                 ans.questionId === currentSectionData?._id?.toString() ||
                                                 ans.questionId === currentSectionData?.id ||
                                                 (ans.userAnswer && ans.userAnswer.includes("--- TASK 1"))

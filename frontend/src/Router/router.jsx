@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router";
 import PrivateRoute from "../context/PrivateRoute";
 import Loader from "../components/Loader/Loader";
-import Error from "../components/Common/Error";
+import ErrorPage from "../components/Common/Error";
 import { AdminRoutes } from "../context/Role Based Routes/AdminRoutes";
 import { SuperAdminRoutes } from "../context/Role Based Routes/SuperAdminRoutes";
 import { InstructorRoutes } from "../context/Role Based Routes/InstructorRoutes";
@@ -71,7 +71,7 @@ const MaintenancePage = lazy(() => import("../components/Common/MaintenancePage"
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
-    errorElement: <Error />,
+    errorElement: <ErrorPage />,
     children: [
       {
         path: "/maintenance",
