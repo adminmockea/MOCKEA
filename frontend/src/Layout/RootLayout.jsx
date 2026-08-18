@@ -52,12 +52,19 @@ export default function RootLayout() {
     if (maintenance.mode) {
       // If maintenance mode is active, only allow superadmins to bypass
       if (role !== "superadmin" && !isMaintenancePath && !isLoginPath) {
+        sessionStorage.setItem("redirectAfterMaintenance", location.pathname + location.search);
         navigate("/maintenance", { replace: true });
       }
     } else {
       // If maintenance mode is disabled, redirect users away from the maintenance page
       if (isMaintenancePath) {
-        navigate("/", { replace: true });
+        const savedPath = sessionStorage.getItem("redirectAfterMaintenance");
+        if (savedPath) {
+          sessionStorage.removeItem("redirectAfterMaintenance");
+          navigate(savedPath, { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       }
     }
   }, [maintenance.mode, role, roleLoading, configLoading, location.pathname, navigate]);
