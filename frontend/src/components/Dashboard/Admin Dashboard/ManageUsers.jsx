@@ -41,25 +41,34 @@ const roleIcon = (role) => {
 
 // ─── Role Dropdown ──────────────────────────────────────────────────────────────
 
-const RoleDropdown = ({ user, onChangeRole, loading, disabled }) => {
+const RoleDropdown = ({ user, onChangeRole, loading, disabled, currentUserRole }) => {
   const [open, setOpen] = useState(false);
+
+  const availableRoles = ROLES.filter((r) => {
+    if (r === user.role) return false;
+    if (currentUserRole !== "superadmin" && (r === "admin" || r === "superadmin")) return false;
+    return true;
+  });
+
   return (
     <div className="relative">
       <button
         className="btn btn-ghost btn-xs gap-1 font-semibold"
         onClick={() => setOpen((v) => !v)}
-        disabled={loading || disabled}
+        disabled={loading || disabled || availableRoles.length === 0}
       >
         <span>{roleIcon(user.role)}</span>
         <span className={`badge badge-sm ${ROLE_COLORS[user.role] ?? "badge-ghost"}`}>
           {user.role}
         </span>
-        {!disabled && <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />}
+        {!disabled && availableRoles.length > 0 && (
+          <PiCaretDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        )}
       </button>
 
-      {open && !disabled && (
+      {open && !disabled && availableRoles.length > 0 && (
         <div className="absolute left-0 top-full mt-1 z-30 min-w-[120px] rounded-xl border border-base-300 bg-base-100 shadow-xl overflow-hidden">
-          {ROLES.filter((r) => r !== user.role).map((r) => (
+          {availableRoles.map((r) => (
             <button
               key={r}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200 transition-colors"
@@ -205,7 +214,7 @@ const UserRow = ({ user, institutions, onChangeRole, onChangePlan, onChangeInsti
       </td>
 
       <td className="py-3">
-        <RoleDropdown user={user} onChangeRole={onChangeRole} loading={isLoading} disabled={isEditingDisabled} />
+        <RoleDropdown user={user} onChangeRole={onChangeRole} loading={isLoading} disabled={isEditingDisabled} currentUserRole={currentUserRole} />
       </td>
 
       <td className="py-3 hidden sm:table-cell">
@@ -389,8 +398,8 @@ const ManageUsers = () => {
         queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         setLoadingId(null);
     },
-    onError: () => {
-        toast.error("Failed to update role");
+    onError: (err) => {
+        toast.error(err.response?.data?.message || "Failed to update role");
         setLoadingId(null);
     }
   });
@@ -412,8 +421,8 @@ const ManageUsers = () => {
         queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         setLoadingId(null);
     },
-    onError: () => {
-        toast.error("Failed to update status");
+    onError: (err) => {
+        toast.error(err.response?.data?.message || "Failed to update status");
         setLoadingId(null);
     }
   });
