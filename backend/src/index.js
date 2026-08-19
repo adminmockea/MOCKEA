@@ -98,7 +98,7 @@ app.get("/api/settings/public", getPublicSystemConfig);
 
 
 app.get("/", (req, res) => {
-    res.send("MOCKEA Server is running");
+    res.json({ success: true, message: "MOCKEA Server is running" });
 })
 
 // Error handling middleware (must be last)
