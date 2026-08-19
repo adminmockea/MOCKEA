@@ -109,13 +109,28 @@ body,
   animation: voice-bar 1s ease-in-out infinite;
 }
 
-/* Ensure collapsed drawer side menu tooltips display properly and overlay correctly */
-@media (min-width: 1024px) {
-  .drawer-side.lg\:overflow-visible,
-  .drawer-side.lg\:overflow-visible > .menu {
-    overflow: visible !important;
-  }
+/* Sidebar menu layout & scrolling */
+.drawer-side .menu {
+  flex-wrap: nowrap !important;
+  flex-direction: column !important;
+  overflow-x: hidden !important;
 }
+
+.drawer-side .menu::-webkit-scrollbar {
+  width: 4px;
+}
+.drawer-side .menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.drawer-side .menu::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
+}
+.drawer-side .menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+
 
 /* Make sure DaisyUI tooltips are on top of other content overlays and have high z-index */
 .tooltip.z-50::before,

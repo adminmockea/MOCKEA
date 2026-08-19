@@ -162,12 +162,12 @@ const DashboardLayout = () => {
       </div>
 
       {!isFullscreen && (
-        <div className={`drawer-side z-50 transition-all duration-300 ${isDrawerOpen ? "" : "lg:w-20 lg:overflow-visible"}`}>
+        <div className={`drawer-side z-50 transition-all duration-300 ${isDrawerOpen ? "" : "lg:w-20"}`}>
           <label htmlFor="dashboard-drawer" className="drawer-overlay"></label>
           <ul 
             onClick={handleSidebarClick}
-            className={`menu p-4 min-h-full bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 overflow-y-auto ${
-              isDrawerOpen ? "w-80" : "w-80 lg:w-20 lg:overflow-visible"
+            className={`menu flex-col flex-nowrap p-4 h-screen max-h-screen bg-base-100 text-base-content border-r border-base-200 transition-all duration-300 overflow-y-auto overflow-x-hidden ${
+              isDrawerOpen ? "w-80" : "w-80 lg:w-20"
             }`}
           >
             {/* Sidebar content here */}
@@ -221,24 +221,25 @@ const DashboardLayout = () => {
 
             <div className="divider my-4"></div>
 
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Home">
-              <NavLink to="/" end className={!isDrawerOpen ? "justify-center" : ""}>
+            <li>
+              <NavLink to="/" end title={!isDrawerOpen ? "Home" : undefined} className={!isDrawerOpen ? "justify-center" : ""}>
                 <PiHouse className="w-5 h-5 shrink-0" />
                 {isDrawerOpen && <span>Home</span>}
               </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="My Profile">
-              <NavLink to="/dashboard/profile" className={!isDrawerOpen ? "justify-center" : ""}>
+            <li>
+              <NavLink to="/dashboard/profile" title={!isDrawerOpen ? "My Profile" : undefined} className={!isDrawerOpen ? "justify-center" : ""}>
                 <PiUser className="w-5 h-5 shrink-0" />
                 {isDrawerOpen && <span>My Profile</span>}
               </NavLink>
             </li>
-             <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Notifications">
+            <li>
               <button 
                 onClick={() => {
                   setShowNotificationsModal(true);
                   markNotificationsAsRead();
                 }} 
+                title={!isDrawerOpen ? "Notifications" : undefined}
                 className={`w-full flex items-center justify-between ${!isDrawerOpen ? "justify-center" : ""}`}
               >
                 <div className="flex items-center gap-3">
@@ -252,8 +253,8 @@ const DashboardLayout = () => {
                 )}
               </button>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Logout">
-              <button onClick={handleLogOut} className={`w-full flex items-center ${!isDrawerOpen ? "justify-center" : ""}`}>
+            <li>
+              <button onClick={handleLogOut} title={!isDrawerOpen ? "Logout" : undefined} className={`w-full flex items-center ${!isDrawerOpen ? "justify-center" : ""}`}>
                 <PiSignOut className="w-5 h-5 shrink-0" />
                 {isDrawerOpen && <span>Logout</span>}
               </button>

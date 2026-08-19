@@ -64,21 +64,22 @@ const StudentDashboard = ({ isDrawerOpen }) => {
 
     return (
         <>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Dashboard">
-                <NavLink to="/dashboard" end className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
+            <li>
+                <NavLink to="/dashboard" end title={!isDrawerOpen ? "Dashboard" : undefined} className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
                     <PiChartBar className="w-5 h-5 shrink-0" />
                     {isDrawerOpen && <span>Dashboard</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Take a Test">
-                <NavLink to="/dashboard/practice" className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive || isPracticeActive ? "active" : ""}`}>
+            <li>
+                <NavLink to="/dashboard/practice" title={!isDrawerOpen ? "Take a Test" : undefined} className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive || isPracticeActive ? "active" : ""}`}>
                     <PiPenNib className="w-5 h-5 shrink-0" />
                     {isDrawerOpen && <span>Take a Test</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Full Mock Test">
+            <li>
                 <NavLink 
                     to="/dashboard/full-mock-test" 
+                    title={!isDrawerOpen ? "Full Mock Test" : undefined}
                     onMouseEnter={prefetchMockTests}
                     className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}
                 >
@@ -86,9 +87,10 @@ const StudentDashboard = ({ isDrawerOpen }) => {
                     {isDrawerOpen && <span>Full Mock Test</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Review">
+            <li>
                 <NavLink 
                     to="/dashboard/review" 
+                    title={!isDrawerOpen ? "Review" : undefined}
                     onMouseEnter={prefetchReview}
                     className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive || isReviewActive ? "active" : ""}`}
                 >
@@ -96,9 +98,10 @@ const StudentDashboard = ({ isDrawerOpen }) => {
                     {isDrawerOpen && <span>Review</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Analytics">
+            <li>
                 <NavLink 
                     to="/dashboard/analytics" 
+                    title={!isDrawerOpen ? "Analytics" : undefined}
                     onMouseEnter={prefetchAnalytics}
                     className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}
                 >
@@ -106,14 +109,14 @@ const StudentDashboard = ({ isDrawerOpen }) => {
                     {isDrawerOpen && <span>Analytics</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Trainers">
-                <NavLink to="/dashboard/trainer" className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
+            <li>
+                <NavLink to="/dashboard/trainer" title={!isDrawerOpen ? "Trainers" : undefined} className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
                     <PiGraduationCap className="w-5 h-5 shrink-0" />
                     {isDrawerOpen && <span>Trainers</span>}
                 </NavLink>
             </li>
-            <li className={!isDrawerOpen ? "tooltip tooltip-right z-50" : ""} data-tip="Courses">
-                <NavLink to="/dashboard/courses" className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
+            <li>
+                <NavLink to="/dashboard/courses" title={!isDrawerOpen ? "Courses" : undefined} className={({ isActive }) => `${!isDrawerOpen ? "justify-center" : ""} ${isActive ? "active" : ""}`}>
                     <PiNotebook className="w-5 h-5 shrink-0" />
                     {isDrawerOpen && <span>Courses</span>}
                 </NavLink>
