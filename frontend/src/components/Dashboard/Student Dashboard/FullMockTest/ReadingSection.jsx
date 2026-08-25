@@ -379,8 +379,8 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
 
             {isPteFillBlanks && (() => {
                 const text = q.question || "";
-                const parts = text.split(/\[blank-\d+\]/g);
-                const matches = text.match(/\[blank-\d+\]/g) || [];
+                const parts = text.split(/\[blank-\$?\d+\]/g);
+                const matches = text.match(/\[blank-\$?\d+\]/g) || [];
                 const currentAns = answers[q.id] || "";
                 const ansList = [];
                 const rawAnswers = currentAns.split(",").map(s => s.trim());
