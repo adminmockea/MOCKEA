@@ -178,16 +178,42 @@ export const QuestionTypeExtras = ({
     // ── PTE Reading Dropdown Fill-in-the-Blanks ──
     if (q.type === "pte-reading-writing-fill-blanks") {
         const dropdownOptions = q.pteDropdownOptions || [["", "", "", ""]];
+        
+        const handlePteDropdownPaste = (e, blankIdx, optIdx) => {
+            const pastedText = e.clipboardData?.getData("text");
+            if (!pastedText) return;
+            const parsed = parsePastedOptionsText(pastedText);
+            if (parsed && parsed.length > 1) {
+                e.preventDefault();
+                const newArr = dropdownOptions.map((arr, aIdx) => {
+                    if (aIdx !== blankIdx) return arr;
+                    const updatedSub = [...(arr || ["", "", "", ""])];
+                    for (let k = 0; k < Math.min(4, parsed.length); k++) {
+                        updatedSub[k] = parsed[k];
+                    }
+                    return updatedSub;
+                });
+                onUpdate(q.id, "pteDropdownOptions", newArr);
+            }
+        };
+
         return (
             <div className="bg-slate-50 p-4 rounded-2xl space-y-4 border border-slate-200">
-                <span className="text-[10px] font-black uppercase tracking-widest text-primary">
-                    PTE Reading &amp; Writing Blanks (4 options per blank)
-                </span>
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        PTE Reading &amp; Writing Blanks (4 options per blank)
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium">
+                        💡 <strong>Smart Paste Enabled:</strong> Paste multi-line options or <em>"Option 1 / Option 2 / Option 3 / Option 4"</em> into any option box to auto-fill all 4 choices!
+                    </span>
+                </div>
                 <div className="space-y-4">
                     {dropdownOptions.map((optionsArr, blankIdx) => (
                         <div key={blankIdx} className="space-y-2 border-b border-slate-200 pb-3 last:border-none">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-700">Blank #{blankIdx + 1} Options (use `[blank-${blankIdx + 1}]` in passage)</span>
+                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                    Blank #{blankIdx + 1} Options (use <code className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono font-bold text-xs">[blank-{blankIdx + 1}]</code> in passage)
+                                </span>
                                 {dropdownOptions.length > 1 && (
                                     <button
                                         type="button"
@@ -210,6 +236,7 @@ export const QuestionTypeExtras = ({
                                         className="input input-bordered input-sm rounded-xl"
                                         placeholder={`Option ${optIdx + 1} ${optIdx === 0 ? "(Correct Answer)" : ""}`}
                                         value={opt}
+                                        onPaste={(e) => handlePteDropdownPaste(e, blankIdx, optIdx)}
                                         onChange={(e) => {
                                             const newArr = dropdownOptions.map((arr, aIdx) => {
                                                 if (aIdx !== blankIdx) return arr;
@@ -242,11 +269,27 @@ export const QuestionTypeExtras = ({
     if (q.type === "pte-reorder-paragraphs") {
         const paragraphs = q.options || [""];
         const correctOrder = q.pteParagraphsOrder || [];
+
+        const handlePteParagraphsPaste = (e, paraIdx) => {
+            const pastedText = e.clipboardData?.getData("text");
+            if (!pastedText) return;
+            const parsed = parsePastedOptionsText(pastedText);
+            if (parsed && parsed.length > 1) {
+                e.preventDefault();
+                onUpdate(q.id, "options", parsed);
+            }
+        };
+
         return (
             <div className="bg-slate-50 p-4 rounded-2xl space-y-4 border border-slate-200">
-                <span className="text-[10px] font-black uppercase tracking-widest text-primary">
-                    PTE Paragraphs Re-ordering
-                </span>
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        PTE Paragraphs Re-ordering
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium">
+                        💡 <strong>Smart Paste Enabled:</strong> Paste multi-line paragraphs into Paragraph A to auto-split them into A, B, C, D!
+                    </span>
+                </div>
                 <div className="space-y-3">
                     <span className="text-xs font-bold text-slate-700">Enter paragraphs to re-order:</span>
                     {paragraphs.map((para, paraIdx) => (
@@ -258,6 +301,7 @@ export const QuestionTypeExtras = ({
                                 className="textarea textarea-bordered textarea-sm rounded-xl flex-1 text-xs"
                                 placeholder={`Paragraph Content ${String.fromCharCode(65 + paraIdx)}`}
                                 value={para}
+                                onPaste={(e) => handlePteParagraphsPaste(e, paraIdx)}
                                 onChange={(e) => {
                                     onUpdateOption(q.id, paraIdx, e.target.value);
                                 }}

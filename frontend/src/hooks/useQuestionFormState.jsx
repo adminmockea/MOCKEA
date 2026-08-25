@@ -424,6 +424,14 @@ export function parsePastedOptionsText(text) {
         return singleLineMatches.map(m => m[2].trim());
     }
 
+    // Pattern 3: Single-line paste separated by slashes or commas (e.g. "instructor / professor / scientist / artist")
+    if (trimmed.includes("/") || (trimmed.includes(",") && !trimmed.includes("\n"))) {
+        const parts = trimmed.split(/\s*(?:\/|,)\s*/).map(p => p.trim()).filter(Boolean);
+        if (parts.length >= 2 && parts.length <= 8) {
+            return parts.map(p => p.replace(/^([A-Ea-e1-9][\.\)\:\-]?\s+)/, "").trim());
+        }
+    }
+
     return null;
 }
 
