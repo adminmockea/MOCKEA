@@ -242,6 +242,19 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             data.images = data.images.filter(img => img && img.trim() !== "");
         }
 
+        if (data.questions && Array.isArray(data.questions)) {
+            data.questions = data.questions.map(q => {
+                if (q.type === "pte-reading-writing-fill-blanks") {
+                    const derivedAns = (q.pteDropdownOptions || []).map(arr => arr?.[0]).filter(Boolean).join(", ");
+                    return {
+                        ...q,
+                        correctAnswer: derivedAns || q.correctAnswer || ""
+                    };
+                }
+                return q;
+            });
+        }
+
         mutation.mutate(data);
     };
 

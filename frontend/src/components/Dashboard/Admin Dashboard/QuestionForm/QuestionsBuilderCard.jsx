@@ -284,8 +284,36 @@ export default function QuestionsBuilderCard({
 
                             {/* Correct answer */}
                             <div className="form-control">
-                                <label className="label"><span className="label-text font-semibold">Correct Answer</span></label>
-                                {NEEDS_OPTIONS.includes(q.type) ? (
+                                <div className="flex items-center justify-between">
+                                    <label className="label py-1">
+                                        <span className="label-text font-semibold">Correct Answer</span>
+                                    </label>
+                                    <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/50">
+                                        {q.type === "pte-reading-writing-fill-blanks"
+                                            ? "✨ Auto-derived from Option #1 of each blank pool"
+                                            : NEEDS_OPTIONS.includes(q.type)
+                                            ? "Select from options list below"
+                                            : q.type === "short-answer" || q.type === "sentence-completion" || q.type === "summary-completion"
+                                            ? "💡 Use / for multiple acceptable answers (e.g. hotel / luxury hotel)"
+                                            : q.type === "pte-reorder-paragraphs"
+                                            ? "💡 Format: comma separated letters (e.g. B, D, A, C)"
+                                            : q.type === "true-false" || q.type === "yes-no"
+                                            ? "Select True/False/Not Given"
+                                            : "Enter exact string expected for auto-grading"}
+                                    </span>
+                                </div>
+                                {q.type === "pte-reading-writing-fill-blanks" ? (
+                                    <input
+                                        type="text"
+                                        className="input input-bordered rounded-2xl border-emerald-300 bg-emerald-50 text-emerald-900 font-bold text-sm cursor-not-allowed"
+                                        value={
+                                            q.pteDropdownOptions?.map((arr) => arr?.[0]).filter(Boolean).join(", ") ||
+                                            q.correctAnswer ||
+                                            "Auto-derived when options are filled"
+                                        }
+                                        readOnly
+                                    />
+                                ) : NEEDS_OPTIONS.includes(q.type) ? (
                                     <select
                                         className="select select-bordered w-full rounded-2xl border-success/40 bg-white text-slate-800 text-sm font-semibold shadow-xs focus:border-success focus:ring-4 focus:ring-success/10"
                                         value={q.correctAnswer}
@@ -314,8 +342,14 @@ export default function QuestionsBuilderCard({
                                 ) : (
                                     <input
                                         type="text"
-                                        className="input input-bordered rounded-2xl border-success/30 bg-success/5"
-                                        placeholder="Enter the exact correct answer"
+                                        className="input input-bordered rounded-2xl border-success/30 bg-success/5 font-semibold text-slate-800"
+                                        placeholder={
+                                            q.type === "short-answer" 
+                                                ? "e.g. 15th April / 15 April / April 15" 
+                                                : q.type === "true-false"
+                                                ? "TRUE or FALSE or NOT GIVEN"
+                                                : "Enter exact correct answer text"
+                                        }
                                         value={q.correctAnswer}
                                         onChange={(e) => updateQuestionField(q.id, "correctAnswer", e.target.value)}
                                         required
