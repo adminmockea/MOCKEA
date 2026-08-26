@@ -179,6 +179,30 @@ export const QuestionTypeExtras = ({
     if (q.type === "pte-reading-writing-fill-blanks") {
         const dropdownOptions = q.pteDropdownOptions || [["", "", "", ""]];
         
+        const insertPteBlankInPassage = (blankNum) => {
+            const tag = `[blank-${blankNum}]`;
+            const ta = document.getElementById("pte-reading-passage-textarea") || document.getElementById("reading-passage-textarea-0");
+            if (ta) {
+                const start = ta.selectionStart;
+                const end = ta.selectionEnd;
+                const text = ta.value || "";
+                const newText = text.substring(0, start) + tag + text.substring(end);
+                
+                const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                if (nativeTextareaValueSetter) {
+                    nativeTextareaValueSetter.call(ta, newText);
+                } else {
+                    ta.value = newText;
+                }
+                ta.dispatchEvent(new Event("input", { bubbles: true }));
+                
+                setTimeout(() => {
+                    ta.focus();
+                    ta.selectionStart = ta.selectionEnd = start + tag.length;
+                }, 0);
+            }
+        };
+        
         const handlePteDropdownPaste = (e, blankIdx, optIdx) => {
             const pastedText = e.clipboardData?.getData("text");
             if (!pastedText) return;
@@ -210,9 +234,17 @@ export const QuestionTypeExtras = ({
                 <div className="space-y-4">
                     {dropdownOptions.map((optionsArr, blankIdx) => (
                         <div key={blankIdx} className="space-y-2 border-b border-slate-200 pb-3 last:border-none">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                    Blank #{blankIdx + 1} Options (use <code className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono font-bold text-xs">[blank-{blankIdx + 1}]</code> in passage)
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 flex-wrap">
+                                    <span>Blank #{blankIdx + 1} Options</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => insertPteBlankInPassage(blankIdx + 1)}
+                                        className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white font-mono font-bold text-xs transition-all cursor-pointer flex items-center gap-1"
+                                        title="Click to insert this blank tag at cursor in passage"
+                                    >
+                                        + Insert [blank-{blankIdx + 1}] in Passage
+                                    </button>
                                 </span>
                                 {dropdownOptions.length > 1 && (
                                     <button

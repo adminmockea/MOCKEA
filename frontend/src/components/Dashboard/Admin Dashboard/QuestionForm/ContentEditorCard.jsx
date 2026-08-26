@@ -63,6 +63,121 @@ function adjustGroupRanges(groups, changedIdx, field, newValue) {
     return updated;
 }
 
+function cleanAndFormatWebPassage(rawText, mode = "pte") {
+    if (!rawText) return "";
+
+    // 1. Process line by line to catch dropdown placeholders on their own lines (common on AlfaPTE, APEUni)
+    const rawLines = rawText.split(/\r?\n/);
+    const processedLines = rawLines.map(line => {
+        const trimmed = line.trim();
+        // Check if line is purely a dropdown placeholder like "Select Answer", "Select", "Choose", "Select Answer v", "______", etc.
+        const isDropdownLine = /^(?:\[?\s*(?:Select(?:\s+Answer)?|Choose(?:\s+Answer)?|Blank)\s*\]?[\s\u25bc\u25bd\u2193\u2304v∨^]*|______+|──────+)$/i.test(trimmed);
+        if (isDropdownLine) {
+            return " __BLANK_MARKER__ ";
+        }
+        return line;
+    });
+
+    let intermediateText = processedLines.join("\n");
+
+    // 2. Also replace inline dropdown placeholders ("Select Answer", "Select", "______", "──────", etc.)
+    intermediateText = intermediateText
+        .replace(/(?:\[?\s*Select\s+Answer\s*\]?[\s\u25bc\u25bd\u2193\u2304v∨^]*)/gi, " __BLANK_MARKER__ ")
+        .replace(/(?:\[?\s*Select\s*\]?[\s\u25bc\u25bd\u2193\u2304v∨^]*)/gi, " __BLANK_MARKER__ ")
+        .replace(/(?:\[?\s*Choose\s+Answer\s*\]?)/gi, " __BLANK_MARKER__ ")
+        .replace(/______+/g, " __BLANK_MARKER__ ")
+        .replace(/──────+/g, " __BLANK_MARKER__ ");
+
+    // 3. Un-wrap single-word multi-line breaks (common when copying from web DOM flexboxes)
+    const linesAfterMarker = intermediateText.split(/\r?\n/);
+    const nonEmptyLines = linesAfterMarker.map(l => l.trim()).filter(Boolean);
+    const totalWords = nonEmptyLines.reduce((acc, l) => acc + l.split(/\s+/).length, 0);
+    const avgWordsPerLine = nonEmptyLines.length > 0 ? totalWords / nonEmptyLines.length : 10;
+
+    let unwrappedText = "";
+    if (avgWordsPerLine < 3.5 && nonEmptyLines.length > 3) {
+        const paragraphs = [];
+        let currentPara = [];
+        for (let line of linesAfterMarker) {
+            const trimmed = line.trim();
+            if (!trimmed) {
+                if (currentPara.length > 0) {
+                    paragraphs.push(currentPara.join(" "));
+                    currentPara = [];
+                }
+            } else {
+                currentPara.push(trimmed);
+            }
+        }
+        if (currentPara.length > 0) {
+            paragraphs.push(currentPara.join(" "));
+        }
+        unwrappedText = paragraphs.join("\n\n");
+    } else {
+        unwrappedText = intermediateText;
+    }
+
+    // 4. Determine starting blank index if existing blanks are present
+    let existingMax = 0;
+    const existingBlanks = getPteBlankNumbers(unwrappedText);
+    if (existingBlanks.length > 0) {
+        existingMax = Math.max(...existingBlanks);
+    }
+
+    let blankIndex = existingMax > 0 ? existingMax + 1 : 1;
+
+    // 5. Replace __BLANK_MARKER__ with [blank-1], [blank-2]... or ___1___, ___2___...
+    let resultText = unwrappedText.replace(/\s*__BLANK_MARKER__\s*/g, () => {
+        const tag = mode === "pte" ? ` [blank-${blankIndex}] ` : ` ___${blankIndex}___ `;
+        blankIndex++;
+        return tag;
+    });
+
+    // 6. Clean up multiple spaces & punctuation spacing
+    resultText = resultText
+        .replace(/[ \t]+/g, " ")
+        .replace(/\s+\./g, ".")
+        .replace(/\s+,/g, ",")
+        .replace(/\n /g, "\n")
+        .replace(/ \n/g, "\n")
+        .trim();
+
+    return resultText;
+}
+
+function getPteBlankNumbers(text) {
+    if (!text) return [];
+    const re = new RegExp("\\[blank-(\\d+)\\]", "g");
+    const matches = [...text.matchAll(re)];
+    return matches.map(m => parseInt(m[1])).filter(Boolean);
+}
+
+function isWebCopyText(text) {
+    if (!text) return false;
+    const re = new RegExp("Select|Choose|Answer|______", "i");
+    if (re.test(text)) return true;
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const avgWords = lines.length > 0 ? lines.reduce((acc, l) => acc + l.split(/\s+/).length, 0) / lines.length : 10;
+    return avgWords < 3.5 && lines.length > 3;
+}
+
+function insertTextAtCursor(elementId, textToInsert, currentValue, onUpdate) {
+    const ta = document.getElementById(elementId);
+    if (ta) {
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const text = currentValue || "";
+        const newText = text.substring(0, start) + textToInsert + text.substring(end);
+        onUpdate(newText);
+        setTimeout(() => {
+            ta.focus();
+            ta.selectionStart = ta.selectionEnd = start + textToInsert.length;
+        }, 0);
+    } else {
+        onUpdate((currentValue || "") + textToInsert);
+    }
+}
+
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
     const [focusedSelectId, setFocusedSelectId] = useState(null);
     const [selectRevisions, setSelectRevisions] = useState({});
@@ -118,7 +233,22 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-slate-700">Passage Content</label>
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold text-slate-700">Passage Content</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cleaned = cleanAndFormatWebPassage(passage.content, "ielts");
+                                                        const updated = [...formData.passages];
+                                                        updated[pIdx].content = cleaned;
+                                                        patch({ passages: updated });
+                                                    }}
+                                                    className="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-bold text-[11px]"
+                                                    title="Auto-clean single-word lines and convert web 'Select Answer' to gaps"
+                                                >
+                                                    ✨ Smart Auto-Clean Web Copy
+                                                </button>
+                                            </div>
                                             <textarea
                                                 id={`reading-passage-textarea-${pIdx}`}
                                                 className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl text-sm transition-all outline-none resize-y min-h-[150px] font-serif"
@@ -129,10 +259,123 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     updated[pIdx].content = e.target.value;
                                                     patch({ passages: updated });
                                                 }}
+                                                onPaste={(e) => {
+                                                    const pastedText = e.clipboardData?.getData("text");
+                                                    if (!pastedText) return;
+                                                    if (isWebCopyText(pastedText)) {
+                                                        e.preventDefault();
+                                                        const cleaned = cleanAndFormatWebPassage(pastedText, "ielts");
+                                                        insertTextAtCursor(
+                                                            `reading-passage-textarea-${pIdx}`,
+                                                            cleaned,
+                                                            passage.content,
+                                                            (val) => {
+                                                                const updated = [...formData.passages];
+                                                                updated[pIdx].content = val;
+                                                                patch({ passages: updated });
+                                                            }
+                                                        );
+                                                    }
+                                                }}
                                                 required
                                             />
-                                            <p className="text-[11px] text-slate-500 font-semibold mt-1">
-                                                Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>. Empty lines create paragraph breaks.
+                                            
+                                            {/* Quick Instant Blank Toolbar for IELTS Passages */}
+                                            <div className="flex flex-wrap items-center gap-2 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">
+                                                    Insert Instant Blank:
+                                                </span>
+                                                {(() => {
+                                                    const groupForPassage = (formData.questionGroups || []).filter(g => (g.passageIndex || 0) === pIdx);
+                                                    let qNumbers = [];
+                                                    groupForPassage.forEach(g => {
+                                                        const from = Number(g.fromQuestion) || 1;
+                                                        const to = Number(g.toQuestion) || 1;
+                                                        for (let n = from; n <= to; n++) {
+                                                            if (!qNumbers.includes(n)) qNumbers.push(n);
+                                                        }
+                                                    });
+                                                    qNumbers.sort((a, b) => a - b);
+
+                                                    if (qNumbers.length === 0) {
+                                                        const totalQ = Math.max(5, formData.questions?.length || 0);
+                                                        for (let n = 1; n <= totalQ; n++) qNumbers.push(n);
+                                                    }
+
+                                                    return (
+                                                        <>
+                                                            <span className="text-[10px] font-bold text-slate-400 select-none ml-1">Gap:</span>
+                                                            {qNumbers.map(n => {
+                                                                const tag = `___${n}___`;
+                                                                const alreadyInserted = (passage.content || "").includes(tag);
+                                                                return (
+                                                                    <button
+                                                                        key={`q-${n}`}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            insertTextAtCursor(
+                                                                                `reading-passage-textarea-${pIdx}`,
+                                                                                tag,
+                                                                                passage.content,
+                                                                                (val) => {
+                                                                                    const updated = [...formData.passages];
+                                                                                    updated[pIdx].content = val;
+                                                                                    patch({ passages: updated });
+                                                                                }
+                                                                            );
+                                                                        }}
+                                                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                                            alreadyInserted
+                                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-black shadow-2xs cursor-default"
+                                                                                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-primary hover:text-white hover:border-primary shadow-2xs cursor-pointer"
+                                                                        }`}
+                                                                        title={alreadyInserted ? `${tag} is inserted in passage` : `Insert ${tag} at cursor`}
+                                                                    >
+                                                                        Q{n} {alreadyInserted && "✓"}
+                                                                    </button>
+                                                                );
+                                                            })}
+
+                                                            <div className="h-4 w-px bg-slate-200 mx-1" />
+
+                                                            <span className="text-[10px] font-bold text-slate-400 select-none">PTE Blank:</span>
+                                                            {[1, 2, 3, 4, 5].map(bNum => {
+                                                                const tag = `[blank-${bNum}]`;
+                                                                const alreadyInserted = (passage.content || "").includes(tag);
+                                                                return (
+                                                                    <button
+                                                                        key={`blank-${bNum}`}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            insertTextAtCursor(
+                                                                                `reading-passage-textarea-${pIdx}`,
+                                                                                tag,
+                                                                                passage.content,
+                                                                                (val) => {
+                                                                                    const updated = [...formData.passages];
+                                                                                    updated[pIdx].content = val;
+                                                                                    patch({ passages: updated });
+                                                                                }
+                                                                            );
+                                                                        }}
+                                                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                                            alreadyInserted
+                                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-black shadow-2xs cursor-default"
+                                                                                : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white shadow-2xs cursor-pointer"
+                                                                        }`}
+                                                                        title={alreadyInserted ? `${tag} is inserted in passage` : `Insert ${tag} at cursor`}
+                                                                    >
+                                                                        [blank-{bNum}] {alreadyInserted && "✓"}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            <p className="text-[11px] text-slate-500 font-semibold mt-1 select-none">
+                                                💡 Click a <strong>QN (___N___)</strong> or <strong>[blank-N]</strong> button to insert a gap placeholder directly at your cursor. Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>.
                                             </p>
                                         </div>
                                     </div>
@@ -141,14 +384,183 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                         </>
                     ) : (
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">PTE Reading Text / Passage</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-700 tracking-wide">PTE Reading Text / Passage</label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const cleaned = cleanAndFormatWebPassage(formData.passage, "pte");
+                                        patch({ passage: cleaned });
+
+                                        // Auto-sync options pool count with detected blanks count
+                                        const matches = getPteBlankNumbers(cleaned);
+                                        const count = matches.length;
+                                        if (count > 0 && formData.questions && formData.questions.length > 0) {
+                                            const pteQIdx = formData.questions.findIndex(q => q.type === "pte-reading-writing-fill-blanks");
+                                            if (pteQIdx !== -1) {
+                                                const targetQ = formData.questions[pteQIdx];
+                                                const currentOpts = targetQ.pteDropdownOptions || [];
+                                                if (currentOpts.length < count) {
+                                                    const newOpts = [...currentOpts];
+                                                    while (newOpts.length < count) {
+                                                        newOpts.push(["", "", "", ""]);
+                                                    }
+                                                    const updatedQuestions = [...formData.questions];
+                                                    updatedQuestions[pteQIdx] = { ...targetQ, pteDropdownOptions: newOpts };
+                                                    patch({ questions: updatedQuestions });
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    className="btn btn-ghost btn-xs text-primary hover:bg-primary/10 gap-1 font-bold text-[11px]"
+                                    title="Auto-clean single-word line wraps and convert AlfaPTE/APEUni 'Select Answer' to [blank-1], [blank-2], etc."
+                                >
+                                    ✨ Smart Auto-Clean Web Copy (AlfaPTE / APEUni)
+                                </button>
+                            </div>
                             <textarea
+                                id="pte-reading-passage-textarea"
                                 className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all outline-none resize-y min-h-[200px] font-mono text-slate-800 leading-relaxed"
                                 placeholder="Enter the reading text passage here. Use [blank-1], [blank-2], etc. for Reading Fill in the Blanks interactive dropdowns."
                                 value={formData.passage || ""}
                                 onChange={(e) => patch({ passage: e.target.value })}
+                                onPaste={(e) => {
+                                    const pastedText = e.clipboardData?.getData("text");
+                                    if (!pastedText) return;
+                                    if (isWebCopyText(pastedText)) {
+                                        e.preventDefault();
+                                        const cleaned = cleanAndFormatWebPassage(pastedText, "pte");
+                                        insertTextAtCursor("pte-reading-passage-textarea", cleaned, formData.passage, (val) => patch({ passage: val }));
+
+                                        // Auto-sync options pool count with detected blanks count
+                                        const matches = getPteBlankNumbers(cleaned);
+                                        const count = matches.length;
+                                        if (count > 0 && formData.questions && formData.questions.length > 0) {
+                                            const pteQIdx = formData.questions.findIndex(q => q.type === "pte-reading-writing-fill-blanks");
+                                            if (pteQIdx !== -1) {
+                                                const targetQ = formData.questions[pteQIdx];
+                                                const currentOpts = targetQ.pteDropdownOptions || [];
+                                                if (currentOpts.length < count) {
+                                                    const newOpts = [...currentOpts];
+                                                    while (newOpts.length < count) {
+                                                        newOpts.push(["", "", "", ""]);
+                                                    }
+                                                    const updatedQuestions = [...formData.questions];
+                                                    updatedQuestions[pteQIdx] = { ...targetQ, pteDropdownOptions: newOpts };
+                                                    patch({ questions: updatedQuestions });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }}
                                 required
                             />
+
+                            {/* Quick Instant Blank Toolbar for PTE Passage */}
+                            <div className="flex flex-wrap items-center gap-2 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">
+                                    Insert Instant Blank:
+                                </span>
+                                {(() => {
+                                    // 1. Gather all blank indices from passage text using top-level helper
+                                    const passageNums = getPteBlankNumbers(formData.passage);
+
+                                    // 2. Gather max blank index from PTE questions pteDropdownOptions
+                                    let questionBlankCount = 0;
+                                    (formData.questions || []).forEach(q => {
+                                        if (q.pteDropdownOptions && Array.isArray(q.pteDropdownOptions)) {
+                                            questionBlankCount = Math.max(questionBlankCount, q.pteDropdownOptions.length);
+                                        }
+                                    });
+
+                                    // 3. Determine dynamic max blank number
+                                    const maxNum = Math.max(5, questionBlankCount, ...(passageNums.length > 0 ? passageNums : [0]));
+
+                                    const buttons = [];
+                                    for (let i = 1; i <= maxNum; i++) {
+                                        const tag = `[blank-${i}]`;
+                                        const alreadyInserted = (formData.passage || "").includes(tag);
+                                        buttons.push(
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => insertTextAtCursor("pte-reading-passage-textarea", tag, formData.passage, (val) => patch({ passage: val }))}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                    alreadyInserted
+                                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-black shadow-2xs cursor-default"
+                                                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-primary hover:text-white hover:border-primary shadow-2xs cursor-pointer"
+                                                }`}
+                                                title={alreadyInserted ? `${tag} is inserted in passage` : `Insert ${tag} at cursor`}
+                                            >
+                                                {tag} {alreadyInserted && "✓"}
+                                            </button>
+                                        );
+                                    }
+
+                                    const nextBlankNum = maxNum + 1;
+
+                                    return (
+                                        <>
+                                            {buttons}
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const tag = `[blank-${nextBlankNum}]`;
+                                                    insertTextAtCursor("pte-reading-passage-textarea", tag, formData.passage, (val) => patch({ passage: val }));
+
+                                                    // Auto-add new option pool if pte-reading-writing-fill-blanks question exists
+                                                    if (formData.questions && formData.questions.length > 0) {
+                                                        const pteQIdx = formData.questions.findIndex(q => q.type === "pte-reading-writing-fill-blanks");
+                                                        if (pteQIdx !== -1) {
+                                                            const targetQ = formData.questions[pteQIdx];
+                                                            const currentOpts = targetQ.pteDropdownOptions || [];
+                                                            if (currentOpts.length < nextBlankNum) {
+                                                                const newOpts = [...currentOpts];
+                                                                while (newOpts.length < nextBlankNum) {
+                                                                    newOpts.push(["", "", "", ""]);
+                                                                }
+                                                                const updatedQuestions = [...formData.questions];
+                                                                updatedQuestions[pteQIdx] = { ...targetQ, pteDropdownOptions: newOpts };
+                                                                patch({ questions: updatedQuestions });
+                                                            }
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-2.5 py-1 rounded-lg text-[11px] font-black border border-primary/30 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                                                title={`Insert [blank-${nextBlankNum}] into passage and sync question options`}
+                                            >
+                                                <PiPlus className="w-3 h-3" /> Insert [blank-{nextBlankNum}]
+                                            </button>
+
+                                            <div className="h-4 w-px bg-slate-200 mx-1" />
+                                            <span className="text-[10px] font-bold text-slate-400 select-none">Gap:</span>
+                                            {[1, 2, 3, 4, 5].map(n => {
+                                                const gapTag = `___${n}___`;
+                                                const alreadyInserted = (formData.passage || "").includes(gapTag);
+                                                return (
+                                                    <button
+                                                        key={`gap-${n}`}
+                                                        type="button"
+                                                        onClick={() => insertTextAtCursor("pte-reading-passage-textarea", gapTag, formData.passage, (val) => patch({ passage: val }))}
+                                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                            alreadyInserted
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-black shadow-2xs cursor-default"
+                                                                : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white shadow-2xs cursor-pointer"
+                                                        }`}
+                                                        title={alreadyInserted ? `${gapTag} is inserted in passage` : `Insert ${gapTag} at cursor`}
+                                                    >
+                                                        ___{n}___ {alreadyInserted && "✓"}
+                                                    </button>
+                                                );
+                                            })}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-semibold mt-1 select-none">
+                                💡 Click any <strong>[blank-N]</strong> button or <strong>+ Insert [blank-N]</strong> to dynamically add interactive blanks at your cursor position inside the PTE text passage.
+                            </p>
                         </div>
                     )}
                 </div>
