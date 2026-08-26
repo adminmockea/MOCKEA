@@ -4,6 +4,7 @@ import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js
 import { PiNotePencil } from "react-icons/pi";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
+import { shuffleOptions, getOptionsForBlank } from "../../../../utils/shuffleOptions.js";
 
 
 const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, data, offset = 0 }) => {
@@ -399,6 +400,10 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                     const newAnsList = [...ansList];
                     newAnsList[blankIdx] = val;
                     onAnswerChange(q.id, newAnsList.join(", "));
+                    const targetSubQ = data?.questions?.[blankIdx];
+                    if (targetSubQ && targetSubQ.id && targetSubQ.id !== q.id) {
+                        onAnswerChange(targetSubQ.id, val);
+                    }
                 };
 
                 return (
@@ -410,14 +415,11 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                                     return <span key={index}>{part}</span>;
                                 }
                                 const blankIdx = index;
-                                let blankOptions = [];
-                                if (q.type === 'pte-reading-writing-fill-blanks' && q.pteDropdownOptions) {
-                                    blankOptions = q.pteDropdownOptions[blankIdx] || [];
-                                } else {
-                                    blankOptions = q.options || [];
-                                }
+                                const blankOptions = getOptionsForBlank(q, data, blankIdx);
                                 
-                                const selectedVal = ansList[blankIdx] || "";
+                                const targetSubQ = data?.questions?.[blankIdx] || q;
+                                const subQId = targetSubQ.id || q.id;
+                                const selectedVal = ansList[blankIdx] || answers[subQId] || "";
                                 const isSelected = Boolean(selectedVal);
 
                                 return (
