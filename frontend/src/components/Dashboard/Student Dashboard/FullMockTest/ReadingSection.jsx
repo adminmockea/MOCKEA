@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, Fragment } from "react";
 import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils.js";
 import { PiNotePencil } from "react-icons/pi";
@@ -378,7 +378,14 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
             )}
 
             {isPteFillBlanks && (() => {
-                const text = q.question || "";
+                const passageContent = (q.passageIndex !== undefined && data?.passages?.[q.passageIndex]?.content) || data?.passage || "";
+                const text = (q.question && /\[blank-\$?\d+\]/.test(q.question))
+                    ? q.question
+                    : (passageContent && /\[blank-\$?\d+\]/.test(passageContent))
+                    ? passageContent
+                    : (q.info && /\[blank-\$?\d+\]/.test(q.info))
+                    ? q.info
+                    : passageContent || q.question || "";
                 const parts = text.split(/\[blank-\$?\d+\]/g);
                 const matches = text.match(/\[blank-\$?\d+\]/g) || [];
                 const currentAns = answers[q.id] || "";
@@ -395,36 +402,45 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                 };
 
                 return (
-                    <div className="ml-14 leading-loose text-slate-700 bg-slate-50 p-6 rounded-3xl border border-slate-200 text-sm font-medium">
-                        {parts.map((part, index) => {
-                            const isLast = index === parts.length - 1;
-                            if (isLast) {
-                                return <span key={index}>{part}</span>;
-                            }
-                            const blankIdx = index;
-                            let blankOptions = [];
-                            if (q.type === 'pte-reading-writing-fill-blanks' && q.pteDropdownOptions) {
-                                blankOptions = q.pteDropdownOptions[blankIdx] || [];
-                            } else {
-                                blankOptions = q.options || [];
-                            }
-                            
-                            return (
-                                <span key={index} className="inline-flex items-center gap-1 mx-1 align-middle">
-                                    <span>{part}</span>
-                                    <select
-                                        value={ansList[blankIdx]}
-                                        onChange={(e) => handleChange(blankIdx, e.target.value)}
-                                        className="select select-bordered select-xs font-bold bg-white text-slate-800 rounded-lg border-slate-300 focus:border-primary px-2 py-0 h-8"
-                                    >
-                                        <option value="">— select —</option>
-                                        {blankOptions.map((opt, oIdx) => (
-                                            <option key={oIdx} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                </span>
-                            );
-                        })}
+                    <div className="space-y-3 ml-2 md:ml-14">
+                        <div className="p-8 bg-white rounded-[2rem] border border-slate-200 shadow-xs text-base font-normal text-slate-800 leading-[2.5] font-sans">
+                            {parts.map((part, index) => {
+                                const isLast = index === parts.length - 1;
+                                if (isLast) {
+                                    return <span key={index}>{part}</span>;
+                                }
+                                const blankIdx = index;
+                                let blankOptions = [];
+                                if (q.type === 'pte-reading-writing-fill-blanks' && q.pteDropdownOptions) {
+                                    blankOptions = q.pteDropdownOptions[blankIdx] || [];
+                                } else {
+                                    blankOptions = q.options || [];
+                                }
+                                
+                                const selectedVal = ansList[blankIdx] || "";
+                                const isSelected = Boolean(selectedVal);
+
+                                return (
+                                    <Fragment key={index}>
+                                        <span>{part}</span>
+                                        <select
+                                            value={selectedVal}
+                                            onChange={(e) => handleChange(blankIdx, e.target.value)}
+                                            className={`inline-block mx-1.5 my-1 px-3 py-1 text-sm font-semibold rounded-xl border-2 transition-all cursor-pointer shadow-2xs align-baseline ${
+                                                isSelected
+                                                    ? "bg-primary/10 border-primary text-primary font-bold shadow-sm"
+                                                    : "bg-slate-50 border-slate-300 text-slate-700 hover:border-primary/50 hover:bg-white"
+                                            }`}
+                                        >
+                                            <option value="" className="text-slate-400 font-normal">— Select Blank #{blankIdx + 1} —</option>
+                                            {blankOptions.map((opt, oIdx) => (
+                                                <option key={oIdx} value={opt} className="text-slate-800 font-semibold">{opt}</option>
+                                            ))}
+                                        </select>
+                                    </Fragment>
+                                );
+                            })}
+                        </div>
                     </div>
                 );
             })()}

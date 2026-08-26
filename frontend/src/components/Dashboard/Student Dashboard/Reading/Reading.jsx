@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, Fragment } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure.jsx";
@@ -123,7 +123,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
     );
 };
 
-const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption }) => {
+const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption, activeSet }) => {
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     const isPteFillBlanks = q.type === 'pte-reading-writing-fill-blanks' || q.type === 'pte-reading-fill-blanks';
     const isPteReorder = q.type === 'pte-reorder-paragraphs';
@@ -157,7 +157,14 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
             )}
 
             {isPteFillBlanks && (() => {
-                const text = q.question || "";
+                const passageContent = (q.passageIndex !== undefined && activeSet?.passages?.[q.passageIndex]?.content) || activeSet?.passage || "";
+                const text = (q.question && /\[blank-\$?\d+\]/.test(q.question))
+                    ? q.question
+                    : (passageContent && /\[blank-\$?\d+\]/.test(passageContent))
+                    ? passageContent
+                    : (q.info && /\[blank-\$?\d+\]/.test(q.info))
+                    ? q.info
+                    : passageContent || q.question || "";
                 const parts = text.split(/\[blank-\$?\d+\]/g);
                 const matches = text.match(/\[blank-\$?\d+\]/g) || [];
                 const currentAns = answers[q.id] || "";
@@ -175,8 +182,17 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                 };
 
                 return (
-                    <div className="space-y-4">
-                        <div className="leading-loose text-slate-700 bg-slate-50 p-6 rounded-3xl border border-slate-200 text-sm font-medium">
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between bg-slate-100/90 px-5 py-2.5 rounded-2xl border border-slate-200/80 mb-1">
+                            <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <PiBookOpenFill className="w-4 h-4" /> PTE Reading &amp; Writing: Fill in the Blanks
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs">
+                                {matches.length} {matches.length === 1 ? "Blank" : "Blanks"}
+                            </span>
+                        </div>
+
+                        <div className="p-8 bg-white rounded-[2rem] border border-slate-200 shadow-xs text-base font-normal text-slate-800 leading-[2.5] font-sans">
                             {parts.map((part, index) => {
                                 const isLast = index === parts.length - 1;
                                 if (isLast) {
@@ -190,27 +206,38 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                                     blankOptions = q.options || [];
                                 }
                                 
+                                const selectedVal = ansList[blankIdx] || "";
+                                const isSelected = Boolean(selectedVal);
+
                                 return (
-                                    <span key={index} className="inline-flex items-center gap-1 mx-1 align-middle">
+                                    <Fragment key={index}>
                                         <span>{part}</span>
                                         <select
                                             disabled={submitted}
-                                            value={ansList[blankIdx]}
+                                            value={selectedVal}
                                             onChange={(e) => handleChange(blankIdx, e.target.value)}
-                                            className="select select-bordered select-xs font-bold bg-white text-slate-800 rounded-lg border-slate-300 focus:border-primary px-2 py-0 h-8"
+                                            className={`inline-block mx-1.5 my-1 px-3 py-1 text-sm font-semibold rounded-xl border-2 transition-all cursor-pointer shadow-2xs align-baseline ${
+                                                submitted
+                                                    ? isSelected
+                                                        ? "bg-emerald-50 border-emerald-400 text-emerald-900 font-bold"
+                                                        : "bg-rose-50 border-rose-300 text-rose-800"
+                                                    : isSelected
+                                                    ? "bg-primary/10 border-primary text-primary font-bold shadow-sm"
+                                                    : "bg-slate-50 border-slate-300 text-slate-700 hover:border-primary/50 hover:bg-white"
+                                            }`}
                                         >
-                                            <option value="">— select —</option>
+                                            <option value="" className="text-slate-400 font-normal">— Select Blank #{blankIdx + 1} —</option>
                                             {blankOptions.map((opt, oIdx) => (
-                                                <option key={oIdx} value={opt}>{opt}</option>
+                                                <option key={oIdx} value={opt} className="text-slate-800 font-semibold">{opt}</option>
                                             ))}
                                         </select>
-                                    </span>
+                                    </Fragment>
                                 );
                             })}
                         </div>
                         {submitted && !isCorrect && (
-                            <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
-                                <PiCheckCircleFill /> Correct: {correctAnswer}
+                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center gap-1.5">
+                                <PiCheckCircleFill className="w-4 h-4 text-emerald-500" /> Correct Answers: {correctAnswer}
                             </div>
                         )}
                     </div>
@@ -1012,6 +1039,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                                     correctAnswer={q.correctAnswer}
                                     clickedOption={clickedOption}
                                     setClickedOption={setClickedOption}
+                                    activeSet={activeSet}
                                 />
                             </div>
                             {isFlowChart && nextIsFlowChart && (
