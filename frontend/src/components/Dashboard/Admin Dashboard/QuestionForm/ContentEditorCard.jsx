@@ -336,46 +336,13 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                                 );
                                                             })}
 
-                                                            <div className="h-4 w-px bg-slate-200 mx-1" />
-
-                                                            <span className="text-[10px] font-bold text-slate-400 select-none">PTE Blank:</span>
-                                                            {[1, 2, 3, 4, 5].map(bNum => {
-                                                                const tag = `[blank-${bNum}]`;
-                                                                const alreadyInserted = (passage.content || "").includes(tag);
-                                                                return (
-                                                                    <button
-                                                                        key={`blank-${bNum}`}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            insertTextAtCursor(
-                                                                                `reading-passage-textarea-${pIdx}`,
-                                                                                tag,
-                                                                                passage.content,
-                                                                                (val) => {
-                                                                                    const updated = [...formData.passages];
-                                                                                    updated[pIdx].content = val;
-                                                                                    patch({ passages: updated });
-                                                                                }
-                                                                            );
-                                                                        }}
-                                                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
-                                                                            alreadyInserted
-                                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-black shadow-2xs cursor-default"
-                                                                                : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white shadow-2xs cursor-pointer"
-                                                                        }`}
-                                                                        title={alreadyInserted ? `${tag} is inserted in passage` : `Insert ${tag} at cursor`}
-                                                                    >
-                                                                        [blank-{bNum}] {alreadyInserted && "✓"}
-                                                                    </button>
-                                                                );
-                                                            })}
                                                         </>
                                                     );
                                                 })()}
                                             </div>
 
                                             <p className="text-[11px] text-slate-500 font-semibold mt-1 select-none">
-                                                💡 Click a <strong>QN (___N___)</strong> or <strong>[blank-N]</strong> button to insert a gap placeholder directly at your cursor. Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>.
+                                                💡 Click a <strong>QN (___N___)</strong> button to insert a gap placeholder directly at your cursor. Use markdown tables with vertical bars (<code>|</code>) and markdown links like <code>[example](https://example.com)</code>.
                                             </p>
                                         </div>
                                     </div>
