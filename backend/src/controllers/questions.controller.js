@@ -35,9 +35,24 @@ const isAnswerMatching = (correct, user) => {
     if (!correctStr || !userStr) return false;
 
     const userClean = userStr.toLowerCase();
+    const correctClean = correctStr.toLowerCase();
 
-    // Split correct answer by '/', ',' or ';' or ' or ' to get all possible valid options
-    const options = correctStr.split(/\s*(?:\/|,|;| or )\s*/i).map(opt => opt.trim().toLowerCase()).filter(Boolean);
+    // 1. Direct exact or normalized match for full answer string
+    if (userClean === correctClean) return true;
+    if (cleanAnswer(userClean) === cleanAnswer(correctClean)) return true;
+
+    // 2. Multi-part comma sequence match (e.g. PTE Fill Blanks / Reorder Paragraphs: "ans1, ans2, ans3")
+    if (correctStr.includes(",") && userStr.includes(",")) {
+        const correctParts = correctStr.split(",").map(cleanAnswer).filter(Boolean);
+        const userParts = userStr.split(",").map(cleanAnswer).filter(Boolean);
+        if (correctParts.length === userParts.length && correctParts.length > 1) {
+            const allMatch = correctParts.every((cPart, idx) => cPart === userParts[idx]);
+            if (allMatch) return true;
+        }
+    }
+
+    // 3. Split correct answer by '/', ';', or ' or ' to check alternative single answers (e.g. "15th April / 15 April")
+    const options = correctStr.split(/\s*(?:\/|;| or )\s*/i).map(opt => opt.trim().toLowerCase()).filter(Boolean);
 
     for (const option of options) {
         if (option === userClean) return true;
