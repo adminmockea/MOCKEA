@@ -1312,6 +1312,15 @@ const Reading = ({ preloadedSet = null }) => {
     );
   }, [currentTabGroupedItems]);
 
+  const hasPassageContent = useMemo(() => {
+    if (!activeSet) return false;
+    const hasPassages = activeSet.passages && activeSet.passages.some(p => p && p.content && p.content.trim() !== "");
+    const hasSinglePassage = activeSet.passage && activeSet.passage.trim() !== "";
+    return Boolean(hasPassages || hasSinglePassage);
+  }, [activeSet]);
+
+  const showPassageSide = !isPte || hasPassageContent;
+
   const hasRightPaneQuestions = useMemo(() => {
     if (!activeSet) return false;
     return true;
@@ -1631,7 +1640,7 @@ const Reading = ({ preloadedSet = null }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-0">
             {/* Passage Side */}
-            {!isPte && (
+            {showPassageSide && (
                 <div className={`${!hasRightPaneQuestions ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                 <div className="card bg-white p-10 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar">
                     <div className="prose prose-slate max-w-none">
@@ -1669,7 +1678,7 @@ const Reading = ({ preloadedSet = null }) => {
 
             {/* Questions Side */}
             {(hasRightPaneQuestions || isPte) && (
-                <div className={`${isPte ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
+                <div className={`${!showPassageSide ? "lg:col-span-12" : "lg:col-span-6"} h-full min-h-0`}>
                     <div className="card bg-white p-5 rounded-[3rem] border border-base-300 shadow-sm h-full overflow-y-auto custom-scrollbar relative">
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-2xl font-black tracking-tight">Question Panel</h2>
