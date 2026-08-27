@@ -1409,18 +1409,43 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
     );
 };
 
-const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange, offset, data }) => {
+const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange, offset, data, submitted, result }) => {
     const firstQ = questions[0];
     const questionNumbers = questions.map(q => {
         const idx = data.questions.findIndex(item => item.id === q.id);
         return offset + idx + 1;
     });
 
+    const correctAnswersList = useMemo(() => {
+        return questions.map(q => {
+            const evalItem = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
+            return (evalItem?.correctAnswer || q.correctAnswer || "").trim();
+        }).filter(Boolean);
+    }, [questions, result]);
+
+    const isOptionCorrect = (opt, letter) => {
+        const cleanOpt = opt.trim().toLowerCase();
+        const letterUpper = letter.toUpperCase();
+        return correctAnswersList.some(ca => {
+            const cleanCa = ca.trim().toLowerCase();
+            const caUpper = ca.trim().toUpperCase();
+            return (
+                cleanCa === cleanOpt ||
+                caUpper === letterUpper ||
+                cleanCa === `${letterUpper.toLowerCase()}. ${cleanOpt}` ||
+                cleanOpt.startsWith(cleanCa) ||
+                cleanCa.split(",").map(s => s.trim().toLowerCase()).includes(cleanOpt) ||
+                cleanCa.split(",").map(s => s.trim().toUpperCase()).includes(letterUpper)
+            );
+        });
+    };
+
     const isAllChecked = (opt) => {
         return questions.some(q => answers[q.id] === opt);
     };
 
     const handleCheckboxChange = (opt) => {
+        if (submitted) return;
         const currentlySelected = questions.map(q => answers[q.id]).filter(Boolean);
         const alreadySelectedIdx = currentlySelected.indexOf(opt);
 
@@ -1439,6 +1464,11 @@ const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange
         }
     };
 
+    const isGroupCorrect = submitted && questions.every(q => {
+        const evalItem = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
+        return evalItem?.isCorrect;
+    });
+
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -1449,39 +1479,76 @@ const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange
                         </div>
                     ))}
                 </div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 flex-1">
                     {firstQ.question}
                 </p>
+                {submitted && (
+                    isGroupCorrect
+                        ? <PiCheckCircleFill className="text-emerald-500 text-xl flex-shrink-0 ml-auto" />
+                        : <PiXCircleFill className="text-rose-500 text-xl flex-shrink-0 ml-auto" />
+                )}
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 pl-2">
                 {options.map((opt, optIdx) => {
                     const isChecked = isAllChecked(opt);
                     const letter = String.fromCharCode(65 + optIdx);
-                    
+                    const isCorrectOpt = isOptionCorrect(opt, letter);
+
+                    let cardClass = "border-slate-200 bg-white hover:bg-slate-50 text-slate-700";
+                    let badgeOrCheck = (
+                        <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
+                            {letter}
+                        </span>
+                    );
+
+                    if (submitted) {
+                        if (isCorrectOpt) {
+                            cardClass = "border-emerald-400 bg-emerald-50 text-emerald-900 font-bold shadow-xs";
+                            badgeOrCheck = <PiCheckCircleFill className="text-emerald-500 text-lg flex-shrink-0" />;
+                        } else if (isChecked && !isCorrectOpt) {
+                            cardClass = "border-rose-400 bg-rose-50 text-rose-800 font-bold shadow-xs";
+                            badgeOrCheck = <PiXCircleFill className="text-rose-500 text-lg flex-shrink-0" />;
+                        } else {
+                            cardClass = "border-slate-200 bg-slate-50/50 text-slate-400 opacity-60";
+                            badgeOrCheck = (
+                                <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-400">
+                                    {letter}
+                                </span>
+                            );
+                        }
+                    } else if (isChecked) {
+                        cardClass = "border-primary bg-primary/5 text-primary font-bold shadow-sm";
+                    }
+
                     return (
                         <label 
                             key={optIdx} 
-                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
-                                isChecked 
-                                ? "border-primary bg-primary/5 text-primary font-bold" 
-                                : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
-                            }`}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${cardClass}`}
                         >
                             <input
                                 type="checkbox"
-                                checked={isChecked}
+                                checked={submitted ? (isCorrectOpt || isChecked) : isChecked}
+                                disabled={submitted}
                                 onChange={() => handleCheckboxChange(opt)}
-                                className="checkbox checkbox-primary checkbox-sm rounded-lg"
+                                className={`checkbox checkbox-sm rounded-lg ${
+                                    submitted 
+                                        ? isCorrectOpt ? "checkbox-success" : "checkbox-error"
+                                        : "checkbox-primary"
+                                }`}
                             />
-                            <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
-                                {letter}
-                            </span>
-                            <span className="text-xs">{opt}</span>
+                            {badgeOrCheck}
+                            <span className="text-xs flex-1">{opt}</span>
                         </label>
                     );
                 })}
             </div>
+
+            {submitted && !isGroupCorrect && correctAnswersList.length > 0 && (
+                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center gap-1.5 mt-2">
+                    <PiCheckCircleFill className="w-4 h-4 text-emerald-500 flex-shrink-0" /> Correct Answers: {correctAnswersList.join(", ")}
+                </div>
+            )}
         </div>
     );
 };
@@ -1536,6 +1603,8 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, submi
                                         onAnswerChange={onAnswerChange}
                                         offset={offset}
                                         data={activeSet}
+                                        submitted={submitted}
+                                        result={result}
                                     />
                                 </div>
                             </motion.div>
