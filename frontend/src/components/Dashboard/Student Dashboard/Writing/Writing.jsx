@@ -109,19 +109,31 @@ const Writing = ({ preloadedSet = null }) => {
     }
   };
 
-  const [timerActive, setTimerActive] = useState(false);
-  const { timeLeft, fmtTime: fmt, resetCountdown } = useCountdown(3600, timerActive, submitted);
-
-  // Fullscreen & Gating States
-  const [isStarted, setIsStarted] = useState(false);
-  const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
-
   const activeSet = useMemo(
     () => writingSets.find((set) => set._id === selectedSetId) || null,
     [writingSets, selectedSetId],
   );
 
   const isPte = useMemo(() => activeSet?.examType === "PTE" || targetExam === "PTE", [activeSet, targetExam]);
+
+  const targetDurationSeconds = useMemo(() => {
+    if (activeSet?.timeLimit && Number(activeSet.timeLimit) > 0) {
+      return Number(activeSet.timeLimit) * 60;
+    }
+    if (isPte || activeSet?.examType === "PTE") {
+      return 20 * 60; // 20 minutes default for PTE standalone tests
+    }
+    return 60 * 60; // 60 minutes default for IELTS Writing
+  }, [activeSet, isPte]);
+
+  const [timerActive, setTimerActive] = useState(false);
+  const { timeLeft, fmtTime: fmt, resetCountdown } = useCountdown(targetDurationSeconds, timerActive, submitted);
+
+  useEffect(() => {
+    if (activeSet) {
+      resetCountdown(targetDurationSeconds);
+    }
+  }, [activeSet, targetDurationSeconds, resetCountdown]);
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
   const wordCount1 = useMemo(() => task1Text.trim() ? task1Text.trim().split(/\s+/).filter(w => w.length > 0).length : 0, [task1Text]);
@@ -294,7 +306,7 @@ const Writing = ({ preloadedSet = null }) => {
     setSubmitting(false);
     resetText();
     setTimerActive(true);
-    resetCountdown(3600);
+    resetCountdown(targetDurationSeconds);
     setIsStarted(true);
     enterFullscreen();
   };

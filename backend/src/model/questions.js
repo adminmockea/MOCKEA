@@ -185,6 +185,11 @@ const QuestionsSchema = new mongoose.Schema(
             type: [String],
             default: []
         },
+        // Custom time limit in minutes (if null/undefined, defaults apply: PTE=20m, IELTS=standard section duration)
+        timeLimit: {
+            type: Number,
+            default: null,
+        },
         // If true, this question set is visible to unauthenticated (guest) users
         isPublic: {
             type: Boolean,

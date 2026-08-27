@@ -79,6 +79,7 @@ const QuestionsGrid = ({
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1.5">
                                 <span className="badge badge-outline badge-xs px-2 font-semibold">{q.questions?.length || 0} Qs</span>
+                                <span className="badge badge-outline badge-xs px-2 font-semibold text-primary">{q.timeLimit ? `⏱️ ${q.timeLimit}m` : (q.examType === 'PTE' ? '⏱️ 20m' : '⏱️ Standard')}</span>
                                 <span className={`badge badge-xs px-2 font-bold ${q.forPlanType === 'premium' ? 'badge-accent' : 'badge-ghost'}`}>{q.forPlanType}</span>
                                 <span 
                                     onClick={() => handleToggleStatus(q._id, q.isActive !== false)}

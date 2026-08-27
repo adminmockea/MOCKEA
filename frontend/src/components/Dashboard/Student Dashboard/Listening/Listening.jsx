@@ -95,7 +95,19 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       return first?.options?.filter(Boolean) || [];
   }, [dragDropQuestions]);
 
-    const { timeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(0, !!activeSet && duration > 0, submitted);
+  const isPte = useMemo(() => activeSet?.examType === "PTE" || targetExam === "PTE", [activeSet, targetExam]);
+
+  const targetDurationSeconds = useMemo(() => {
+    if (activeSet?.timeLimit && Number(activeSet.timeLimit) > 0) {
+      return Number(activeSet.timeLimit) * 60;
+    }
+    if (isPte || activeSet?.examType === "PTE") {
+      return 20 * 60; // 20 minutes default for PTE standalone tests
+    }
+    return duration > 0 ? Math.ceil(duration) : 30 * 60; // Audio duration or 30 mins default for IELTS
+  }, [activeSet, isPte, duration]);
+
+  const { timeLeft, fmtTime: fmtCountdown, resetCountdown } = useCountdown(targetDurationSeconds, !!activeSet && targetDurationSeconds > 0, submitted);
 
   // Listening data fetched via useQuery above
 
@@ -132,10 +144,10 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     }, [activeSet?.audioUrl]);
 
     useEffect(() => {
-        if (duration > 0 && !submitted) {
-            resetCountdown(Math.ceil(duration));
+        if (targetDurationSeconds > 0 && !submitted) {
+            resetCountdown(targetDurationSeconds);
         }
-    }, [duration, submitted, resetCountdown]);
+    }, [targetDurationSeconds, submitted, resetCountdown]);
 
     useEffect(() => {
         if (howlRef.current) {

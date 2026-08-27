@@ -336,7 +336,13 @@ export const getQuestions = async (req, res) => {
 
 export const postQuestion = async (req, res) => {
     try {
-        const questionData = req.body;
+        const questionData = { ...req.body };
+        if (questionData.timeLimit === "" || questionData.timeLimit === undefined || questionData.timeLimit === null) {
+            questionData.timeLimit = null;
+        } else {
+            const num = Number(questionData.timeLimit);
+            questionData.timeLimit = !isNaN(num) && num > 0 ? num : null;
+        }
         const newQuestion = new Questions(questionData);
         await newQuestion.save();
         return res.status(201).json({
@@ -417,7 +423,16 @@ export const getQuestionById = async (req, res) => {
 export const updateQuestion = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const updateData = { ...req.body };
+
+        if ("timeLimit" in updateData) {
+            if (updateData.timeLimit === "" || updateData.timeLimit === undefined || updateData.timeLimit === null) {
+                updateData.timeLimit = null;
+            } else {
+                const num = Number(updateData.timeLimit);
+                updateData.timeLimit = !isNaN(num) && num > 0 ? num : null;
+            }
+        }
         
         const original = await Questions.findById(id);
         if (!original) {

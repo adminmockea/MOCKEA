@@ -81,6 +81,7 @@ export function parseQuestionToState(fetchedQuestion) {
         exampleAnswer,
         examType: fetchedQuestion.examType || "IELTS",
         listeningPart: fetchedQuestion.listeningPart || 1,
+        timeLimit: fetchedQuestion.timeLimit !== null && fetchedQuestion.timeLimit !== undefined ? String(fetchedQuestion.timeLimit) : "",
         forPlanType: fetchedQuestion.forPlanType || "free",
         isActive: fetchedQuestion.isActive !== false,
         isPublic: fetchedQuestion.isPublic || false,

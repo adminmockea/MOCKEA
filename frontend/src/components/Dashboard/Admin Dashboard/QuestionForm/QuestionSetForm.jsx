@@ -147,7 +147,12 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             }
         }
 
-        const data = { ...formData, questionGroups: sanitizedGroups, testType };
+        const data = {
+            ...formData,
+            timeLimit: formData.timeLimit !== "" && formData.timeLimit !== null && formData.timeLimit !== undefined ? Number(formData.timeLimit) : null,
+            questionGroups: sanitizedGroups,
+            testType
+        };
 
         if (testType === "reading") {
             if (formData.examType === "PTE") {

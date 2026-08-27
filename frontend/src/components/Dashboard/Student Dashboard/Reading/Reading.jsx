@@ -1326,12 +1326,23 @@ const Reading = ({ preloadedSet = null }) => {
     return true;
   }, [activeSet]);
  
+  const targetDurationSeconds = useMemo(() => {
+    if (activeSet?.timeLimit && Number(activeSet.timeLimit) > 0) {
+      return Number(activeSet.timeLimit) * 60;
+    }
+    if (isPte || activeSet?.examType === "PTE") {
+      return 20 * 60; // 20 minutes default for PTE standalone tests
+    }
+    return 60 * 60; // 60 minutes default for IELTS Reading
+  }, [activeSet, isPte]);
+
+  const { timeLeft, fmtTime, resetCountdown } = useCountdown(targetDurationSeconds, !!selectedSetId, submitted);
+
   if (selectedSetId !== prevSelectedSetId) {
       setPrevSelectedSetId(selectedSetId);
       setClickedOption(null);
+      resetCountdown(targetDurationSeconds);
   }
-
-  const { timeLeft, fmtTime, resetCountdown } = useCountdown(3600, !!selectedSetId, submitted);
 
   const passageElement = useMemo(() => {
     if (!activeSet) return null;
@@ -1438,7 +1449,7 @@ const Reading = ({ preloadedSet = null }) => {
     setResult(null);
     setClickedOption(null);
     setActivePassageTab(0);
-    resetCountdown(3600);
+    resetCountdown(targetDurationSeconds);
     setIsStarted(true);
     enterFullscreen();
   };

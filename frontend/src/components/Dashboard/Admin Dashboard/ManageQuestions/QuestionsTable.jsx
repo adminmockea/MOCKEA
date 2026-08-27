@@ -49,6 +49,7 @@ const QuestionsTable = ({
                         <th className="py-4">Question Set</th>
                         <th className="py-4">Section</th>
                         <th className="py-4">Exam</th>
+                        <th className="py-4">Time Limit</th>
                         <th className="py-4">Questions</th>
                         <th className="py-4">Plan Type</th>
                         <th className="py-4">Status</th>
@@ -104,6 +105,9 @@ const QuestionsTable = ({
                                     q.examType === 'PTE' ? 'bg-green-50 text-green-700' :
                                     'bg-amber-50 text-amber-700'
                                 }`}>{q.examType || 'IELTS'}</span>
+                            </td>
+                            <td className="py-4 font-semibold text-xs text-slate-600">
+                                {q.timeLimit ? `⏱️ ${q.timeLimit} mins` : (q.examType === 'PTE' ? '⏱️ 20 mins (Def)' : '⏱️ Standard')}
                             </td>
                             <td className="py-4 font-bold text-slate-600">
                                 {q.questions?.length || 0} Qs
