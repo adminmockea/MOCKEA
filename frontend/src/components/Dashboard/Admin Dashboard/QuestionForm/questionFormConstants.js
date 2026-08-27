@@ -93,6 +93,8 @@ export const PTE_QUESTION_TYPE_GROUPS = [
             { value: "pte-reading-writing-fill-blanks", label: "Reading & Writing: Fill in the Blanks" },
             { value: "pte-reorder-paragraphs", label: "Re-order Paragraphs" },
             { value: "pte-reading-fill-blanks", label: "Reading: Fill in the Blanks" },
+            { value: "multiple-choice", label: "Multiple Choice (Single Answer)" },
+            { value: "multiple-selection", label: "Multiple Choice (Multiple Answers)" },
         ]
     },
     {
@@ -103,6 +105,8 @@ export const PTE_QUESTION_TYPE_GROUPS = [
             { value: "pte-highlight-incorrect-words", label: "Highlight Incorrect Words" },
             { value: "pte-write-from-dictation", label: "Write from Dictation" },
             { value: "pte-select-missing-word", label: "Select Missing Word" },
+            { value: "multiple-choice", label: "Multiple Choice (Single Answer)" },
+            { value: "multiple-selection", label: "Multiple Choice (Multiple Answers)" },
         ]
     }
 ];
