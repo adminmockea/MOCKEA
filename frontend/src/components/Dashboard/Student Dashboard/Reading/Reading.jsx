@@ -124,7 +124,7 @@ const MatchingGridRenderer = ({ questions, options, answers, onAnswerChange, sub
     );
 };
 
-const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption, activeSet }) => {
+const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCorrect, correctAnswer, clickedOption, setClickedOption, activeSet, result }) => {
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     const isPteFillBlanks = q.type === 'pte-reading-writing-fill-blanks' || q.type === 'pte-reading-fill-blanks';
     const isPteReorder = q.type === 'pte-reorder-paragraphs';
@@ -210,6 +210,8 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                                 const subQId = targetSubQ.id || q.id;
                                 const selectedVal = ansList[blankIdx] || answers[subQId] || "";
                                 const isSelected = Boolean(selectedVal);
+                                const subEvaluation = result?.evaluatedAnswers?.find(a => a.questionId === subQId);
+                                const isSubCorrect = subEvaluation ? subEvaluation.isCorrect : (selectedVal && targetSubQ.correctAnswer && selectedVal.trim().toLowerCase() === targetSubQ.correctAnswer.trim().toLowerCase());
 
                                 return (
                                     <Fragment key={index}>
@@ -220,9 +222,9 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                                             onChange={(e) => handleChange(blankIdx, e.target.value)}
                                             className={`inline-block mx-1.5 my-1 px-3 py-1 text-sm font-semibold rounded-xl border-2 transition-all cursor-pointer shadow-2xs align-baseline ${
                                                 submitted
-                                                    ? isSelected
+                                                    ? isSubCorrect
                                                         ? "bg-emerald-50 border-emerald-400 text-emerald-900 font-bold"
-                                                        : "bg-rose-50 border-rose-300 text-rose-800"
+                                                        : "bg-rose-50 border-rose-400 text-rose-800 font-bold"
                                                     : isSelected
                                                     ? "bg-primary/10 border-primary text-primary font-bold shadow-sm"
                                                     : "bg-slate-50 border-slate-300 text-slate-700 hover:border-primary/50 hover:bg-white"
@@ -382,43 +384,81 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                 </div>
             ) : q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 && !isPteReorder && !isPteFillBlanks ? (
                 <div className="grid gap-3">
-                    {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
-                        <label 
-                            key={oIdx}
-                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
-                                answers[q.id] === opt 
-                                ? "bg-primary/10 border-primary text-primary font-bold shadow-md shadow-primary/10" 
-                                : "bg-white border-base-200 hover:border-primary/30"
-                            }`}
-                        >
-                            <input 
-                                type="radio" 
-                                className="hidden"
-                                name={q.id}
-                                value={opt}
-                                disabled={submitted}
-                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                            />
+                    {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => {
+                        const isSelected = answers[q.id] === opt;
+                        const letter = String.fromCharCode(65 + oIdx);
+                        
+                        const cleanCorrect = (correctAnswer || q.correctAnswer || "").trim();
+                        const cleanOpt = opt.trim();
+                        const isOptCorrect = cleanCorrect.toLowerCase() === cleanOpt.toLowerCase() ||
+                                             cleanCorrect.toUpperCase() === letter ||
+                                             cleanCorrect.toLowerCase() === `${letter.toLowerCase()}. ${cleanOpt.toLowerCase()}` ||
+                                             cleanOpt.toLowerCase().startsWith(cleanCorrect.toLowerCase());
+
+                        let optionClass = "bg-white border-base-200 hover:border-primary/30 text-slate-700";
+                        let indicator = (
                             <span className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center p-1">
-                                {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-current" />}
+                                {isSelected && <div className="w-full h-full rounded-full bg-current" />}
                             </span>
-                            <span className="text-sm">{opt}</span>
-                        </label>
-                    ))}
+                        );
+
+                        if (submitted) {
+                            if (isOptCorrect) {
+                                optionClass = "bg-emerald-50 border-emerald-400 text-emerald-900 font-bold shadow-xs";
+                                indicator = <PiCheckCircleFill className="text-emerald-500 text-xl flex-shrink-0" />;
+                            } else if (isSelected && !isOptCorrect) {
+                                optionClass = "bg-rose-50 border-rose-400 text-rose-800 font-bold shadow-xs";
+                                indicator = <PiXCircleFill className="text-rose-500 text-xl flex-shrink-0" />;
+                            } else {
+                                optionClass = "bg-slate-50/50 border-slate-200 text-slate-400 opacity-60";
+                            }
+                        } else if (isSelected) {
+                            optionClass = "bg-primary/10 border-primary text-primary font-bold shadow-md shadow-primary/10";
+                        }
+
+                        return (
+                            <label 
+                                key={oIdx}
+                                className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${optionClass}`}
+                            >
+                                <input 
+                                    type="radio" 
+                                    className="hidden"
+                                    name={q.id}
+                                    value={opt}
+                                    disabled={submitted}
+                                    onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                />
+                                {indicator}
+                                <span className="text-sm font-semibold flex-1">{opt}</span>
+                            </label>
+                        );
+                    })}
+                    {submitted && !isCorrect && (
+                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center gap-1.5 mt-1">
+                            <PiCheckCircleFill className="w-4 h-4 text-emerald-500" /> Correct Answer: {correctAnswer || q.correctAnswer}
+                        </div>
+                    )}
                 </div>
             ) : !isPteFillBlanks && !isPteReorder && (
                 <div className="space-y-2">
                     <input 
                         type="text" 
                         disabled={submitted}
-                        className="input input-bordered w-full rounded-2xl font-bold bg-white focus:border-primary"
+                        className={`input input-bordered w-full rounded-2xl font-bold transition-all ${
+                            submitted
+                                ? isCorrect
+                                    ? "bg-emerald-50 border-emerald-400 text-emerald-900 font-bold"
+                                    : "bg-rose-50 border-rose-400 text-rose-800 font-bold"
+                                : "bg-white focus:border-primary"
+                        }`}
                         placeholder="Type your answer here..."
                         value={answers[q.id] || ""}
                         onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                     />
                     {submitted && !isCorrect && (
-                        <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
-                            <PiCheckCircleFill /> Correct: {correctAnswer}
+                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center gap-1.5 mt-1">
+                            <PiCheckCircleFill className="w-4 h-4 text-emerald-500" /> Correct Answer: {correctAnswer || q.correctAnswer}
                         </div>
                     )}
                 </div>
@@ -521,18 +561,43 @@ const groupQuestions = (questions, questionGroups, offset = 0, allQuestions = []
     return groups;
 };
 
-const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange, offset = 0, data }) => {
+const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange, offset = 0, data, submitted, result }) => {
     const firstQ = questions[0];
     const questionNumbers = questions.map(q => {
         const idx = data.questions.findIndex(item => item.id === q.id);
         return offset + idx + 1;
     });
 
+    const correctAnswersList = useMemo(() => {
+        return questions.map(q => {
+            const evalItem = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
+            return (evalItem?.correctAnswer || q.correctAnswer || "").trim();
+        }).filter(Boolean);
+    }, [questions, result]);
+
+    const isOptionCorrect = (opt, letter) => {
+        const cleanOpt = opt.trim().toLowerCase();
+        const letterUpper = letter.toUpperCase();
+        return correctAnswersList.some(ca => {
+            const cleanCa = ca.trim().toLowerCase();
+            const caUpper = ca.trim().toUpperCase();
+            return (
+                cleanCa === cleanOpt ||
+                caUpper === letterUpper ||
+                cleanCa === `${letterUpper.toLowerCase()}. ${cleanOpt}` ||
+                cleanOpt.startsWith(cleanCa) ||
+                cleanCa.split(",").map(s => s.trim().toLowerCase()).includes(cleanOpt) ||
+                cleanCa.split(",").map(s => s.trim().toUpperCase()).includes(letterUpper)
+            );
+        });
+    };
+
     const isAllChecked = (opt) => {
         return questions.some(q => answers[q.id] === opt);
     };
 
     const handleCheckboxChange = (opt) => {
+        if (submitted) return;
         const currentlySelected = questions.map(q => answers[q.id]).filter(Boolean);
         const alreadySelectedIdx = currentlySelected.indexOf(opt);
 
@@ -551,6 +616,11 @@ const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange
         }
     };
 
+    const isGroupCorrect = submitted && questions.every(q => {
+        const evalItem = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
+        return evalItem?.isCorrect;
+    });
+
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -561,39 +631,76 @@ const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange
                         </div>
                     ))}
                 </div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 flex-1">
                     {firstQ.question}
                 </p>
+                {submitted && (
+                    isGroupCorrect
+                        ? <PiCheckCircleFill className="text-emerald-500 text-xl flex-shrink-0 ml-auto" />
+                        : <PiXCircleFill className="text-rose-500 text-xl flex-shrink-0 ml-auto" />
+                )}
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 pl-2">
                 {options.map((opt, optIdx) => {
                     const isChecked = isAllChecked(opt);
                     const letter = String.fromCharCode(65 + optIdx);
-                    
+                    const isCorrectOpt = isOptionCorrect(opt, letter);
+
+                    let cardClass = "border-slate-200 bg-white hover:bg-slate-50 text-slate-700";
+                    let badgeOrCheck = (
+                        <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
+                            {letter}
+                        </span>
+                    );
+
+                    if (submitted) {
+                        if (isCorrectOpt) {
+                            cardClass = "border-emerald-400 bg-emerald-50 text-emerald-900 font-bold shadow-xs";
+                            badgeOrCheck = <PiCheckCircleFill className="text-emerald-500 text-lg flex-shrink-0" />;
+                        } else if (isChecked && !isCorrectOpt) {
+                            cardClass = "border-rose-400 bg-rose-50 text-rose-800 font-bold shadow-xs";
+                            badgeOrCheck = <PiXCircleFill className="text-rose-500 text-lg flex-shrink-0" />;
+                        } else {
+                            cardClass = "border-slate-200 bg-slate-50/50 text-slate-400 opacity-60";
+                            badgeOrCheck = (
+                                <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-400">
+                                    {letter}
+                                </span>
+                            );
+                        }
+                    } else if (isChecked) {
+                        cardClass = "border-primary bg-primary/5 text-primary font-bold shadow-sm";
+                    }
+
                     return (
                         <label 
                             key={optIdx} 
-                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
-                                isChecked 
-                                ? "border-primary bg-primary/5 text-primary font-bold" 
-                                : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
-                            }`}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${cardClass}`}
                         >
                             <input
                                 type="checkbox"
-                                checked={isChecked}
+                                checked={submitted ? (isCorrectOpt || isChecked) : isChecked}
+                                disabled={submitted}
                                 onChange={() => handleCheckboxChange(opt)}
-                                className="checkbox checkbox-primary checkbox-sm rounded-lg"
+                                className={`checkbox checkbox-sm rounded-lg ${
+                                    submitted 
+                                        ? isCorrectOpt ? "checkbox-success" : "checkbox-error"
+                                        : "checkbox-primary"
+                                }`}
                             />
-                            <span className="text-xs font-black w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
-                                {letter}
-                            </span>
-                            <span className="text-xs">{opt}</span>
+                            {badgeOrCheck}
+                            <span className="text-xs flex-1">{opt}</span>
                         </label>
                     );
                 })}
             </div>
+
+            {submitted && !isGroupCorrect && correctAnswersList.length > 0 && (
+                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-center gap-1.5 mt-2">
+                    <PiCheckCircleFill className="w-4 h-4 text-emerald-500 flex-shrink-0" /> Correct Answers: {correctAnswersList.join(", ")}
+                </div>
+            )}
         </div>
     );
 };
@@ -1006,6 +1113,8 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                                     onAnswerChange={handleAnswerChange}
                                     offset={0}
                                     data={activeSet}
+                                    submitted={submitted}
+                                    result={result}
                                 />
                             </div>
                         );
@@ -1035,6 +1144,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                                     q={q}
                                     idx={idx}
                                     submitted={submitted}
+                                    result={result}
                                     answers={answers}
                                     handleAnswerChange={handleAnswerChange}
                                     isCorrect={isCorrect}
