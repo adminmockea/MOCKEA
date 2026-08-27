@@ -393,25 +393,90 @@ export function parsePastedOptionsText(text) {
     const trimmed = text.trim();
     if (!trimmed) return null;
 
-    // Pattern 1: Multi-line paste (split by newlines or tabs)
+    // Split by lines or tabs
     let rawLines = trimmed
         .split(/\r?\n|\t+/)
         .map(line => line.trim())
         .filter(line => line.length > 0);
 
-    // If copied format has alternating letter line and content line, e.g. ["A", "Option content", "B", "Option content"]
-    if (rawLines.length >= 4 && rawLines.every((l, idx) => idx % 2 === 0 ? /^[A-Ea-e1-9][\.\)\:]?$/.test(l) : true)) {
-        const merged = [];
-        for (let i = 0; i < rawLines.length; i += 2) {
-            if (rawLines[i + 1]) {
-                merged.push(rawLines[i + 1]);
+    if (rawLines.length > 1) {
+        // Check for explicit option prefixes like "A. ", "A) ", "Option A:", "1. ", "1) "
+        const optionPrefixRegex = /^([A-Ea-e1-9]|Option\s+[A-Ea-e1-9])[\.\)\:\-]?\s+/i;
+        const isolatedHeaderRegex = /^(?:Option\s+)?([A-Ea-e1-9])[\.\)\:]?$/i;
+
+        // Check if multiple lines start with explicit option prefixes
+        const linesWithPrefix = rawLines.filter(l => optionPrefixRegex.test(l) || isolatedHeaderRegex.test(l));
+        if (linesWithPrefix.length >= 2) {
+            const grouped = [];
+            let currentGroup = "";
+
+            for (const line of rawLines) {
+                if (isolatedHeaderRegex.test(line)) {
+                    if (currentGroup) grouped.push(currentGroup.trim());
+                    currentGroup = "";
+                } else if (optionPrefixRegex.test(line)) {
+                    if (currentGroup) grouped.push(currentGroup.trim());
+                    currentGroup = line.replace(optionPrefixRegex, "").trim();
+                } else {
+                    if (currentGroup) {
+                        currentGroup += " " + line;
+                    } else {
+                        currentGroup = line;
+                    }
+                }
+            }
+            if (currentGroup) grouped.push(currentGroup.trim());
+            if (grouped.length > 1) return grouped;
+        }
+
+        // Check if format is alternating isolated letter line and content line, e.g. ["A", "Option content", "B", "Option content"]
+        if (rawLines.length >= 4 && rawLines.every((l, idx) => idx % 2 === 0 ? isolatedHeaderRegex.test(l) : true)) {
+            const merged = [];
+            for (let i = 0; i < rawLines.length; i += 2) {
+                if (rawLines[i + 1]) {
+                    merged.push(rawLines[i + 1]);
+                }
+            }
+            if (merged.length > 1) return merged;
+        }
+
+        // Smart re-joining of soft-wrapped multi-line text without explicit option prefixes
+        // E.g., sentences copied from web pages (like alfapte.com) that wrap across line breaks
+        const connectorRegex = /\b(?:the|of|and|in|to|for|with|a|an|or|is|are|was|were|be|been|by|on|at|that|which|from|as|about|than)\s*$/i;
+        const terminalPunctuationRegex = /[\.\!\?\:\;]$/;
+        const startsWithLowercaseRegex = /^[a-z]/;
+
+        const mergedItems = [];
+        let currentItem = "";
+
+        for (let i = 0; i < rawLines.length; i++) {
+            const line = rawLines[i];
+            const cleanLine = line.replace(/^([A-Ea-e1-9][\.\)\:\-]?\s+)/, "").trim();
+
+            if (!currentItem) {
+                currentItem = cleanLine;
+                continue;
+            }
+
+            const prevEndedWithTerminal = terminalPunctuationRegex.test(currentItem);
+            const prevEndedWithConnector = connectorRegex.test(currentItem);
+            const lineStartsWithLowercase = startsWithLowercaseRegex.test(cleanLine);
+
+            // Re-join if it looks like a continuation of the same sentence
+            if (lineStartsWithLowercase || prevEndedWithConnector || !prevEndedWithTerminal) {
+                currentItem += " " + cleanLine;
+            } else {
+                mergedItems.push(currentItem);
+                currentItem = cleanLine;
             }
         }
-        if (merged.length > 1) return merged;
-    }
+        if (currentItem) mergedItems.push(currentItem);
 
-    if (rawLines.length > 1) {
-        // Strip single option letter/digit prefixes ONLY (e.g. "A. ", "A) ", "A: ", "A ", "1. ", "1) ")
+        if (mergedItems.length > 1) {
+            return mergedItems;
+        }
+
+        // Fallback: simple line split with prefix removal
         return rawLines.map(line => line.replace(/^([A-Ea-e1-9][\.\)\:\-]?\s+)/, "").trim());
     }
 
