@@ -9,7 +9,7 @@ const DEBOUNCE_MS = 400;
  */
 function splitIntoSegments(html) {
     const segments = [];
-    const regex = /___([\w-]+)___/g;
+    const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
     let lastIndex = 0;
     let match;
 
@@ -17,7 +17,8 @@ function splitIntoSegments(html) {
         if (match.index > lastIndex) {
             segments.push({ type: "html", content: html.slice(lastIndex, match.index) });
         }
-        segments.push({ type: "placeholder", matchKey: match[1] });
+        const matchKey = match[1] || match[2];
+        segments.push({ type: "placeholder", matchKey });
         lastIndex = match.index + match[0].length;
     }
 
@@ -30,16 +31,21 @@ function splitIntoSegments(html) {
 
 /**
  * Finds a question by the placeholder matchKey, supporting id, global number, local index,
- * and numeric ID stripping (e.g. "r1" → "1").
+ * and numeric ID stripping (e.g. "r1" → "1", "$1" → "1").
  */
 function findQuestion(questions, matchKey, offset) {
+    if (!questions || !matchKey) return null;
+    const cleanKey = matchKey.toString().replace(/^\$/, "").replace(/^blank-\$?/, "");
     return questions.find((item, idx) => {
         const questionNum = (offset || 0) + idx + 1;
         const localIndex = idx + 1;
         return (
             item.id === matchKey ||
+            item.id === cleanKey ||
             questionNum.toString() === matchKey ||
-            localIndex.toString() === matchKey
+            questionNum.toString() === cleanKey ||
+            localIndex.toString() === matchKey ||
+            localIndex.toString() === cleanKey
         );
     });
 }
@@ -263,7 +269,7 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
         return convertMarkdownContentToHtml(passageContent);
     }, [passageContent]);
 
-    const hasInlinePlaceholders = useMemo(() => /___[\w-]+___/.test(baseHtml), [baseHtml]);
+    const hasInlinePlaceholders = useMemo(() => /(?:___[\w-]+___|\[blank-\$?(\d+)\])/.test(baseHtml), [baseHtml]);
 
     // Split HTML into segments only when passage content changes — NOT on answer changes
     const segments = useMemo(() => {

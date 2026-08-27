@@ -1319,7 +1319,13 @@ const Reading = ({ preloadedSet = null }) => {
     return Boolean(hasPassages || hasSinglePassage);
   }, [activeSet]);
 
-  const showPassageSide = !isPte || hasPassageContent;
+  const isPteFillBlanks = useMemo(() => {
+    return activeSet?.questions?.some(
+      (q) => q.type === "pte-reading-writing-fill-blanks" || q.type === "pte-reading-fill-blanks"
+    );
+  }, [activeSet]);
+
+  const showPassageSide = !isPteFillBlanks && (!isPte || hasPassageContent);
 
   const hasRightPaneQuestions = useMemo(() => {
     if (!activeSet) return false;
