@@ -20,6 +20,8 @@ import {
 import { useNavigate } from "react-router";
 import useTestIntegrity from "../../../../hooks/useTestIntegrity.jsx";
 import TestShell from "../../../Common/TestShell.jsx";
+import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils.js";
+
 
 const getTaskContent = (activeSet, tab, isPte) => {
   if (!activeSet) return "";
@@ -81,6 +83,21 @@ const Writing = ({ preloadedSet = null }) => {
   const loading = preloadedSet ? false : queryLoading;
 
   const [selectedSetId, setSelectedSetId] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
+
+  const categories = useMemo(() => {
+    const map = new Map();
+    writingSets.forEach(set => {
+      const cat = getSetCategory(set);
+      map.set(cat, (map.get(cat) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
+  }, [writingSets]);
+
+  const filteredWritingSets = useMemo(() => {
+    if (selectedCategory === "ALL") return writingSets;
+    return writingSets.filter(set => getSetCategory(set) === selectedCategory);
+  }, [writingSets, selectedCategory]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -399,38 +416,90 @@ const Writing = ({ preloadedSet = null }) => {
                     </div>
                 </motion.div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {writingSets.map((set, idx) => (
-                        <motion.div 
-                            key={set._id}
-                            whileHover={{ y: -10 }}
-                            className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                            onClick={() => setSelectedSetId(set._id)}
-                        >
-                            <div className="flex flex-col h-full space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                                        <PiPencilLineFill />
-                                    </div>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
-                                </div>
-                                <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
-                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                    <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
-                                    <span className="flex items-center gap-1.5"><PiTextAaFill /> 2 Tasks</span>
-                                    {set.examType && (
-                                        <span className={`badge badge-sm font-black ${
-                                            set.examType === 'IELTS' ? 'badge-primary' :
-                                            set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
-                                        }`}>{set.examType}</span>
-                                    )}
-                                </div>
-                                <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
-                                    Start Composition
+                <div className="space-y-8">
+                    {/* Category Filter Tabs */}
+                    {categories.length > 0 && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                            <button
+                                onClick={() => setSelectedCategory("ALL")}
+                                className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border ${
+                                    selectedCategory === "ALL"
+                                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-[1.02]"
+                                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                                }`}
+                            >
+                                All Categories ({writingSets.length})
+                            </button>
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat.name}
+                                    onClick={() => setSelectedCategory(cat.name)}
+                                    className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border flex items-center gap-2 ${
+                                        selectedCategory === cat.name
+                                        ? "bg-primary text-white border-primary shadow-md scale-[1.02]"
+                                        : "bg-white text-slate-600 border-slate-200 hover:border-primary/30 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <span>{cat.name}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                                        selectedCategory === cat.name ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                                    }`}>
+                                        {cat.count}
+                                    </span>
                                 </button>
-                            </div>
-                        </motion.div>
-                    ))}
+                            ))}
+                        </div>
+                    )}
+
+                    {filteredWritingSets.length === 0 ? (
+                        <div className="p-12 text-center bg-white border border-slate-200 rounded-[2.5rem]">
+                            <p className="text-slate-500 font-bold text-sm">No modules found for category "{selectedCategory}".</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {filteredWritingSets.map((set, idx) => {
+                                const categoryName = getSetCategory(set);
+                                return (
+                                    <motion.div 
+                                        key={set._id}
+                                        whileHover={{ y: -10 }}
+                                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
+                                        onClick={() => setSelectedSetId(set._id)}
+                                    >
+                                        <div className="flex flex-col h-full space-y-6">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+                                                    <PiPencilLineFill />
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1.5 flex-1 min-w-0">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
+                                                    {categoryName && (
+                                                        <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border truncate max-w-full ${getCategoryBadgeStyle(categoryName)}`}>
+                                                            {categoryName}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                                            <div className="flex items-center gap-3 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                                <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
+                                                <span className="flex items-center gap-1.5"><PiTextAaFill /> 2 Tasks</span>
+                                                {set.examType && (
+                                                    <span className={`badge badge-sm font-black ${
+                                                        set.examType === 'IELTS' ? 'badge-primary' :
+                                                        set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
+                                                    }`}>{set.examType}</span>
+                                                )}
+                                            </div>
+                                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                                Start Composition
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
