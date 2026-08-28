@@ -200,6 +200,13 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                         updates.options = [...firstDD.options];
                     }
                 }
+            } else if (field === "correctAnswer") {
+                const targetQ = prev.questions.find(q => q.id === id);
+                if (targetQ && targetQ.type === "pte-reorder-paragraphs") {
+                    updates.pteParagraphsOrder = typeof value === "string"
+                        ? value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean)
+                        : [];
+                }
             }
             
             const updatedQuestions = prev.questions.map((q) =>

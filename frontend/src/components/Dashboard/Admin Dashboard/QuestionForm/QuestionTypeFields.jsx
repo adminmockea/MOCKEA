@@ -356,19 +356,6 @@ export const QuestionTypeExtras = ({
                     >
                         <PiPlus /> Add Paragraph
                     </button>
-                    <div className="flex flex-col gap-1.5 pt-2">
-                        <label className="text-xs font-bold text-slate-700">Correct Order Sequence (e.g. A, C, B, D)</label>
-                        <input
-                            type="text"
-                            className="input input-bordered rounded-xl text-sm"
-                            placeholder="A, B, C, D"
-                            value={correctOrder.join(", ")}
-                            onChange={(e) => {
-                                const seq = e.target.value.split(",").map(s => s.trim().toUpperCase()).filter(s => s !== "");
-                                onUpdate(q.id, "pteParagraphsOrder", seq);
-                            }}
-                        />
-                    </div>
                 </div>
             </div>
         );
