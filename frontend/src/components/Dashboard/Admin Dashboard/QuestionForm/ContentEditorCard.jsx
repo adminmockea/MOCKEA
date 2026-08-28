@@ -229,7 +229,6 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     updated[pIdx].title = e.target.value;
                                                     patch({ passages: updated });
                                                 }}
-                                                required
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
@@ -277,7 +276,6 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                         );
                                                     }
                                                 }}
-                                                required
                                             />
                                             
                                             {/* Quick Instant Blank Toolbar for IELTS Passages */}
@@ -352,7 +350,10 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                     ) : (
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
-                                <label className="text-xs font-bold text-slate-700 tracking-wide">PTE Reading Text / Passage</label>
+                                <label className="text-xs font-bold text-slate-700 tracking-wide flex items-center gap-2">
+                                    PTE Reading Text / Passage
+                                    <span className="text-[10px] font-semibold text-slate-400 font-sans">(Optional for Re-order Paragraphs)</span>
+                                </label>
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -388,7 +389,7 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                             <textarea
                                 id="pte-reading-passage-textarea"
                                 className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all outline-none resize-y min-h-[200px] font-mono text-slate-800 leading-relaxed"
-                                placeholder="Enter the reading text passage here. Use [blank-1], [blank-2], etc. for Reading Fill in the Blanks interactive dropdowns."
+                                placeholder="Enter the reading text passage here (Leave blank for Re-order Paragraphs or standalone questions). Use [blank-1], [blank-2], etc. for Fill in the Blanks."
                                 value={formData.passage || ""}
                                 onChange={(e) => patch({ passage: e.target.value })}
                                 onPaste={(e) => {
@@ -420,7 +421,6 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         }
                                     }
                                 }}
-                                required
                             />
 
                             {/* Quick Instant Blank Toolbar for PTE Passage */}
