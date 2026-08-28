@@ -26,6 +26,7 @@ import TestShell from "../../../Common/TestShell.jsx";
 import useEvaluate from "../../../../hooks/useEvaluate";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
+import ReorderParagraphsRenderer from "../../../Common/ReorderParagraphsRenderer";
 import { shuffleOptions, getOptionsForBlank } from "../../../../utils/shuffleOptions.js";
 import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils.js";
 
@@ -249,94 +250,17 @@ const QuestionRenderer = ({ q, idx, submitted, answers, handleAnswerChange, isCo
                 );
             })()}
 
-            {isPteReorder && (() => {
-                const paragraphs = q.options || [];
-                const currentAns = answers[q.id] || "";
-                const orderedKeys = currentAns ? currentAns.split(",").map(s => s.trim()).filter(Boolean) : [];
-                
-                const getParaKey = (para) => {
-                    const match = para.match(/^([A-Ea-e])/);
-                    return match ? match[1].toUpperCase() : para.substring(0, 1).toUpperCase();
-                };
-
-                const handleSelectKey = (key) => {
-                    if (submitted) return;
-                    if (orderedKeys.includes(key)) {
-                        const newOrder = orderedKeys.filter(k => k !== key);
-                        handleAnswerChange(q.id, newOrder.join(", "));
-                    } else {
-                        const newOrder = [...orderedKeys, key];
-                        handleAnswerChange(q.id, newOrder.join(", "));
-                    }
-                };
-
-                return (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-xs font-sans">
-                            <div className="space-y-3">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Source Paragraphs (Click to add)</span>
-                                <div className="space-y-2">
-                                    {paragraphs.map((para, pIdx) => {
-                                        const key = getParaKey(para);
-                                        const isChosen = orderedKeys.includes(key);
-                                        return (
-                                            <button
-                                                key={pIdx}
-                                                type="button"
-                                                onClick={() => handleSelectKey(key)}
-                                                className={`w-full text-left p-4 rounded-2xl border-2 text-xs font-semibold leading-relaxed transition-all flex items-start gap-3 ${
-                                                    isChosen
-                                                    ? "bg-slate-200/50 border-slate-200 text-slate-400 pointer-events-none"
-                                                    : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 shadow-sm"
-                                                }`}
-                                            >
-                                                <span className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
-                                                    {key}
-                                                </span>
-                                                <span className="flex-1">{para}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 border-l border-slate-200 pl-6">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Your Order (Click to remove)</span>
-                                {orderedKeys.length === 0 ? (
-                                    <div className="h-[200px] border-2 border-dashed border-slate-300 rounded-3xl flex items-center justify-center text-slate-400 text-xs font-semibold">
-                                        Click paragraphs on the left to set order
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {orderedKeys.map((key, oIdx) => {
-                                            const paraText = paragraphs.find(p => getParaKey(p) === key) || key;
-                                            return (
-                                                <button
-                                                    key={key}
-                                                    type="button"
-                                                    disabled={submitted}
-                                                    onClick={() => handleSelectKey(key)}
-                                                    className="w-full text-left p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-xs font-bold leading-relaxed transition-all flex items-start gap-3 text-primary group"
-                                                >
-                                                    <span className="w-6 h-6 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
-                                                        {oIdx + 1}
-                                                    </span>
-                                                    <span className="flex-1">{paraText}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        {submitted && !isCorrect && (
-                            <div className="text-[10px] font-black uppercase tracking-widest text-success mt-2 flex items-center gap-1">
-                                <PiCheckCircleFill /> Correct Sequence: {correctAnswer}
-                            </div>
-                        )}
-                    </div>
-                );
-            })()}
+            {isPteReorder && (
+                <ReorderParagraphsRenderer
+                    q={q}
+                    answers={answers}
+                    onAnswerChange={handleAnswerChange}
+                    submitted={submitted}
+                    result={result}
+                    correctAnswer={correctAnswer}
+                    isCorrect={isCorrect}
+                />
+            )}
 
             {isDragDrop ? (
                 <div className="space-y-2">

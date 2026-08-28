@@ -17,7 +17,7 @@ import {
  */
 export const getParaInfo = (para, index) => {
     if (!para) return { key: String.fromCharCode(65 + index), text: "" };
-    const match = para.match(/^([A-Za-z])[\.\:\)\s]\s*(.*)/s);
+    const match = para.match(/^([A-Za-z])[\.\:\)]\s*(.*)/s);
     if (match && match[1] && match[2]) {
         return {
             key: match[1].toUpperCase(),
