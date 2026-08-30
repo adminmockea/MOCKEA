@@ -274,10 +274,16 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
     const baseHtml = useMemo(() => {
         if (!passageContent) return "";
         let html = convertMarkdownContentToHtml(passageContent);
-        // Replace forced <br/> line breaks directly before or after inline placeholders with spaces so text flows inline
-        html = html.replace(/(?:<br\s*\/?>\s*)+((?:___[\w-]+___|\[blank-\$?(\d+)\]))/gi, " $1");
-        html = html.replace(/((?:___[\w-]+___|\[blank-\$?(\d+)\]))\s*(?:<br\s*\/?>\s*)+/gi, "$1 ");
-        return html;
+
+        // 1. Merge adjacent paragraph tags into continuous text
+        html = html.replace(/<\/p>\s*<p[^>]*>/gi, " ");
+        // 2. Replace all forced <br/> line breaks with single spaces
+        html = html.replace(/<br\s*\/?>/gi, " ");
+        // 3. Strip outer <p> tags so we can control paragraph flow cleanly
+        html = html.replace(/<\/?p[^>]*>/gi, "");
+
+        // 4. Return as a single clean paragraph
+        return `<p class="leading-[2.3] text-slate-800 font-medium">${html}</p>`;
     }, [passageContent]);
 
     const hasInlinePlaceholders = useMemo(() => /(?:___[\w-]+___|\[blank-\$?(\d+)\])/.test(baseHtml), [baseHtml]);
