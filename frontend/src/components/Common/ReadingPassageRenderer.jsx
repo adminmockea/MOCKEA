@@ -93,7 +93,7 @@ const DragDropTarget = memo(function DragDropTarget({
             ? "border-emerald-400 bg-emerald-50/90 text-emerald-800 font-extrabold shadow-2xs"
             : "border-rose-400 bg-rose-50/90 text-rose-800 font-extrabold shadow-2xs";
         return (
-            <span className="inline-flex items-center gap-1 mx-1 relative group align-middle my-0.5">
+            <span className="inline-flex items-center mx-1 relative group align-middle my-1.5">
                 <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-slate-100 text-slate-500 font-black text-[10px] mr-0.5 select-none flex-shrink-0">
                     ({labelNum})
                 </span>
@@ -117,7 +117,7 @@ const DragDropTarget = memo(function DragDropTarget({
     }
 
     return (
-        <span className="inline-flex items-center mx-1 relative group align-middle my-0.5">
+        <span className="inline-flex items-center mx-1 relative group align-middle my-1.5">
             <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-primary/10 text-primary font-black text-[10px] mr-1 select-none flex-shrink-0 shadow-2xs">
                 ({labelNum})
             </span>
@@ -275,15 +275,12 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
         if (!passageContent) return "";
         let html = convertMarkdownContentToHtml(passageContent);
 
-        // 1. Merge adjacent paragraph tags into continuous text
+        // Strip block p and br tags so split segments contain only clean inline text
         html = html.replace(/<\/p>\s*<p[^>]*>/gi, " ");
-        // 2. Replace all forced <br/> line breaks with single spaces
         html = html.replace(/<br\s*\/?>/gi, " ");
-        // 3. Strip outer <p> tags so we can control paragraph flow cleanly
         html = html.replace(/<\/?p[^>]*>/gi, "");
 
-        // 4. Return as a single clean paragraph
-        return `<p class="leading-[2.3] text-slate-800 font-medium">${html}</p>`;
+        return html.trim();
     }, [passageContent]);
 
     const hasInlinePlaceholders = useMemo(() => /(?:___[\w-]+___|\[blank-\$?(\d+)\])/.test(baseHtml), [baseHtml]);
@@ -299,12 +296,12 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
 
     if (!hasInlinePlaceholders || !segments) {
         // Pure HTML passage — no interactive elements needed
-        return <div className={className} dangerouslySetInnerHTML={{ __html: baseHtml }} />;
+        return <div className={className} dangerouslySetInnerHTML={{ __html: convertMarkdownContentToHtml(passageContent) }} />;
     }
 
-    // Passage with interactive inline elements — render as real React tree
+    // Passage with interactive inline elements — render as a clean continuous paragraph
     return (
-        <div className={className}>
+        <p className={`${className} leading-[3.2] text-slate-800 font-medium`}>
             {segments.map((seg, i) => (
                 <Segment
                     key={`${questionsKey}-${i}`}
@@ -320,7 +317,7 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
                     lastInteractionRef={lastInteractionRef}
                 />
             ))}
-        </div>
+        </p>
     );
 });
 
