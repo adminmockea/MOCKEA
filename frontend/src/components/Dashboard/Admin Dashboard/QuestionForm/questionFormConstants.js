@@ -60,7 +60,7 @@ export const QUESTION_TYPE_GROUPS = [
 ];
 
 // Which types need options array
-export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion", "multiple-selection", "pte-select-missing-word"];
+export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matching-grid", "drag-drop-completion", "multiple-selection", "pte-select-missing-word", "pte-reading-fill-blanks-drag-drop", "pte-reading-fill-blanks"];
 // Which types need matchingPairs
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL
@@ -90,7 +90,8 @@ export const PTE_QUESTION_TYPE_GROUPS = [
         group: "PTE Reading",
         icon: PiBookOpen,
         types: [
-            { value: "pte-reading-writing-fill-blanks", label: "Reading & Writing: Fill in the Blanks" },
+            { value: "pte-reading-fill-blanks-drag-drop", label: "Reading: Fill in the Blanks (Drag & Drop)" },
+            { value: "pte-reading-writing-fill-blanks", label: "Reading & Writing: Fill in the Blanks (Dropdown)" },
             { value: "pte-reorder-paragraphs", label: "Re-order Paragraphs" },
             { value: "pte-reading-fill-blanks", label: "Reading: Fill in the Blanks" },
             { value: "multiple-choice", label: "Multiple Choice (Single Answer)" },

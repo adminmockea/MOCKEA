@@ -1,8 +1,9 @@
 export const PTE_QUESTION_TYPE_LABELS = {
   // PTE Reading
-  "pte-reading-writing-fill-blanks": "Reading & Writing: Fill in the Blanks",
+  "pte-reading-fill-blanks-drag-drop": "Reading: Fill in the Blanks (Drag & Drop)",
+  "pte-reading-writing-fill-blanks": "Reading & Writing: Fill in the Blanks (Dropdown)",
   "pte-reorder-paragraphs": "Re-order Paragraphs",
-  "pte-reading-fill-blanks": "Reading: Fill in the Blanks",
+  "pte-reading-fill-blanks": "Reading: Fill in the Blanks (Drag & Drop)",
 
   // PTE Speaking
   "pte-read-aloud": "Read Aloud",

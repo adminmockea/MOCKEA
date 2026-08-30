@@ -212,7 +212,7 @@ const Segment = memo(function Segment({
     const isMockTest = submitted === undefined;
     const value = answers[qId] || "";
 
-    if (q.type === "drag-drop-completion") {
+    if (q.type === "drag-drop-completion" || q.type === "pte-reading-fill-blanks" || q.type === "pte-reading-fill-blanks-drag-drop") {
         return (
             <DragDropTarget
                 qId={qId}

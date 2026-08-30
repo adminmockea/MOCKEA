@@ -136,7 +136,10 @@ export default function QuestionsBuilderCard({
                             </p>
                             <ul className="list-disc pl-5 space-y-1">
                                 <li>
-                                    <strong>Reading Blanks:</strong> Set question to <em>Reading & Writing: Fill in the Blanks</em>. Type text in the passage field, replacing blanks with <code>[blank-1]</code>, <code>[blank-2]</code>, etc. Define options (first is correct).
+                                    <strong>Reading Blanks (Dropdown):</strong> Set question to <em>Reading &amp; Writing: Fill in the Blanks (Dropdown)</em>. Type text in the passage field with <code>[blank-1]</code>, <code>[blank-2]</code>, etc., and define 4 dropdown choices per blank.
+                                </li>
+                                <li>
+                                    <strong>Reading Blanks (Drag &amp; Drop):</strong> Set question to <em>Reading: Fill in the Blanks (Drag &amp; Drop)</em>. Add word pool options (A, B, C, D...) and define correct answer for each blank.
                                 </li>
                                 <li>
                                     <strong>Re-order Paragraphs:</strong> Define paragraph choices (A, B, C, D) and input the correct sequence order separated by commas (e.g., <code>B, D, A, C</code>).

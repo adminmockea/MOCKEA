@@ -243,8 +243,8 @@ const MultipleSelectionRenderer = ({ questions, options, answers, onAnswerChange
 };
 
 const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption, offset = 0 }) => {
-    const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
-    const isPteFillBlanks = q.type === 'pte-reading-writing-fill-blanks' || q.type === 'pte-reading-fill-blanks';
+    const isDragDrop = q.type === 'drag-drop-completion' || q.type === 'pte-reading-fill-blanks' || q.type === 'pte-reading-fill-blanks-drag-drop' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
+    const isPteFillBlanks = q.type === 'pte-reading-writing-fill-blanks';
     const isPteReorder = q.type === 'pte-reorder-paragraphs';
 
     return (
@@ -705,7 +705,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
         return ids;
     }, [data, offset]);
 
-    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
+    const dragDropQuestions = useMemo(() => data?.questions?.filter(q => q.type === 'drag-drop-completion' || q.type === 'pte-reading-fill-blanks' || q.type === 'pte-reading-fill-blanks-drag-drop' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [data?.questions]);
     const sharedOptions = useMemo(() => {
         const first = dragDropQuestions[0];
         return first?.options?.filter(Boolean) || [];
@@ -739,12 +739,12 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
 
                 const groupDragDropQuestions = groupEntry.visuals?.flatMap(vg => {
                     if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
-                        return vg.questions?.filter(q => q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [];
+                        return vg.questions?.filter(q => q.type === 'drag-drop-completion' || q.type === 'pte-reading-fill-blanks' || q.type === 'pte-reading-fill-blanks-drag-drop' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [];
                     }
                     const q = vg.question;
-                    return q?.type === 'drag-drop-completion' || (q?.type === 'flow-chart-completion' && q.options?.length > 0) ? [q] : [];
+                    return (q?.type === 'drag-drop-completion' || q?.type === 'pte-reading-fill-blanks' || q?.type === 'pte-reading-fill-blanks-drag-drop' || (q?.type === 'flow-chart-completion' && q.options?.length > 0)) ? [q] : [];
                 }) || [];
-                const groupOptions = groupDragDropQuestions[0]?.options?.filter(Boolean) || [];
+                const groupOptions = (groupDragDropQuestions[0]?.options || sharedOptions)?.filter(Boolean) || [];
 
                 const renderDragOptions = () => {
                     if (groupOptions.length === 0) return null;

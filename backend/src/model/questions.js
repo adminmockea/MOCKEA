@@ -44,6 +44,7 @@ const QuestionItemSchema = new mongoose.Schema(
                 "pte-reading-writing-fill-blanks",
                 "pte-reorder-paragraphs",
                 "pte-reading-fill-blanks",
+                "pte-reading-fill-blanks-drag-drop",
                 "pte-summarize-spoken-text",
                 "pte-highlight-incorrect-words",
                 "pte-write-from-dictation",
