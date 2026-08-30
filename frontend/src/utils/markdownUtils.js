@@ -152,7 +152,7 @@ export const convertMarkdownContentToHtml = (rawText) => {
       paragraphLines.push(lines[index]);
       index += 1;
     }
-    const paragraphText = paragraphLines.map((line) => convertInlineText(line)).join("<br/>");
+    const paragraphText = paragraphLines.map((line) => convertInlineText(line)).join(" ");
     htmlParts.push(`<p class="leading-relaxed">${paragraphText}</p>`);
   }
 

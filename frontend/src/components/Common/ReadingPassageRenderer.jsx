@@ -273,7 +273,11 @@ const ReadingPassageRenderer = memo(function ReadingPassageRenderer({
     // Convert markdown → HTML once (stable unless passage/questions/submit state change)
     const baseHtml = useMemo(() => {
         if (!passageContent) return "";
-        return convertMarkdownContentToHtml(passageContent);
+        let html = convertMarkdownContentToHtml(passageContent);
+        // Replace forced <br/> line breaks directly before or after inline placeholders with spaces so text flows inline
+        html = html.replace(/(?:<br\s*\/?>\s*)+((?:___[\w-]+___|\[blank-\$?(\d+)\]))/gi, " $1");
+        html = html.replace(/((?:___[\w-]+___|\[blank-\$?(\d+)\]))\s*(?:<br\s*\/?>\s*)+/gi, "$1 ");
+        return html;
     }, [passageContent]);
 
     const hasInlinePlaceholders = useMemo(() => /(?:___[\w-]+___|\[blank-\$?(\d+)\])/.test(baseHtml), [baseHtml]);
