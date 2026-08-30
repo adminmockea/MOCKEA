@@ -760,56 +760,37 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
         const ids = new Set();
         if (!activeSet) return ids;
 
-        const passages = activeSet.passages || [];
-        passages.forEach(p => {
-            if (!p.content) return;
-            const matches = p.content.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
+        const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+        const processText = (text) => {
+            if (!text) return;
+            let match;
+            const re = new RegExp(regex);
+            while ((match = re.exec(text)) !== null) {
+                const matchKey = match[1] || match[2];
+                const cleanKey = matchKey.toString().replace(/^\$/, "").replace(/^blank-\$?/, "");
                 const q = activeSet.questions?.find((item, idx) => {
                     const questionNum = idx + 1;
                     return (
                         item.id === matchKey ||
-                        questionNum.toString() === matchKey
+                        item.id === cleanKey ||
+                        questionNum.toString() === matchKey ||
+                        questionNum.toString() === cleanKey ||
+                        (idx + 1).toString() === matchKey ||
+                        (idx + 1).toString() === cleanKey
                     );
                 });
                 if (q) ids.add(q.id);
-            });
+            }
+        };
+
+        (activeSet.passages || []).forEach(p => processText(p?.content));
+        processText(activeSet.passage);
+        (activeSet.questionGroups || []).forEach(g => {
+            if (g.instructions && !/^\|.+\|$/m.test(g.instructions)) {
+                processText(g.instructions);
+            }
         });
 
-        if (activeSet.passage) {
-            const matches = activeSet.passage.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
-                const q = activeSet.questions?.find((item, idx) => {
-                    const questionNum = idx + 1;
-                    return (
-                        item.id === matchKey ||
-                        questionNum.toString() === matchKey
-                    );
-                });
-                if (q) ids.add(q.id);
-            });
-        }
-
-        if (activeSet.questionGroups) {
-            activeSet.questionGroups.forEach(g => {
-                if (!g.instructions) return;
-                if (/^\|.+\|$/m.test(g.instructions)) return; // Skip tables
-                const matches = g.instructions.match(/___([\w-]+)___/g) || [];
-                matches.forEach(m => {
-                    const matchKey = m.replace(/___/g, "").trim();
-                    const q = activeSet.questions?.find((item, idx) => {
-                        const questionNum = idx + 1;
-                        return (
-                            item.id === matchKey ||
-                            questionNum.toString() === matchKey
-                        );
-                    });
-                    if (q) ids.add(q.id);
-                });
-            });
-        }
         return ids;
     }, [activeSet]);
 
@@ -817,37 +798,31 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
         const ids = new Set();
         if (!activeSet) return ids;
 
-        const passages = activeSet.passages || [];
-        passages.forEach(p => {
-            if (!p.content) return;
-            const matches = p.content.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
+        const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+        const processText = (text) => {
+            if (!text) return;
+            let match;
+            const re = new RegExp(regex);
+            while ((match = re.exec(text)) !== null) {
+                const matchKey = match[1] || match[2];
+                const cleanKey = matchKey.toString().replace(/^\$/, "").replace(/^blank-\$?/, "");
                 const q = activeSet.questions?.find((item, idx) => {
                     const questionNum = idx + 1;
                     return (
                         item.id === matchKey ||
-                        questionNum.toString() === matchKey
+                        item.id === cleanKey ||
+                        questionNum.toString() === matchKey ||
+                        questionNum.toString() === cleanKey ||
+                        (idx + 1).toString() === matchKey ||
+                        (idx + 1).toString() === cleanKey
                     );
                 });
                 if (q) ids.add(q.id);
-            });
-        });
+            }
+        };
 
-        if (activeSet.passage) {
-            const matches = activeSet.passage.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
-                const q = activeSet.questions?.find((item, idx) => {
-                    const questionNum = idx + 1;
-                    return (
-                        item.id === matchKey ||
-                        questionNum.toString() === matchKey
-                    );
-                });
-                if (q) ids.add(q.id);
-            });
-        }
+        (activeSet.passages || []).forEach(p => processText(p?.content));
+        processText(activeSet.passage);
 
         return ids;
     }, [activeSet]);
