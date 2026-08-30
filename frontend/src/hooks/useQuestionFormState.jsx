@@ -2,6 +2,8 @@ import { useState, useCallback } from "react";
 import { makeQuestion, initialForm } from "../components/Dashboard/Admin Dashboard/QuestionForm/questionFormConstants";
 import { stripListeningExampleBlocks } from "../utils/listeningPassage";
 
+const isDragDropType = (type) => type === "drag-drop-completion" || type === "pte-reading-fill-blanks-drag-drop" || type === "pte-reading-fill-blanks";
+
 // Parser logic to reverse-engineer database HTML wrappers back into editable form state
 export function parseQuestionToState(fetchedQuestion) {
     if (!fetchedQuestion) return null;
@@ -194,8 +196,8 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                     if (currentOpts.length === 0 || currentOpts.every(o => o === "A" || o === "B" || o === "C" || o === "D")) {
                         updates.options = ["Option A", "Option B"];
                     }
-                } else if (value === "drag-drop-completion") {
-                    const firstDD = prev.questions.find(q => q.type === "drag-drop-completion");
+                } else if (value === "drag-drop-completion" || value === "pte-reading-fill-blanks-drag-drop" || value === "pte-reading-fill-blanks") {
+                    const firstDD = prev.questions.find(q => q.type === "drag-drop-completion" || q.type === "pte-reading-fill-blanks-drag-drop" || q.type === "pte-reading-fill-blanks");
                     if (firstDD && firstDD.options?.length) {
                         updates.options = [...firstDD.options];
                     }
@@ -229,11 +231,11 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             const nextValue = targetQuestion.type === "matching-grid"
                 ? String.fromCharCode(65 + (targetQuestion.options?.length || 0))
                 : "";
-            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const isDragDrop = isDragDropType(targetQuestion.type);
             const newOptions = [...(targetQuestion.options || []), nextValue];
 
             const updatedQuestions = prev.questions.map((q) => {
-                if (isDragDrop && q.type === "drag-drop-completion") {
+                if (isDragDrop && isDragDropType(q.type)) {
                     return { ...q, options: newOptions };
                 }
                 return q.id === qId ? { ...q, options: newOptions } : q;
@@ -252,10 +254,10 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             if (!targetQuestion) return prev;
             const opts = [...(targetQuestion.options || [])];
             opts[idx] = value;
-            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const isDragDrop = isDragDropType(targetQuestion.type);
 
             const updatedQuestions = prev.questions.map((q) => {
-                if (isDragDrop && q.type === "drag-drop-completion") {
+                if (isDragDrop && isDragDropType(q.type)) {
                     return { ...q, options: opts };
                 }
                 return q.id === qId ? { ...q, options: opts } : q;
@@ -273,10 +275,10 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             const targetQuestion = prev.questions.find((q) => q.id === qId);
             if (!targetQuestion) return prev;
             const opts = (targetQuestion.options || []).filter((_, i) => i !== idx);
-            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const isDragDrop = isDragDropType(targetQuestion.type);
 
             const updatedQuestions = prev.questions.map((q) => {
-                if (isDragDrop && q.type === "drag-drop-completion") {
+                if (isDragDrop && isDragDropType(q.type)) {
                     return { ...q, options: opts };
                 }
                 return q.id === qId ? { ...q, options: opts } : q;
@@ -341,9 +343,9 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                 }
             }
 
-            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const isDragDrop = isDragDropType(targetQuestion.type);
             const updatedQuestions = prev.questions.map((q) => {
-                if (isDragDrop && q.type === "drag-drop-completion") {
+                if (isDragDrop && isDragDropType(q.type)) {
                     return { ...q, options: opts };
                 }
                 return q.id === qId ? { ...q, options: opts } : q;
@@ -362,9 +364,9 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
             if (!targetQuestion) return prev;
 
             const defaultOpts = ["", ""];
-            const isDragDrop = targetQuestion.type === "drag-drop-completion";
+            const isDragDrop = isDragDropType(targetQuestion.type);
             const updatedQuestions = prev.questions.map((q) => {
-                if (isDragDrop && q.type === "drag-drop-completion") {
+                if (isDragDrop && isDragDropType(q.type)) {
                     return { ...q, options: defaultOpts };
                 }
                 return q.id === qId ? { ...q, options: defaultOpts } : q;
