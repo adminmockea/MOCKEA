@@ -90,23 +90,25 @@ const DragDropTarget = memo(function DragDropTarget({
 
     if (submitted) {
         const borderClass = isCorrect
-            ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-            : "border-red-400 bg-red-50 text-red-700";
+            ? "border-emerald-400 bg-emerald-50/90 text-emerald-800 font-extrabold shadow-2xs"
+            : "border-rose-400 bg-rose-50/90 text-rose-800 font-extrabold shadow-2xs";
         return (
-            <span className="inline-flex items-center gap-1 mx-1.5 relative group align-baseline">
-                <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+            <span className="inline-flex items-center gap-1 mx-1 relative group align-middle my-0.5">
+                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-slate-100 text-slate-500 font-black text-[10px] mr-0.5 select-none flex-shrink-0">
+                    ({labelNum})
+                </span>
                 <span
-                    className={`inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-black align-middle ${borderClass}`}
+                    className={`inline-flex items-center justify-center min-w-[120px] h-8 px-3 border-2 rounded-xl text-xs align-middle ${borderClass}`}
                     data-q-id={qId}
                     title={!isCorrect ? `Correct Answer: ${correctAnswer}` : ""}
                 >
                     {value || "No Answer"}
                 </span>
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold ml-1 flex-shrink-0 ${isCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0 shadow-2xs ${isCorrect ? "bg-emerald-500" : "bg-rose-500"}`}>
                     {isCorrect ? "✓" : "✗"}
                 </span>
                 {!isCorrect && (
-                    <span className="inline-flex items-center text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 ml-1.5 flex-shrink-0 align-middle">
+                    <span className="inline-flex items-center text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-2.5 py-0.5 flex-shrink-0 align-middle shadow-2xs">
                         ✓ {correctAnswer}
                     </span>
                 )}
@@ -115,13 +117,15 @@ const DragDropTarget = memo(function DragDropTarget({
     }
 
     return (
-        <span className="inline-flex items-baseline mx-0.5 relative group align-baseline">
-            <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+        <span className="inline-flex items-center mx-1 relative group align-middle my-0.5">
+            <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-primary/10 text-primary font-black text-[10px] mr-1 select-none flex-shrink-0 shadow-2xs">
+                ({labelNum})
+            </span>
             <span
-                className={`inline-flex items-center justify-center min-w-[130px] h-9 px-3 border-2 rounded-xl text-xs font-bold align-middle cursor-pointer select-none transition-all ${
+                className={`inline-flex items-center justify-between min-w-[125px] h-8.5 px-3 border-2 rounded-xl text-xs font-bold align-middle cursor-pointer select-none transition-all duration-200 ${
                     value
-                        ? "border-solid border-primary bg-white text-slate-800 font-black shadow-xs"
-                        : "border-dashed border-slate-400 bg-slate-50/50 hover:bg-slate-100/50 hover:border-primary/40 text-slate-500"
+                        ? "border-primary bg-white text-slate-900 font-extrabold shadow-xs hover:shadow-md hover:border-primary-hover"
+                        : "border-dashed border-primary/35 bg-primary/5 hover:bg-primary/10 hover:border-primary text-primary/70 font-semibold shadow-2xs"
                 }`}
                 data-q-id={qId}
                 onDragOver={handleDragOver}
@@ -130,17 +134,18 @@ const DragDropTarget = memo(function DragDropTarget({
             >
                 {value ? (
                     <>
-                        <span className="text-slate-800 font-black mx-1 font-sans">{value}</span>
+                        <span className="text-slate-900 font-extrabold font-sans truncate">{value}</span>
                         <button
                             type="button"
-                            className="clear-btn text-slate-400 hover:text-error ml-1.5 text-sm font-black"
+                            className="w-4 h-4 rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-400 text-xs font-black inline-flex items-center justify-center transition-all ml-1.5 flex-shrink-0"
                             onClick={handleClear}
+                            title="Clear answer"
                         >
                             ×
                         </button>
                     </>
                 ) : (
-                    "Drop here"
+                    <span className="w-full text-center tracking-wide font-bold">Drop here</span>
                 )}
             </span>
         </span>
@@ -164,8 +169,10 @@ const InlineTextInput = memo(function InlineTextInput({
     }
 
     return (
-        <span className="inline-flex items-baseline mx-0.5 relative group align-baseline">
-            <span className="text-primary font-black mr-0.5 flex-shrink-0">({labelNum})</span>
+        <span className="inline-flex items-center mx-1 relative group align-middle my-0.5">
+            <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-primary/10 text-primary font-black text-[10px] mr-1 select-none flex-shrink-0 shadow-2xs">
+                ({labelNum})
+            </span>
             <input
                 type="text"
                 value={value}
