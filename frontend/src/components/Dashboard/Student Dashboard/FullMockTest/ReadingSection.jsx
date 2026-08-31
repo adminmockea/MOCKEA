@@ -623,7 +623,9 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                         localIndex.toString() === cleanKey
                     );
                 });
-                if (q) ids.add(q.id);
+                if (q && q.type !== 'pte-reading-writing-fill-blanks' && q.type !== 'pte-reorder-paragraphs') {
+                    ids.add(q.id);
+                }
             }
         };
 
@@ -1027,7 +1029,8 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
 
     const currentTabGroupedItems = useMemo(() => {
         if (!data) return [];
-        return groupedItems.filter(groupEntry => {
+        if (!data.passages || data.passages.length <= 1) return groupedItems;
+        const filtered = groupedItems.filter(groupEntry => {
             const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' || groupEntry.visuals[0]?.type === 'multiple-selection-group'
                 ? groupEntry.visuals[0].questions[0] 
                 : groupEntry.visuals[0]?.question;
@@ -1036,6 +1039,7 @@ const ReadingSection = ({ sections = [], answers, onAnswerChange, activeSectionI
             const qPassageIndex = getQuestionPassageIndex(firstQ, data.questionGroups, qIdx);
             return qPassageIndex === activePassageTab;
         });
+        return filtered.length > 0 ? filtered : groupedItems;
     }, [groupedItems, activePassageTab, data]);
 
     const hasDragDropInActiveTab = useMemo(() => {
