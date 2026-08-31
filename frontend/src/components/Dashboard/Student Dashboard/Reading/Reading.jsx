@@ -837,6 +837,64 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
         return first?.options?.filter(Boolean) || [];
     }, [dragDropQuestions]);
 
+    const hasVisibleQuestions = useMemo(() => {
+        return groupedItems.some((groupEntry) => {
+            return groupEntry.visuals?.some((vg) => {
+                if (vg.type === 'matching-grid-group' || vg.type === 'multiple-selection-group') {
+                    return vg.questions?.some((q) => !renderedInlineIds.has(q.id));
+                }
+                return vg.question && !renderedInlineIds.has(vg.question.id);
+            });
+        });
+    }, [groupedItems, renderedInlineIds]);
+
+    if (!hasVisibleQuestions && renderedInlineIds.size > 0) {
+        return (
+            <div className="space-y-6">
+                {sharedOptions.length > 0 && (
+                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4 shadow-xs">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 text-center">
+                            Option Bank (Drag or Click to select)
+                        </h3>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {sharedOptions.map((opt, i) => {
+                                const letter = String.fromCharCode(65 + i);
+                                const label = `${letter}. ${opt}`;
+                                const isSelected = clickedOption === label;
+                                return (
+                                    <div
+                                        key={i}
+                                        draggable={true}
+                                        onDragStart={(e) => e.dataTransfer.setData("text/plain", label)}
+                                        onClick={() => setClickedOption && setClickedOption(isSelected ? null : label)}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none cursor-pointer ${
+                                            isSelected
+                                                ? "bg-primary border-primary text-white shadow-md scale-105"
+                                                : "bg-white border-slate-200 hover:border-primary/50 text-slate-700 hover:scale-105"
+                                        }`}
+                                    >
+                                        {label}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                <div className="p-8 bg-slate-50/80 border border-slate-200/80 rounded-3xl text-center space-y-4 shadow-xs my-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl">
+                        ✍️
+                    </div>
+                    <div className="space-y-1">
+                        <h3 className="font-black text-slate-800 text-base">Questions Embedded In Passage</h3>
+                        <p className="text-xs font-medium text-slate-500 max-w-sm mx-auto leading-relaxed">
+                            All questions for this section are embedded directly inside the reading text on the left pane. Complete your answers by filling in the blanks within the passage.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
             {groupedItems.map((groupEntry, geIdx) => {
