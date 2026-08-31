@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { PiBookOpen, PiEar, PiCheckCircle, PiInfo } from "react-icons/pi";
+import { PiBookOpen, PiEar, PiCheckCircle, PiInfo, PiTimer } from "react-icons/pi";
 import AdminModal from "../../../Common/AdminModal";
 
 const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: propNavigate, handleBulkAction, selectedIds, setSelectedIds, bulkMutation }) => {
@@ -286,6 +286,14 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                             className="btn btn-xs btn-warning rounded-lg font-bold text-slate-900 px-3 h-7 min-h-0"
                         >
                             Disable
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleBulkAction("update-timer")}
+                            disabled={bulkMutation?.isPending}
+                            className="btn btn-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold px-3 h-7 min-h-0 border-none flex items-center gap-1"
+                        >
+                            <PiTimer className="text-sm" /> Set Timer
                         </button>
                         <div className="dropdown dropdown-top dropdown-end">
                             <button

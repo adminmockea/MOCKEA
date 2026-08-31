@@ -2,6 +2,8 @@ import { useNavigate } from "react-router";
 import { PiBookOpen, PiEar, PiPencilLine, PiMicrophoneStage, PiSquaresFour } from "react-icons/pi";
 import HoverActions from "../../../Common/HoverActions";
 
+import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils";
+
 const getIcon = (type) => {
     switch(type) {
         case 'reading': return <PiBookOpen className="text-blue-500" />;
@@ -34,40 +36,48 @@ const QuestionsGrid = ({
     const navigate = propNavigate || navigateHook;
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredQuestions.map((q) => (
-                <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group relative min-w-0">
-                    <div className="flex items-start justify-between min-w-0 gap-2">
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <input
-                                type="checkbox"
-                                className="checkbox checkbox-xs checkbox-primary cursor-pointer mt-1 mr-1 flex-shrink-0"
-                                checked={selectedIds.includes(q._id)}
-                                onChange={() => handleSelectRow(q._id)}
-                            />
-                            <div className="p-3 rounded-2xl bg-base-100 text-2xl flex-shrink-0">
-                                {getIcon(q.testType)}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <h3 
-                                    className="font-bold text-sm leading-snug line-clamp-2"
-                                    onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
-                                >
-                                    {q.title}
-                                </h3>
-                                <p className="text-xs uppercase tracking-widest text-base-content/50 font-semibold">{q.testType}</p>
-                                {q.usedInMockTests && q.usedInMockTests.length > 0 && (
-                                    <div className="mt-1 min-w-0 max-w-full">
-                                        <span 
-                                            className="badge badge-warning badge-xs gap-1 font-bold py-1.5 px-2 rounded-lg border-none bg-amber-100 text-amber-900 inline-flex items-center max-w-full min-w-0"
-                                            title={`Assigned to Mock Test(s): ${q.usedInMockTests.map(m => m.title).join(", ")}`}
-                                        >
-                                            <span className="truncate flex-1 min-w-0">📌 In Mock Test: {q.usedInMockTests[0]?.title}</span>
-                                            {q.usedInMockTests.length > 1 && <span className="opacity-80 font-black flex-shrink-0">+{q.usedInMockTests.length - 1}</span>}
+            {filteredQuestions.map((q) => {
+                const subCat = q.subCategory || getSetCategory(q);
+                return (
+                    <div key={q._id} className="card bg-white border border-base-300 shadow-sm p-6 hover:shadow-md transition-shadow group relative min-w-0">
+                        <div className="flex items-start justify-between min-w-0 gap-2">
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                                <input
+                                    type="checkbox"
+                                    className="checkbox checkbox-xs checkbox-primary cursor-pointer mt-1 mr-1 flex-shrink-0"
+                                    checked={selectedIds.includes(q._id)}
+                                    onChange={() => handleSelectRow(q._id)}
+                                />
+                                <div className="p-3 rounded-2xl bg-base-100 text-2xl flex-shrink-0">
+                                    {getIcon(q.testType)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 
+                                        className="font-bold text-sm leading-snug line-clamp-2"
+                                        onMouseEnter={(e) => handleShowTitleIfClipped(e, q.title)}
+                                    >
+                                        {q.title}
+                                    </h3>
+                                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                        <p className="text-[10px] uppercase tracking-widest text-base-content/60 font-black">{q.category || q.testType}</p>
+                                        <span className="text-slate-300">•</span>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider border truncate max-w-[160px] ${getCategoryBadgeStyle(subCat)}`} title={subCat}>
+                                            {subCat}
                                         </span>
                                     </div>
-                                )}
+                                    {q.usedInMockTests && q.usedInMockTests.length > 0 && (
+                                        <div className="mt-1.5 min-w-0 max-w-full">
+                                            <span 
+                                                className="badge badge-warning badge-xs gap-1 font-bold py-1.5 px-2 rounded-lg border-none bg-amber-100 text-amber-900 inline-flex items-center max-w-full min-w-0"
+                                                title={`Assigned to Mock Test(s): ${q.usedInMockTests.map(m => m.title).join(", ")}`}
+                                            >
+                                                <span className="truncate flex-1 min-w-0">📌 In Mock Test: {q.usedInMockTests[0]?.title}</span>
+                                                {q.usedInMockTests.length > 1 && <span className="opacity-80 font-black flex-shrink-0">+{q.usedInMockTests.length - 1}</span>}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
                         <HoverActions
                             onEdit={() => navigate(`/dashboard/admin/edit-questions/${q._id}`)}
                             onDelete={() => handleDelete(q._id)}
@@ -101,7 +111,8 @@ const QuestionsGrid = ({
                         </button>
                     </div>
                 </div>
-            ))}
+            );
+        })}
         </div>
     );
 };

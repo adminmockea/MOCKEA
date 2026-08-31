@@ -23,6 +23,9 @@ const ManageQuestions = () => {
         setViewMode,
         filterType,
         setFilterType,
+        filterSubCategory,
+        setFilterSubCategory,
+        uniqueSubCategories,
         filterPlan,
         setFilterPlan,
         filterStatus,
@@ -35,6 +38,11 @@ const ManageQuestions = () => {
         setSelectedIds,
         searchQuery,
         setSearchQuery,
+        sortField,
+        setSortField,
+        sortDirection,
+        setSortDirection,
+        handleSort,
         handleToggleStatus,
         handleDelete,
         handleSelectRow,
@@ -54,6 +62,9 @@ const ManageQuestions = () => {
                 setIsFilterOpen={setIsFilterOpen}
                 filterType={filterType}
                 setFilterType={setFilterType}
+                filterSubCategory={filterSubCategory}
+                setFilterSubCategory={setFilterSubCategory}
+                uniqueSubCategories={uniqueSubCategories}
                 filterPlan={filterPlan}
                 setFilterPlan={setFilterPlan}
                 filterStatus={filterStatus}
@@ -65,6 +76,12 @@ const ManageQuestions = () => {
                 setViewMode={setViewMode}
                 selectedIds={selectedIds}
                 handleBulkAction={handleBulkAction}
+                sortField={sortField}
+                setSortField={setSortField}
+                sortDirection={sortDirection}
+                setSortDirection={setSortDirection}
+                handleSort={handleSort}
+                filteredQuestions={filteredQuestions}
             />
 
             <TableShell
@@ -87,6 +104,13 @@ const ManageQuestions = () => {
                         handleDelete={handleDelete}
                         setSelectedQuestion={setSelectedQuestion}
                         navigate={navigate}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                        handleSort={handleSort}
+                        filterType={filterType}
+                        setFilterType={setFilterType}
+                        filterSubCategory={filterSubCategory}
+                        setFilterSubCategory={setFilterSubCategory}
                     />
                 ) : (
                     <QuestionsGrid
