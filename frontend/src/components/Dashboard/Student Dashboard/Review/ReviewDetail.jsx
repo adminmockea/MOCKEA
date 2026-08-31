@@ -465,7 +465,9 @@ const GroupedReviewQuestionsRenderer = ({
                         localIndex.toString() === matchKey
                     );
                 });
-                if (q) ids.add(q.id);
+                if (q && q.type !== 'pte-reading-writing-fill-blanks' && q.type !== 'pte-reorder-paragraphs') {
+                    ids.add(q.id);
+                }
             });
         };
 
