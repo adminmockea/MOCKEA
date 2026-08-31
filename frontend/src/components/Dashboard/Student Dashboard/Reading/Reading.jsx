@@ -755,10 +755,10 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
     );
 };
 
-const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet, clickedOption, setClickedOption, activePassageTab }) => {
+const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, submitted, result, activeSet, clickedOption, setClickedOption, activePassageTab, showPassageSide = true }) => {
     const renderedInlineIds = useMemo(() => {
         const ids = new Set();
-        if (!activeSet) return ids;
+        if (!activeSet || !showPassageSide) return ids;
 
         const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
         const processText = (text) => {
@@ -779,7 +779,9 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                         (idx + 1).toString() === cleanKey
                     );
                 });
-                if (q) ids.add(q.id);
+                if (q && q.type !== 'pte-reading-writing-fill-blanks' && q.type !== 'pte-reorder-paragraphs') {
+                    ids.add(q.id);
+                }
             }
         };
 
@@ -792,11 +794,11 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
         });
 
         return ids;
-    }, [activeSet]);
+    }, [activeSet, showPassageSide]);
 
     const passageInlineIds = useMemo(() => {
         const ids = new Set();
-        if (!activeSet) return ids;
+        if (!activeSet || !showPassageSide) return ids;
 
         const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
         const processText = (text) => {
@@ -817,7 +819,9 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
                         (idx + 1).toString() === cleanKey
                     );
                 });
-                if (q) ids.add(q.id);
+                if (q && q.type !== 'pte-reading-writing-fill-blanks' && q.type !== 'pte-reorder-paragraphs') {
+                    ids.add(q.id);
+                }
             }
         };
 
@@ -825,7 +829,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
         processText(activeSet.passage);
 
         return ids;
-    }, [activeSet]);
+    }, [activeSet, showPassageSide]);
 
     const dragDropQuestions = useMemo(() => activeSet?.questions?.filter(q => q.type === 'drag-drop-completion' || q.type === 'pte-reading-fill-blanks' || q.type === 'pte-reading-fill-blanks-drag-drop' || (q.type === 'flow-chart-completion' && q.options?.length > 0)) || [], [activeSet?.questions]);
     const sharedOptions = useMemo(() => {
@@ -1314,8 +1318,8 @@ const Reading = ({ preloadedSet = null }) => {
 
   const currentTabGroupedItems = useMemo(() => {
       if (!activeSet) return [];
-      if (isPte) return groupedItems;
-      return groupedItems.filter(groupEntry => {
+      if (isPte || !activeSet.passages || activeSet.passages.length <= 1) return groupedItems;
+      const filtered = groupedItems.filter(groupEntry => {
           const firstQ = groupEntry.visuals[0]?.type === 'matching-grid-group' || groupEntry.visuals[0]?.type === 'multiple-selection-group'
               ? groupEntry.visuals[0].questions[0] 
               : groupEntry.visuals[0]?.question;
@@ -1324,6 +1328,7 @@ const Reading = ({ preloadedSet = null }) => {
           const qPassageIndex = getQuestionPassageIndex(firstQ, activeSet.questionGroups, qIdx);
           return qPassageIndex === activePassageTab;
       });
+      return filtered.length > 0 ? filtered : groupedItems;
   }, [groupedItems, activePassageTab, activeSet, isPte]);
 
   const hasDragDropInActiveTab = useMemo(() => {
@@ -1805,6 +1810,7 @@ const Reading = ({ preloadedSet = null }) => {
                                 clickedOption={clickedOption}
                                 setClickedOption={setClickedOption}
                                 activePassageTab={activePassageTab}
+                                showPassageSide={showPassageSide}
                             />
 
                             {!submitted && (
