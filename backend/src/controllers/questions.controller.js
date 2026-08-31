@@ -664,7 +664,7 @@ export const bulkUpdateQuestions = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid or empty IDs array" });
         }
 
-        if (!["delete", "update-plan", "update-status"].includes(action)) {
+        if (!["delete", "update-plan", "update-status", "update-timer"].includes(action)) {
             return res.status(400).json({ success: false, message: "Invalid bulk action" });
         }
 
@@ -705,6 +705,23 @@ export const bulkUpdateQuestions = async (req, res) => {
                 await clearMockTestCacheForQuestion(id);
             }
             return res.status(200).json({ success: true, message: `Successfully updated status to ${activeBool ? 'Active' : 'Disabled'} for ${ids.length} question sets` });
+        }
+
+        if (action === "update-timer") {
+            let timeLimit = null;
+            if (value !== "" && value !== undefined && value !== null) {
+                const num = Number(value);
+                timeLimit = !isNaN(num) && num > 0 ? num : null;
+            }
+            await Questions.updateMany({ _id: { $in: ids } }, { $set: { timeLimit } });
+            for (const id of ids) {
+                await cache.del(`question:${id}`);
+                await clearMockTestCacheForQuestion(id);
+            }
+            const msg = timeLimit
+                ? `Successfully set timer limit to ${timeLimit} minute(s) for ${ids.length} question set(s)`
+                : `Successfully reset timer to default for ${ids.length} question set(s)`;
+            return res.status(200).json({ success: true, message: msg });
         }
 
     } catch (error) {

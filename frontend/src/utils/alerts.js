@@ -152,6 +152,27 @@ export const alerts = {
         confirmButton: "rounded-xl px-8 py-3 font-bold btn btn-error text-white border-none mx-2"
       }
     });
+  },
+  promptTimer: (currentCount = 1) => {
+    return Swal.fire({
+      ...BASE_SWAL_CONFIG,
+      title: "Set Time Limit",
+      text: `Set time limit (in minutes) for ${currentCount} selected question set(s). Enter 0 or leave blank to reset to system section default.`,
+      input: "number",
+      inputAttributes: {
+        min: 0,
+        max: 300,
+        step: 1,
+        placeholder: "Duration in minutes (e.g. 20)"
+      },
+      showCancelButton: true,
+      confirmButtonText: "Save Timer",
+      cancelButtonText: "Cancel",
+      customClass: {
+        ...BASE_SWAL_CONFIG.customClass,
+        input: "input input-bordered rounded-xl w-3/4 text-center font-bold text-lg my-3"
+      }
+    });
   }
 };
 
