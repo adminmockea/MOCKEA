@@ -482,7 +482,9 @@ const Writing = ({ preloadedSet = null }) => {
                                             </div>
                                             <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
                                             <div className="flex items-center gap-3 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                                <span className="flex items-center gap-1.5"><PiClockFill /> 60m</span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === 'PTE' ? '20m' : '60m')}
+                                                </span>
                                                 <span className="flex items-center gap-1.5"><PiTextAaFill /> 2 Tasks</span>
                                                 {set.examType && (
                                                     <span className={`badge badge-sm font-black ${

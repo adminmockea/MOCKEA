@@ -445,7 +445,9 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                             </div>
                                             <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
                                             <div className="flex items-center gap-2 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                                <span className="flex items-center gap-1.5"><PiClockFill /> 30m</span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === 'PTE' ? '20m' : '30m')}
+                                                </span>
                                                 <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
                                                 {set.examType && (
                                                     <span className={`badge badge-sm font-black ${
