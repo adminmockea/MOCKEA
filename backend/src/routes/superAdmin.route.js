@@ -8,7 +8,6 @@ import {
   getErrorAnalytics,
   getCollectionsList,
   exportCollection,
-  runDatabaseSeeder,
   sendNotificationBroadcast,
   getNotificationBroadcastHistory,
   updateNotificationBroadcast,
@@ -38,7 +37,6 @@ superAdminRouter.get("/error-analytics", getErrorAnalytics);
 
 superAdminRouter.get("/collections", getCollectionsList);
 superAdminRouter.get("/export/:collectionName", exportCollection);
-superAdminRouter.post("/seed", runDatabaseSeeder);
 superAdminRouter.post("/notification-broadcast", sendNotificationBroadcast);
 superAdminRouter.get("/notification-broadcasts", getNotificationBroadcastHistory);
 superAdminRouter.put("/notification-broadcast/:id", updateNotificationBroadcast);
