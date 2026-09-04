@@ -8,7 +8,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "import-alfapte": "node src/scripts/importAlfaPTE.js"
   },
   "dependencies": {
     "cloudinary": "^2.2.0",
