@@ -7,24 +7,21 @@ import {
   PiShieldWarning,
   PiBug,
   PiDownloadSimple,
-  PiPlay,
 } from "react-icons/pi";
 
 const DatabaseManagerTab = ({
   collectionCounts,
   loadingCollections,
-  seeding,
   handleExport,
-  handleRunSeeder,
 }) => {
   return (
     <div className="card bg-base-100 border border-base-300 rounded-[2rem] shadow-sm p-6 md:p-8 space-y-6">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <PiDatabase className="text-primary w-6 h-6" /> Database Seed & Export Engine
+          <PiDatabase className="text-primary w-6 h-6" /> Database Export Engine
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Export database collections to CSV or JSON, download specific student information spreadsheets, or trigger database seeders to populate mock tests.
+          Export database collections to CSV or JSON, or download specific student information spreadsheets.
         </p>
       </div>
 
@@ -118,25 +115,6 @@ const DatabaseManagerTab = ({
                 className="btn btn-sm btn-outline rounded-xl font-bold flex items-center justify-center gap-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-transparent hover:bg-indigo-600 hover:text-white transition duration-200 cursor-pointer w-full"
               >
                 <PiDownloadSimple className="w-4 h-4" /> Download Students JSON
-              </button>
-            </div>
-          </div>
-
-          {/* DB Seeder */}
-          <div className="card bg-base-200/30 border border-base-300 p-6 rounded-3xl shadow-sm space-y-4">
-            <h4 className="font-bold text-sm flex items-center gap-2">
-              <PiPlay className="w-5 h-5 text-emerald-500" /> Database Seeder Engine
-            </h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Need to populate mock tests during a server spin-up or testing cycles? Spin up default IELTS mock test sets, reading passages, speaking files, and questions in one-click.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={handleRunSeeder}
-                disabled={seeding}
-                className="btn btn-sm rounded-xl font-bold w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0 transition duration-300 shadow-sm hover:shadow-md cursor-pointer h-10"
-              >
-                {seeding ? "Running Seeders..." : "Run Database Seeder"}
               </button>
             </div>
           </div>
