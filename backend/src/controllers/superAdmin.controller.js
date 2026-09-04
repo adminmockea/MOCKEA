@@ -7,7 +7,6 @@ import MockTest from "../model/mockTest.js";
 import PracticeSubmission from "../model/practiceSubmission.js";
 import BroadcastEmail from "../model/broadcastEmail.js";
 import Notification from "../model/notification.js";
-import { seedDatabase } from "../utils/seeder.js";
 import XLSX from "xlsx";
 import admin from "../lib/firebase.config.js";
 import mongoose from "mongoose";
@@ -569,27 +568,6 @@ export const exportCollection = async (req, res) => {
   }
 };
 
-// 10. Run Mock Test Database Seeder
-export const runDatabaseSeeder = async (req, res) => {
-  try {
-    const result = await seedDatabase();
-
-    await logAction(
-      req.user.email,
-      req.user.role,
-      "RUN_DATABASE_SEEDER",
-      "MockTest",
-      "SYSTEM",
-      req.ip,
-      req.headers["user-agent"],
-      { result }
-    );
-
-    return res.status(200).json({ success: true, message: result.message });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 // 11. Send Cohort Notification Broadcast
 export const sendNotificationBroadcast = async (req, res) => {
