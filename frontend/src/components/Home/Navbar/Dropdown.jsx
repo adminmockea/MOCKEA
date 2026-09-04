@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import {
   UserIcon,
@@ -10,15 +11,29 @@ import {
 import { NavLink } from 'react-router';
 import useAuth from '../../../hooks/useAuth';
 import { toast } from 'react-toastify';
+import ConfirmModal from '../../Common/ConfirmModal';
 
 const Dropdown = () => {
-  const {user,logOut} = useAuth()
-  const handleLogout =()=>{
-    logOut();
-    toast.success("Logout successfully")
-  }
+  const { user, logOut } = useAuth();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleConfirmLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logOut();
+      toast.success("Logout successfully");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Failed to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
+    }
+  };
   return (
-    <Menu as="div" className="relative inline-block text-left">
+    <>
+      <Menu as="div" className="relative inline-block text-left">
       <div>
         <MenuButton className="inline-flex w-full items-center justify-center gap-x-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-hover transition-colors">
           
@@ -85,7 +100,7 @@ const Dropdown = () => {
         <div className="px-1 py-1">
           <MenuItem
             as="button"
-            onClick={handleLogout}
+            onClick={() => setIsLogoutModalOpen(true)}
             className="group cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 data-[focus]:bg-red-50 data-[focus]:text-red-700"
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-500 group-hover:text-red-600 group-data-[focus]:text-red-600" aria-hidden="true" />
@@ -94,6 +109,18 @@ const Dropdown = () => {
         </div>
       </MenuItems>
     </Menu>
+
+    <ConfirmModal
+      isOpen={isLogoutModalOpen}
+      title="Confirm Logout"
+      message="Are you sure you want to log out of your account?"
+      confirmText="Log Out"
+      isDanger={true}
+      loading={isLoggingOut}
+      onConfirm={handleConfirmLogout}
+      onClose={() => setIsLogoutModalOpen(false)}
+    />
+  </>
   );
 };
 
