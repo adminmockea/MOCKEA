@@ -45,7 +45,6 @@ const SuperAdminConsole = () => {
   // Database tab states
   const [collectionCounts, setCollectionCounts] = useState(null);
   const [loadingCollections, setLoadingCollections] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   // Email broadcast tab states
   const [broadcasts, setBroadcasts] = useState([]);
@@ -199,29 +198,6 @@ const SuperAdminConsole = () => {
     } catch (error) {
       console.error(error);
       toast.error("Export failed.");
-    }
-  };
-
-  const handleRunSeeder = async () => {
-    const result = await alerts.confirmAction({
-      title: "Are you sure?",
-      text: "This will seed sample IELTS questions and structured mock tests into the database.",
-      confirmText: "Yes, seed mock tests!",
-    });
-    if (!result.isConfirmed) return;
-
-    try {
-      setSeeding(true);
-      const res = await axiosSecure.post("/superadmin/seed");
-      if (res.data?.success) {
-        toast.success(res.data.message || "Database seeded successfully!");
-        fetchCollectionsCounts();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Failed to run seeder.");
-    } finally {
-      setSeeding(false);
     }
   };
 
@@ -774,9 +750,7 @@ const SuperAdminConsole = () => {
           <DatabaseManagerTab
             collectionCounts={collectionCounts}
             loadingCollections={loadingCollections}
-            seeding={seeding}
             handleExport={handleExport}
-            handleRunSeeder={handleRunSeeder}
           />
         )}
 
