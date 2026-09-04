@@ -5,3 +5,4 @@ eco-fb-sdk.json
 example.route.js
 middleware_usage.txt
 SAMPLE_ERROR_HANDLER_USAGE.js
+src/scripts/*
