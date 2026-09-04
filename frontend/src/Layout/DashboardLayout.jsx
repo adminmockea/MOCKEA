@@ -12,6 +12,7 @@ import Loader from "../components/Loader/Loader";
 import { Logo } from "../components/Home/Logo";
 import useFullscreen from "../hooks/useFullscreen";
 import StudyBuddyChatbot from "../components/Common/StudyBuddyChatbot";
+import ConfirmModal from "../components/Common/ConfirmModal";
 import { registerPushNotifications, unregisterPushNotifications } from "../utils/fcm";
 
 const DashboardLayout = () => {
@@ -22,6 +23,8 @@ const DashboardLayout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
   const [notifications, setNotifications] = useState([]);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const axiosSecure = useAxiosSecure();
 
   const fetchNotifications = async () => {
@@ -91,15 +94,18 @@ const DashboardLayout = () => {
     );
   }
 
-  const handleLogOut = () => {
-    unregisterPushNotifications(axiosSecure)
-      .finally(() => {
-        logOut()
-          .then(() => {
-            navigate('/');
-          })
-          .catch((err) => console.error(err));
-      });
+  const handleConfirmLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await unregisterPushNotifications(axiosSecure).catch((err) => console.error(err));
+      await logOut();
+      navigate('/');
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setIsLoggingOut(false);
+      setIsLogoutModalOpen(false);
+    }
   };
 
   const handleSidebarClick = (e) => {
@@ -254,7 +260,7 @@ const DashboardLayout = () => {
               </button>
             </li>
             <li>
-              <button onClick={handleLogOut} title={!isDrawerOpen ? "Logout" : undefined} className={`w-full flex items-center ${!isDrawerOpen ? "justify-center" : ""}`}>
+              <button onClick={() => setIsLogoutModalOpen(true)} title={!isDrawerOpen ? "Logout" : undefined} className={`w-full flex items-center ${!isDrawerOpen ? "justify-center" : ""}`}>
                 <PiSignOut className="w-5 h-5 shrink-0" />
                 {isDrawerOpen && <span>Logout</span>}
               </button>
@@ -301,6 +307,18 @@ const DashboardLayout = () => {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isLogoutModalOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to log out of your account?"
+        confirmText="Log Out"
+        isDanger={true}
+        loading={isLoggingOut}
+        onConfirm={handleConfirmLogout}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </div>
   );
 };
