@@ -81,6 +81,28 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+    country: {
+      type: String,
+      default: null,
+    },
+    countryCode: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      default: null,
+    },
+    city: {
+      type: String,
+      default: null,
+    },
+    lastLoginIp: {
+      type: String,
+      default: null,
+    },
+    lastLoginCountry: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -90,6 +112,7 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ plan: 1, planExpiresAt: 1 });
 userSchema.index({ institution: 1 });
 userSchema.index({ institutionCode: 1 });
+userSchema.index({ countryCode: 1 });
 
 const User = mongoose.model("User", userSchema);
 export default User;
