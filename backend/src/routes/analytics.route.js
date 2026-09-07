@@ -1,11 +1,20 @@
 import express from "express";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import verifyUserRole from "../middlewares/verifyUserRole.js";
-import { getAnalyticsSummary, getAdminAnalytics, getInstructorAnalytics, getInstructorPerformance } from "../controllers/analytics.controller.js";
+import { 
+  getAnalyticsSummary, 
+  getAdminAnalytics, 
+  getInstructorAnalytics, 
+  getInstructorPerformance,
+  trackVisitor
+} from "../controllers/analytics.controller.js";
 
 const analyticsRouter = express.Router();
 
-// All analytics require authentication
+// Public visitor telemetry beacon (does not require auth, handles guests & users)
+analyticsRouter.post("/track-visit", trackVisitor);
+
+// All subsequent analytics require authentication
 analyticsRouter.use(verifyUserToken);
 // Populate req.user for all analytics routes
 analyticsRouter.use(verifyUserRole());

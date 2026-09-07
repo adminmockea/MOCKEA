@@ -1,6 +1,10 @@
 import User from "../model/user.js";
 import MockTestResult from "../model/mockTestResult.js";
 import PracticeSubmission from "../model/practiceSubmission.js";
+import VisitorLog from "../model/visitorLog.js";
+import admin from "../lib/firebase.config.js";
+import { cache } from "../utils/cache.js";
+import { resolveLocation, parseUserAgent, getCountryName } from "../utils/geoLookup.js";
 
 // Helper: Estimate Band based on percentage
 const estimateBand = (percentage) => {
@@ -441,4 +445,94 @@ export const getInstructorPerformance = async (req, res) => {
     });
   }
 };
+
+export const trackVisitor = async (req, res) => {
+  try {
+    const { path, referrer, sessionId, clientCountry, clientTimezone } = req.body || {};
+    if (!path) {
+      return res.status(200).json({ success: true, message: "Ignored: No path provided" });
+    }
+
+    const { ip, country, countryCode, city, region } = resolveLocation(req);
+    const { device, browser, os } = parseUserAgent(req.headers["user-agent"]);
+
+    // Effective country: prioritize resolved country, then client country hint if local/unknown
+    let finalCountry = country;
+    let finalCountryCode = countryCode;
+    if ((finalCountryCode === "LOCAL" || finalCountryCode === "UN") && clientCountry) {
+      finalCountryCode = clientCountry.toUpperCase();
+      finalCountry = getCountryName(finalCountryCode);
+    }
+
+    // Debounce check: Prevent duplicate hits from same session & path within 30s
+    const debounceKey = `vis:${sessionId || ip}:${path}`;
+    const alreadyLogged = await cache.get(debounceKey);
+    if (alreadyLogged) {
+      return res.status(200).json({ success: true, message: "Visit already recorded recently" });
+    }
+    // Set 30s debounce TTL in cache
+    await cache.set(debounceKey, true, 30);
+
+    // Optional user token identification (soft token decode)
+    let userId = null;
+    let userEmail = null;
+    let userName = null;
+    let userRole = "guest";
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded = await admin.auth().verifyIdToken(token);
+        if (decoded?.email) {
+          const user = await User.findOne({ email: decoded.email.toLowerCase().trim() });
+          if (user) {
+            userId = user._id;
+            userEmail = user.email;
+            userName = user.name;
+            userRole = user.role || "student";
+
+            // Update user's last login country and IP if valid
+            if (finalCountryCode !== "UN" && finalCountryCode !== "LOCAL") {
+              user.lastLoginCountry = finalCountry;
+              user.lastLoginIp = ip;
+              if (!user.country) {
+                user.country = finalCountry;
+                user.countryCode = finalCountryCode;
+              }
+              await user.save();
+            }
+          }
+        }
+      } catch (err) {
+        // Soft fail: continue as guest if token expired or invalid
+      }
+    }
+
+    const log = new VisitorLog({
+      ip,
+      country: finalCountry,
+      countryCode: finalCountryCode,
+      city,
+      region,
+      userId,
+      userEmail,
+      userName,
+      userRole,
+      path: path.slice(0, 200),
+      referrer: (referrer || "").slice(0, 300),
+      device,
+      browser,
+      os,
+      sessionId: sessionId || null,
+    });
+
+    await log.save();
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    console.error("Error logging visitor:", error);
+    return res.status(200).json({ success: false, message: error.message });
+  }
+};
+
 

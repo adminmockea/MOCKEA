@@ -8,8 +8,10 @@ import Loader from "../components/Loader/Loader";
 import { signInWithCustomToken } from "firebase/auth";
 import auth from "../../firebase.config";
 import { toast } from "react-toastify";
+import useVisitorTracker from "../hooks/useVisitorTracker";
 
 export default function RootLayout() {
+  useVisitorTracker();
   const [notice, setNotice] = useState(null);
   const [maintenance, setMaintenance] = useState({ mode: false, message: "" });
   const [visible, setVisible] = useState(true);
