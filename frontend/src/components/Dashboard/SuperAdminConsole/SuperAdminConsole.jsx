@@ -618,7 +618,7 @@ const SuperAdminConsole = () => {
           }`}
         >
           <PiChartBar className="w-5 h-5" />
-          Metrics & Health
+          Analytics & Health
         </button>
         <button
           onClick={() => setActiveTab("flags")}

@@ -1,4 +1,5 @@
-import { PiChartBar, PiGear } from "react-icons/pi";
+import { PiGear } from "react-icons/pi";
+import SystemAnalyticsTab from "./SystemAnalyticsTab";
 
 const MetricsTab = ({
   metrics,
@@ -9,58 +10,8 @@ const MetricsTab = ({
   handleUpdateNotice,
   activeSubTab = "metrics",
 }) => {
-  if (activeSubTab === "metrics" && metrics) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-            <PiChartBar className="w-5 h-5 text-green-500" /> Database Health
-          </h3>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Status:</span>
-              <span className="font-bold text-green-600">{metrics.database?.status}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Collections:</span>
-              <span className="font-bold">{metrics.database?.collectionsCount}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-            <PiGear className="w-5 h-5 text-blue-500" /> Server Performance
-          </h3>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Node CPU / Heap:</span>
-              <span className="font-bold text-blue-600">{metrics.server?.memory?.heapUsed}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Uptime:</span>
-              <span className="font-bold">{Math.round(metrics.server?.uptime / 60)} mins</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 border border-base-300 p-6 rounded-3xl shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-500 mb-4 flex items-center gap-2">
-            <PiChartBar className="w-5 h-5 text-orange-500" /> Site Metrics
-          </h3>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Total Active Users:</span>
-              <span className="font-bold">{metrics.counts?.users}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 text-sm">Total Audit Logs:</span>
-              <span className="font-bold">{metrics.counts?.auditLogs}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (activeSubTab === "metrics") {
+    return <SystemAnalyticsTab />;
   }
 
   if (activeSubTab === "flags" && config) {
