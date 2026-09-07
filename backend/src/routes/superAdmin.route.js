@@ -19,6 +19,11 @@ import {
   removeBlacklistedIp,
   resetDailyQuestionsCycle
 } from "../controllers/superAdmin.controller.js";
+import {
+  getSystemAnalytics,
+  getLiveVisitorFeed,
+  exportSystemAnalytics
+} from "../controllers/systemAnalytics.controller.js";
 import verifyUserToken from "../middlewares/verifyUserToken.js";
 import isSuperAdmin from "../middlewares/isSuperAdmin.js";
 
@@ -34,6 +39,11 @@ superAdminRouter.post("/impersonate", impersonateUser);
 superAdminRouter.get("/logs", getAuditLogs);
 superAdminRouter.get("/metrics", getSystemMetrics);
 superAdminRouter.get("/error-analytics", getErrorAnalytics);
+
+// Detailed System & User Analytics
+superAdminRouter.get("/system-analytics", getSystemAnalytics);
+superAdminRouter.get("/system-analytics/live-visitors", getLiveVisitorFeed);
+superAdminRouter.get("/system-analytics/export", exportSystemAnalytics);
 
 superAdminRouter.get("/collections", getCollectionsList);
 superAdminRouter.get("/export/:collectionName", exportCollection);
