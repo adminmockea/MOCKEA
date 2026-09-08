@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router";
+import { motion } from "framer-motion";
 import { PiHouse, PiSignOut, PiUser, PiCaretLeft, PiCaretRight, PiBell } from "react-icons/pi";
 import useAuth from "../hooks/useAuth";
 import { useRole } from "../hooks/useRole";
@@ -19,6 +20,7 @@ const DashboardLayout = () => {
   const { user, logOut } = useAuth();
   const { role, roleLoading, isError } = useRole();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isFullscreen } = useFullscreen();
   const [isDrawerOpen, setIsDrawerOpen] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1024);
   const [notifications, setNotifications] = useState([]);
@@ -163,7 +165,15 @@ const DashboardLayout = () => {
         )}
 
         <div className={`w-full flex-1 overflow-y-auto ${isFullscreen ? "p-0" : "p-4 md:p-8"}`}>
-          <Outlet />
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="w-full h-full"
+          >
+            <Outlet />
+          </motion.div>
         </div>
       </div>
 

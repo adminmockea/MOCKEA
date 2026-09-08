@@ -9,6 +9,7 @@ import { signInWithCustomToken } from "firebase/auth";
 import auth from "../../firebase.config";
 import { toast } from "react-toastify";
 import useVisitorTracker from "../hooks/useVisitorTracker";
+import TopProgressBar from "../components/Common/TopProgressBar";
 
 export default function RootLayout() {
   useVisitorTracker();
@@ -144,6 +145,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <TopProgressBar />
       <ScrollToTop />
       {notice && visible && (
         <div className={`w-full flex items-center justify-between px-6 py-3 transition-all duration-300 font-medium ${getBannerColor(notice.type)} text-xs md:text-sm shadow-md shrink-0`}>
