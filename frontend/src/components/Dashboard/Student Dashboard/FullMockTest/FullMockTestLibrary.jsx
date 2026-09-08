@@ -17,6 +17,7 @@ import InstructionModal from "./InstructionModal";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import useUserProfile from "../../../../hooks/useUserProfile";
 import Loader from "../../../Loader/Loader";
+import CardSkeleton from "../../../Common/Skeleton/CardSkeleton";
 
 const FullMockTestLibrary = () => {
     const axiosSecure = useAxiosSecure();
@@ -76,9 +77,7 @@ const FullMockTestLibrary = () => {
     const tests = mockTestData?.tests ?? [];
     const todayMockTestTaken = mockTestData?.todayMockTestTaken ?? false;
 
-    const isLoading = testsLoading || profileLoading;
-
-    if (isLoading) {
+    if (profileLoading) {
         return <Loader />;
     }
 
@@ -237,23 +236,27 @@ const FullMockTestLibrary = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {tests.filter(t => t.planType === 'free').map((test, index) => (
-                        <MockTestCard 
-                            key={test._id} 
-                            test={test} 
-                            index={index + 1} 
-                            userPlan={userPlan}
-                            userRole={userRole}
-                            isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
-                            onStart={() => setSelectedTest(test)} 
-                            onMouseEnter={() => handlePrefetch(test._id)}
-                        />
-                    ))}
+                    {testsLoading ? (
+                        <CardSkeleton count={2} />
+                    ) : (
+                        tests.filter(t => t.planType === 'free').map((test, index) => (
+                            <MockTestCard 
+                                key={test._id} 
+                                test={test} 
+                                index={index + 1} 
+                                userPlan={userPlan}
+                                userRole={userRole}
+                                isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
+                                onStart={() => setSelectedTest(test)} 
+                                onMouseEnter={() => handlePrefetch(test._id)}
+                            />
+                        ))
+                    )}
                 </div>
             </motion.section>
 
             {/* --- PREMIUM SECTION --- */}
-            {tests.some(t => t.planType !== 'free') && (
+            {(testsLoading || tests.some(t => t.planType !== 'free')) && (
                 <motion.section variants={item} className="space-y-8 pt-12">
                     <div className="flex items-center justify-between px-4">
                         <div>
@@ -267,18 +270,22 @@ const FullMockTestLibrary = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        {tests.filter(t => t.planType !== 'free').map((test, index) => (
-                            <MockTestCard 
-                                key={test._id} 
-                                test={test} 
-                                index={index + 1} 
-                                userPlan={userPlan}
-                                userRole={userRole}
-                                isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
-                                onStart={() => setSelectedTest(test)} 
-                                onMouseEnter={() => handlePrefetch(test._id)}
-                            />
-                        ))}
+                        {testsLoading ? (
+                            <CardSkeleton count={2} />
+                        ) : (
+                            tests.filter(t => t.planType !== 'free').map((test, index) => (
+                                <MockTestCard 
+                                    key={test._id} 
+                                    test={test} 
+                                    index={index + 1} 
+                                    userPlan={userPlan}
+                                    userRole={userRole}
+                                    isStandardLimitReached={todayMockTestTaken && userPlan === 'standard' && userRole !== 'admin' && userRole !== 'instructor'}
+                                    onStart={() => setSelectedTest(test)} 
+                                    onMouseEnter={() => handlePrefetch(test._id)}
+                                />
+                            ))
+                        )}
                     </div>
                 </motion.section>
             )}

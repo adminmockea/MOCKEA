@@ -18,6 +18,9 @@ import {
 } from "react-icons/pi";
 
 import { parseFeedback } from '../../../utils/parseFeedback';
+import AnimatedCounter from '../../Common/AnimatedCounter';
+import Skeleton from '../../Common/Skeleton/Skeleton';
+import { springs } from '../../../motion/motionTokens';
 
 const quickActions = [
   {
@@ -182,20 +185,44 @@ const DashboardHome = () => {
           {/* Stats Floating In Hero */}
           <div className="grid grid-cols-2 gap-4 lg:w-[400px]">
              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-[2rem] text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Accuracy</div>
-                <div className="text-3xl font-black">{summary?.averageAccuracy ?? "0"}%</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Accuracy</div>
+                <div className="text-3xl font-black">
+                  {loading ? (
+                    <Skeleton className="w-16 h-8 mx-auto !bg-white/20" />
+                  ) : (
+                    <AnimatedCounter value={summary?.averageAccuracy ?? 0} suffix="%" />
+                  )}
+                </div>
              </div>
              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-[2rem] text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Est. Band</div>
-                <div className="text-3xl font-black">{summary?.estimatedBand ?? "5.0"}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Est. Band</div>
+                <div className="text-3xl font-black">
+                  {loading ? (
+                    <Skeleton className="w-16 h-8 mx-auto !bg-white/20" />
+                  ) : (
+                    <AnimatedCounter value={parseFloat(summary?.estimatedBand || 5.0)} decimals={1} />
+                  )}
+                </div>
              </div>
              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-[2rem] text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Attempts</div>
-                <div className="text-3xl font-black">{summary?.testsCompleted ?? "0"}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Attempts</div>
+                <div className="text-3xl font-black">
+                  {loading ? (
+                    <Skeleton className="w-16 h-8 mx-auto !bg-white/20" />
+                  ) : (
+                    <AnimatedCounter value={summary?.testsCompleted ?? 0} />
+                  )}
+                </div>
              </div>
              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-[2rem] text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">Streak</div>
-                <div className="text-3xl font-black">{summary?.studyStreak ?? "0"}d</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Streak</div>
+                <div className="text-3xl font-black">
+                  {loading ? (
+                    <Skeleton className="w-16 h-8 mx-auto !bg-white/20" />
+                  ) : (
+                    <AnimatedCounter value={summary?.studyStreak ?? 0} suffix="d" />
+                  )}
+                </div>
              </div>
           </div>
         </div>
@@ -323,7 +350,14 @@ const DashboardHome = () => {
               </thead>
               <tbody className="divide-y divide-base-100">
                 {loading ? (
-                    [1,2,3].map(i => <tr key={i}><td colSpan="4" className="h-16 animate-pulse bg-base-100/50 rounded-lg"></td></tr>)
+                    [1,2,3,4].map(i => (
+                      <tr key={i}>
+                        <td className="py-5"><Skeleton className="w-16 h-4" /></td>
+                        <td className="py-5"><Skeleton className="w-40 h-5" /></td>
+                        <td className="py-5"><Skeleton className="w-24 h-5" /></td>
+                        <td className="py-5"><Skeleton className="w-12 h-6 rounded-xl" /></td>
+                      </tr>
+                    ))
                 ) : summary?.recentAttempts?.length ? (
                   summary.recentAttempts.map((item, idx) => (
                     <tr key={idx} className="group hover:bg-base-50 transition-colors">

@@ -10,6 +10,7 @@ import {
 } from "react-icons/pi";
 import { motion, AnimatePresence } from "framer-motion";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import CardSkeleton from "../../Common/Skeleton/CardSkeleton";
 
 const TrainerLibrary = () => {
     const axiosSecure = useAxiosSecure();
@@ -111,9 +112,8 @@ const TrainerLibrary = () => {
 
             {/* Trainers Grid */}
             {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                    <PiSpinner className="w-12 h-12 text-primary animate-spin" />
-                    <p className="text-sm font-black text-base-content/40 uppercase tracking-widest">Loading Trainers...</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <CardSkeleton count={3} />
                 </div>
             ) : filteredTrainers.length === 0 ? (
                 <div className="card bg-white p-16 text-center border border-base-200 rounded-[3rem] shadow-sm space-y-4">

@@ -12,6 +12,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { DEFAULT_MOCK_TEST_DURATION_MINUTES } from "../../../../constants";
+import { springs } from "../../../../motion/motionTokens";
 
 const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", isStandardLimitReached = false, onStart, onMouseEnter }) => {
     const isAdminOrInstructor = userRole === "admin" || userRole === "instructor";
@@ -44,7 +45,8 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
 
     return (
         <motion.div 
-            whileHover={{ y: -8 }}
+            whileHover={{ y: -6 }}
+            transition={springs.snappy}
             onMouseEnter={onMouseEnter}
             className="group relative flex flex-col rounded-[3rem] bg-white border border-base-300 p-10 shadow-sm transition-all hover:shadow-2xl hover:border-primary/30"
         >
@@ -112,9 +114,11 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
                 </div>
 
                 {/* Footer Action */}
-                <button 
+                <motion.button 
                     onClick={handleStartClick}
-                    className={`btn w-full rounded-[1.8rem] h-16 text-sm font-black uppercase tracking-[0.2em] gap-4 border-none shadow-xl transition-all ${
+                    whileTap={!isLocked ? { scale: 0.98 } : undefined}
+                    transition={springs.snappy}
+                    className={`btn w-full rounded-[1.8rem] h-16 text-sm font-black uppercase tracking-[0.2em] gap-4 border-none shadow-xl transition-all cursor-pointer ${
                         isLocked 
                         ? "bg-base-200 text-base-content/30 cursor-not-allowed" 
                         : "bg-slate-900 text-white hover:bg-primary shadow-slate-900/10 hover:shadow-primary/30"
@@ -131,7 +135,7 @@ const MockTestCard = ({ test, index, userPlan = "free", userRole = "student", is
                             <PiArrowRightBold className="w-4 h-4" />
                         </>
                     )}
-                </button>
+                </motion.button>
             </div>
         </motion.div>
     );

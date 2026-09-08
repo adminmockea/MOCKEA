@@ -11,10 +11,10 @@ import {
   FiClock
 } from "react-icons/fi";
 import { motion } from "framer-motion";
-import Loader from "../../Loader/Loader";
 import Error from "../../Common/Error";
 import PageHeader from "../../Common/PageHeader";
 import StatCard from "../../Common/StatCard";
+import TableSkeleton from "../../Common/Skeleton/TableSkeleton";
 
 const AdminDashboardHome = () => {
   const axiosSecure = useAxiosSecure();
@@ -25,16 +25,12 @@ const AdminDashboardHome = () => {
     "data"
   );
 
-  if (isLoading) {
-    return<Loader/>
-  }
-
-  if (isError || !analytics) {
-    return <Error/>
+  if (isError && !isLoading) {
+    return <Error/>;
   }
 
   // Destructure with fallbacks to prevent "undefined" crashes
-  const { overview = {}, studentStats = [], recentActivity = [] } = analytics;
+  const { overview = {}, studentStats = [], recentActivity = [] } = analytics || {};
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -75,6 +71,7 @@ const AdminDashboardHome = () => {
           value={overview.totalUsers ?? 0}
           icon={<FiUsers />}
           color="blue"
+          loading={isLoading}
           variants={itemVariants}
           description={
             <>
@@ -91,6 +88,7 @@ const AdminDashboardHome = () => {
           value={overview.totalTests ?? 0}
           icon={<FiFileText />}
           color="purple"
+          loading={isLoading}
           variants={itemVariants}
           description={
             <>
@@ -107,6 +105,7 @@ const AdminDashboardHome = () => {
           value={(overview.totalTests / (overview.totalUsers || 1)).toFixed(1)}
           icon={<FiTrendingUp />}
           color="orange"
+          loading={isLoading}
           variants={itemVariants}
           description={
             <>
@@ -120,6 +119,7 @@ const AdminDashboardHome = () => {
           value={overview.testsToday ?? 0}
           icon={<FiActivity />}
           color="green"
+          loading={isLoading}
           variants={itemVariants}
           description={
             <>
@@ -143,7 +143,11 @@ const AdminDashboardHome = () => {
             </button>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
-            {recentActivity.length > 0 ? recentActivity.map((activity) => (
+            {isLoading ? (
+              <div className="p-6">
+                <TableSkeleton rows={4} columns={2} />
+              </div>
+            ) : recentActivity.length > 0 ? recentActivity.map((activity) => (
               <div key={activity._id} className="p-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black uppercase text-xl">
@@ -181,40 +185,46 @@ const AdminDashboardHome = () => {
             <FiTrendingUp className="text-gray-400" />
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-gray-900/50">
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Student</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center">Tests</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-right">Last Session</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {studentStats.length > 0 ? studentStats.map((student) => (
-                  <tr key={student._id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
-                          <FiUser className="text-gray-500 dark:text-gray-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-black text-gray-800 dark:text-white">{student.name || "Unknown"}</div>
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{student.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className="text-lg font-black text-blue-600 dark:text-blue-400">{student.testCount}</span>
-                    </td>
-                    <td className="px-8 py-6 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                      {new Date(student.lastAttempt).toLocaleDateString()}
-                    </td>
+            {isLoading ? (
+              <div className="p-6">
+                <TableSkeleton rows={4} columns={3} />
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-900/50">
+                    <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Student</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center">Tests</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest text-right">Last Session</th>
                   </tr>
-                )) : (
-                    <tr><td colSpan="3" className="p-20 text-center italic text-gray-400">Awaiting student data...</td></tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {studentStats.length > 0 ? studentStats.map((student) => (
+                    <tr key={student._id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center space-x-4">
+                          <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-xl">
+                            <FiUser className="text-gray-500 dark:text-gray-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-black text-gray-800 dark:text-white">{student.name || "Unknown"}</div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{student.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-center">
+                        <span className="text-lg font-black text-blue-600 dark:text-blue-400">{student.testCount}</span>
+                      </td>
+                      <td className="px-8 py-6 text-right text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                        {new Date(student.lastAttempt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  )) : (
+                      <tr><td colSpan="3" className="p-20 text-center italic text-gray-400">Awaiting student data...</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </motion.div>
       </div>
