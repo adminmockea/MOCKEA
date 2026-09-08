@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from "react";
 import useAnswers from "../../../../hooks/useAnswers";
 import useCountdown from "../../../../hooks/useCountdown";
 import { useParams, useNavigate } from "react-router";
@@ -13,11 +13,30 @@ import {
 } from "react-icons/pi";
 import TestShell from "../../../Common/TestShell";
 import useAxiosSecure from "../../../../hooks/useAxiosSecure";
-import ReadingSection from "./ReadingSection";
-import ListeningSection from "./ListeningSection";
-import WritingSection from "./WritingSection";
-import SpeakingSection from "./SpeakingSection";
 import Loader from "../../../Loader/Loader";
+
+const ReadingSection = lazy(() => import("./ReadingSection"));
+const ListeningSection = lazy(() => import("./ListeningSection"));
+const WritingSection = lazy(() => import("./WritingSection"));
+const SpeakingSection = lazy(() => import("./SpeakingSection"));
+
+const SectionLoadingSkeleton = () => (
+    <div className="flex-1 h-full w-full flex overflow-hidden p-6 gap-6 bg-slate-50 animate-pulse">
+        <div className="w-1/2 h-full bg-white rounded-3xl border border-slate-200 p-8 space-y-4">
+            <div className="h-8 bg-slate-200 rounded-lg w-1/3"></div>
+            <div className="space-y-3">
+                <div className="h-4 bg-slate-100 rounded w-full"></div>
+                <div className="h-4 bg-slate-100 rounded w-5/6"></div>
+                <div className="h-4 bg-slate-100 rounded w-4/6"></div>
+            </div>
+        </div>
+        <div className="w-1/2 h-full bg-white rounded-3xl border border-slate-200 p-8 space-y-6">
+            <div className="h-6 bg-slate-200 rounded-lg w-1/4"></div>
+            <div className="h-24 bg-slate-100 rounded-2xl"></div>
+            <div className="h-24 bg-slate-100 rounded-2xl"></div>
+        </div>
+    </div>
+);
 
 const TestEnvironment = () => {
     const { id } = useParams();
@@ -720,6 +739,7 @@ const TestEnvironment = () => {
             </header>
 
             <main className="flex-1 overflow-hidden relative">
+                <Suspense fallback={<SectionLoadingSkeleton />}>
                 {currentModuleIdx === 0 && test?.sections?.listening?.length > 0 && (
                     <ListeningSection 
                         sections={test.sections.listening} 
@@ -754,6 +774,7 @@ const TestEnvironment = () => {
                         examType={test.examType}
                     />
                 )}
+                </Suspense>
             </main>
 
             <footer className="bg-white border-t border-base-300 min-h-20 py-3 px-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
