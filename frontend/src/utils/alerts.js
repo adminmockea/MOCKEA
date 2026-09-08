@@ -1,4 +1,11 @@
-import Swal from "sweetalert2";
+let swalInstance = null;
+const getSwal = async () => {
+  if (!swalInstance) {
+    const mod = await import("sweetalert2");
+    swalInstance = mod.default;
+  }
+  return swalInstance;
+};
 
 const BASE_SWAL_CONFIG = {
   background: "#ffffff",
@@ -12,7 +19,8 @@ const BASE_SWAL_CONFIG = {
 };
 
 export const alerts = {
-  success: (title, text = "") => {
+  success: async (title, text = "") => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "success",
@@ -23,7 +31,8 @@ export const alerts = {
     });
   },
 
-  error: (title, text = "Something went wrong. Please try again.") => {
+  error: async (title, text = "Something went wrong. Please try again.") => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "error",
@@ -32,7 +41,8 @@ export const alerts = {
     });
   },
 
-  confirmDelete: (itemName = "item") => {
+  confirmDelete: async (itemName = "item") => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -48,7 +58,8 @@ export const alerts = {
     });
   },
 
-  confirmAction: ({ title, text, confirmText = "Confirm", danger = false }) => {
+  confirmAction: async ({ title, text, confirmText = "Confirm", danger = false }) => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -66,7 +77,8 @@ export const alerts = {
     });
   },
 
-  confirmExitPractice: (testType = "practice test") => {
+  confirmExitPractice: async (testType = "practice test") => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -86,7 +98,8 @@ export const alerts = {
     });
   },
 
-  confirmExitMockTest: () => {
+  confirmExitMockTest: async () => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -102,7 +115,8 @@ export const alerts = {
     });
   },
 
-  confirmTerminateMockTest: () => {
+  confirmTerminateMockTest: async () => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -122,7 +136,8 @@ export const alerts = {
     });
   },
 
-  confirmCancelPractice: (testType = "practice test") => {
+  confirmCancelPractice: async (testType = "practice test") => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -138,7 +153,8 @@ export const alerts = {
     });
   },
 
-  confirmCancelMockTest: () => {
+  confirmCancelMockTest: async () => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       icon: "warning",
@@ -153,7 +169,8 @@ export const alerts = {
       }
     });
   },
-  promptTimer: (currentCount = 1) => {
+  promptTimer: async (currentCount = 1) => {
+    const Swal = await getSwal();
     return Swal.fire({
       ...BASE_SWAL_CONFIG,
       title: "Set Time Limit",

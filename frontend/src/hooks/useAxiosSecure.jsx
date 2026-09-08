@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
-import Swal from 'sweetalert2';
 import useAuth from './useAuth';
 import { API_BASE_URL } from '../utils/apiConfig';
 
@@ -40,16 +39,18 @@ const useAxiosSecure = () => {
       
       const { status } = error.response;
       if (status === 429) {
-        Swal.fire({
-          title: "Slow Down!",
-          text: error.response.data?.message || "You are sending requests too quickly. Please wait a moment and try again.",
-          icon: "warning",
-          confirmButtonColor: "#3B82F6",
-          background: "#ffffff",
-          customClass: {
-            popup: "rounded-[2rem]",
-            confirmButton: "rounded-xl px-6 py-2.5 font-bold"
-          }
+        import('sweetalert2').then(({ default: Swal }) => {
+          Swal.fire({
+            title: "Slow Down!",
+            text: error.response.data?.message || "You are sending requests too quickly. Please wait a moment and try again.",
+            icon: "warning",
+            confirmButtonColor: "#3B82F6",
+            background: "#ffffff",
+            customClass: {
+              popup: "rounded-[2rem]",
+              confirmButton: "rounded-xl px-6 py-2.5 font-bold"
+            }
+          });
         });
       }
 
