@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiCheckCircle, FiPlay } from 'react-icons/fi';
-import heroStudent from '../../assets/hero-student.png';
-import heroAbstract from '../../assets/hero-abstract.png';
-import heroGroup from '../../assets/hero-group.png';
+import heroStudent from '../../assets/hero-student.webp';
+import heroAbstract from '../../assets/hero-abstract.webp';
+import heroGroup from '../../assets/hero-group.webp';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import useAxios from '../../hooks/useAxios';
@@ -125,7 +125,7 @@ const Hero2 = () => {
             transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.2 }}
             className="absolute z-20 w-[65%] h-[75%] rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-md"
           >
-            <img src={heroStudent} alt="Student taking exam" className="w-full h-full object-cover" />
+            <img src={heroStudent} alt="Student taking exam" fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent"></div>
             <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 text-white">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
@@ -147,7 +147,7 @@ const Hero2 = () => {
             }}
             className="absolute z-30 top-[-5%] right-[-7%] w-[45%] h-[40%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
           >
-            <img src={heroAbstract} alt="Abstract exam elements" className="w-full h-full object-cover opacity-90" />
+            <img src={heroAbstract} alt="Abstract exam elements" loading="lazy" decoding="async" className="w-full h-full object-cover opacity-90" />
             <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent flex items-end p-3 sm:p-4">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="bg-white/20 text-white p-1 sm:p-1.5 rounded-full text-xs sm:text-base">
@@ -172,7 +172,7 @@ const Hero2 = () => {
             }}
             className="absolute z-10 bottom-[-10%] left-[-20%] w-[50%] h-[45%] rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 shadow-md"
           >
-            <img src={heroGroup} alt="Group study" className="w-full h-full object-cover" />
+            <img src={heroGroup} alt="Group study" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent flex items-end p-3 sm:p-4">
                <div>
                   <p className="text-[10px] sm:text-xs text-gray-300 font-semibold mb-0.5 sm:mb-1">Study Groups</p>

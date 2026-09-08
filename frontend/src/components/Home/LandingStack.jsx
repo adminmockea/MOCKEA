@@ -1,13 +1,14 @@
 import { HowItWorks } from "./HowItWorks";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Pricing } from "./Pricing";
 import { TaskCards } from "./TaskCards";
-import { Testimonials } from "./Testimonials";
 import { FreeResources } from "./FreeResources";
 import { CTASection2 } from "./CTASection2";
 import CTASection from "./CTASection";
+
+const Testimonials = lazy(() => import("./Testimonials").then(m => ({ default: m.Testimonials })));
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -113,7 +114,9 @@ export const LandingStack = () => {
           <TaskCards ref={featureCardsRef} />
 
           {/* testimonials */}
-          <Testimonials ref={testimonialsRef} />
+          <Suspense fallback={<div className="min-h-[250px] animate-pulse bg-slate-100/50 rounded-3xl" />}>
+            <Testimonials ref={testimonialsRef} />
+          </Suspense>
 
           {/* pricing */}
           <Pricing />
