@@ -190,3 +190,57 @@ select option:checked,
 .drawer-side .menu li > a:not(.active):hover svg {
   color: #2563eb;
 }
+
+/* ==========================================================================
+   Modern Loading & Shimmer Animation System
+   ========================================================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-effect {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.6) 0%,
+    rgba(241, 245, 249, 0.9) 50%,
+    rgba(226, 232, 240, 0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+.dark .shimmer-effect {
+  background: linear-gradient(
+    90deg,
+    rgba(51, 65, 85, 0.6) 0%,
+    rgba(71, 85, 105, 0.8) 50%,
+    rgba(51, 65, 85, 0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .shimmer-effect {
+    animation: none !important;
+    background: rgba(226, 232, 240, 0.8) !important;
+  }
+  .dark .shimmer-effect {
+    background: rgba(51, 65, 85, 0.8) !important;
+  }
+}
