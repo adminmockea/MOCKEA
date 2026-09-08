@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import ImpersonationTool from "./ImpersonationTool";
 import { toast } from "react-toastify";
@@ -15,14 +15,26 @@ import {
   PiRobot,
 } from "react-icons/pi";
 
-import MetricsTab from "./tabs/MetricsTab";
-import AuditLogsTab from "./tabs/AuditLogsTab";
-import ErrorAnalyticsTab from "./tabs/ErrorAnalyticsTab";
-import DatabaseManagerTab from "./tabs/DatabaseManagerTab";
-import EmailBroadcastTab from "./tabs/EmailBroadcastTab";
-import CacheManagerTab from "./tabs/CacheManagerTab";
-import AiTutorConfigTab from "./tabs/AiTutorConfigTab";
-import SecurityBlacklistTab from "./tabs/SecurityBlacklistTab";
+const MetricsTab = lazy(() => import("./tabs/MetricsTab"));
+const AuditLogsTab = lazy(() => import("./tabs/AuditLogsTab"));
+const ErrorAnalyticsTab = lazy(() => import("./tabs/ErrorAnalyticsTab"));
+const DatabaseManagerTab = lazy(() => import("./tabs/DatabaseManagerTab"));
+const EmailBroadcastTab = lazy(() => import("./tabs/EmailBroadcastTab"));
+const CacheManagerTab = lazy(() => import("./tabs/CacheManagerTab"));
+const AiTutorConfigTab = lazy(() => import("./tabs/AiTutorConfigTab"));
+const SecurityBlacklistTab = lazy(() => import("./tabs/SecurityBlacklistTab"));
+
+const TabLoadingSkeleton = () => (
+  <div className="space-y-4 p-6 bg-base-100 rounded-2xl border border-base-200 animate-pulse">
+    <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg w-1/4"></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="h-28 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+      <div className="h-28 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+      <div className="h-28 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+    </div>
+    <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+  </div>
+);
 
 const SuperAdminConsole = () => {
   const queryClient = useQueryClient();
@@ -705,6 +717,7 @@ const SuperAdminConsole = () => {
 
       {/* Tab Panels */}
       <div className="space-y-6">
+        <Suspense fallback={<TabLoadingSkeleton />}>
         {(activeTab === "metrics" || activeTab === "flags") && (
           <MetricsTab
             metrics={metrics}
@@ -827,6 +840,7 @@ const SuperAdminConsole = () => {
             handleDeleteBroadcast={handleDeleteBroadcast}
           />
         )}
+        </Suspense>
       </div>
     </div>
   );
