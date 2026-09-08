@@ -22,22 +22,39 @@ export default defineConfig({
             ) {
               return 'vendor-react';
             }
-            if (normalizedId.includes('node_modules/swiper/')) {
-              return 'vendor-swiper';
-            }
-            if (normalizedId.includes('node_modules/react-icons/')) {
-              return 'vendor-icons';
+            if (normalizedId.includes('node_modules/@tanstack/react-query/')) {
+              return 'vendor-query';
             }
             if (normalizedId.includes('node_modules/firebase/')) {
               return 'vendor-firebase';
             }
-            if (
-              normalizedId.includes('node_modules/framer-motion/') ||
-              normalizedId.includes('node_modules/gsap/')
-            ) {
-              return 'vendor-animations';
+            if (normalizedId.includes('node_modules/framer-motion/')) {
+              return 'vendor-motion';
             }
-            return 'vendor-utils';
+            if (normalizedId.includes('node_modules/gsap/')) {
+              return 'vendor-gsap';
+            }
+            if (normalizedId.includes('node_modules/swiper/')) {
+              return 'vendor-swiper';
+            }
+            if (
+              normalizedId.includes('node_modules/@headlessui/react/') ||
+              normalizedId.includes('node_modules/@heroicons/react/')
+            ) {
+              return 'vendor-ui';
+            }
+            if (normalizedId.includes('node_modules/react-icons/pi/')) {
+              return 'vendor-icons-pi';
+            }
+            if (normalizedId.includes('node_modules/react-icons/')) {
+              return 'vendor-icons-misc';
+            }
+            if (
+              normalizedId.includes('node_modules/axios/') ||
+              normalizedId.includes('node_modules/react-toastify/')
+            ) {
+              return 'vendor-core-utils';
+            }
           }
         }
       }
