@@ -1,10 +1,12 @@
+import { lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import useManageQuestions from "../../../hooks/useManageQuestions";
 import TableShell from "../../Common/TableShell";
 import QuestionsToolbar from "./ManageQuestions/QuestionsToolbar";
 import QuestionsTable from "./ManageQuestions/QuestionsTable";
 import QuestionsGrid from "./ManageQuestions/QuestionsGrid";
-import QuestionDetailModal from "./ManageQuestions/QuestionDetailModal";
+
+const QuestionDetailModal = lazy(() => import("./ManageQuestions/QuestionDetailModal"));
 
 const ManageQuestions = () => {
     const navigate = useNavigate();
@@ -125,14 +127,18 @@ const ManageQuestions = () => {
                 )}
             </TableShell>
 
-            <QuestionDetailModal
-                selectedQuestion={selectedQuestion}
-                setSelectedQuestion={setSelectedQuestion}
-                navigate={navigate}
-                handleBulkAction={handleBulkAction}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-            />
+            {selectedQuestion && (
+                <Suspense fallback={null}>
+                    <QuestionDetailModal
+                        selectedQuestion={selectedQuestion}
+                        setSelectedQuestion={setSelectedQuestion}
+                        navigate={navigate}
+                        handleBulkAction={handleBulkAction}
+                        selectedIds={selectedIds}
+                        setSelectedIds={setSelectedIds}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };
