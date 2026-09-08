@@ -2,6 +2,7 @@ import express from "express"
 import path from "path"
 import "dotenv/config"
 import cors from "cors"
+import compression from "compression"
 import userRouter from "./routes/user.route.js";
 import { connectDb } from "./lib/connectDB.js";
 import qRouter from "./routes/questions.route.js";
@@ -28,6 +29,9 @@ const Port = process.env.PORT || 3000;
 
 
 const app = express();
+
+// Compress HTTP responses (Gzip/Brotli)
+app.use(compression());
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
