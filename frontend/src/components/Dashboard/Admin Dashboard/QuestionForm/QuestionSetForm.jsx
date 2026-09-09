@@ -256,6 +256,12 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                         correctAnswer: derivedAns || q.correctAnswer || ""
                     };
                 }
+                if (q.type === "pte-summarize-written-text" || q.type === "pte-write-essay" || testType === "writing") {
+                    return {
+                        ...q,
+                        correctAnswer: (q.correctAnswer && q.correctAnswer.trim()) || "[INSTRUCTOR REVIEW REQUIRED]"
+                    };
+                }
                 return q;
             });
         }

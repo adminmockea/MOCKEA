@@ -124,12 +124,13 @@ export const LISTENING_PARTS = [
 let _qCounter = 0;
 export const makeQuestion = (testType = "listening") => {
     _qCounter++;
-    const prefix = testType === "listening" ? "l" : testType === "reading" ? "r" : "q";
+    const prefix = testType === "listening" ? "l" : testType === "reading" ? "r" : testType === "writing" ? "w" : "q";
+    const isWriting = testType === "writing";
     return {
         id: `${prefix}${_qCounter}`,
-        type: "short-answer",
+        type: isWriting ? "pte-summarize-written-text" : "short-answer",
         question: "",
-        correctAnswer: "",
+        correctAnswer: isWriting ? "[INSTRUCTOR REVIEW REQUIRED]" : "",
         options: ["", ""],
         matchingPairs: [{ key: "", value: "" }],
         imageUrl: "",

@@ -201,6 +201,8 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                     if (firstDD && firstDD.options?.length) {
                         updates.options = [...firstDD.options];
                     }
+                } else if (value === "pte-summarize-written-text" || value === "pte-write-essay") {
+                    updates.correctAnswer = "[INSTRUCTOR REVIEW REQUIRED]";
                 }
             } else if (field === "correctAnswer") {
                 const targetQ = prev.questions.find(q => q.id === id);

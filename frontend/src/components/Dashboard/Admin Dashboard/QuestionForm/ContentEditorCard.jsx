@@ -1057,10 +1057,28 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                             </div>
                         </>
                     ) : (
-                        <div className="p-6 bg-purple-50 border border-purple-100 rounded-3xl text-sm text-purple-700 space-y-2">
-                            <h3 className="font-bold text-base">PTE Writing Tasks Guidance</h3>
-                            <p>No global writing prompts or templates are required for PTE Academic.</p>
-                            <p className="font-semibold text-xs">Please use the <strong>Questions Builder</strong> section below to add and configure your PTE writing questions (e.g. <em>Summarize Written Text</em>, <em>Write Essay</em>).</p>
+                        <div className="p-6 bg-purple-50/70 border border-purple-200/80 rounded-3xl text-sm text-purple-900 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <span className="badge badge-primary badge-sm font-black uppercase tracking-wider text-[10px]">PTE Academic</span>
+                                <h3 className="font-black text-base text-slate-800">Writing Tasks Setup</h3>
+                            </div>
+                            <p className="text-slate-600 font-medium text-xs leading-relaxed">
+                                PTE Academic Writing tasks are configured in the <strong>Questions</strong> section below. Each question has a dedicated, multi-line text editor for your reading passage or essay prompt, and scoring is automatically handled without needing an exact correct answer:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                <div className="p-4 bg-white rounded-2xl border border-purple-100 text-xs shadow-2xs space-y-1">
+                                    <div className="font-black text-purple-700 uppercase tracking-wide text-[10px]">Summarize Written Text (SWT)</div>
+                                    <div className="text-slate-600 text-[11px] leading-relaxed">
+                                        Paste the reading passage (100–300 words). Students write a single-sentence summary (5–75 words) with a 10-minute timer.
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white rounded-2xl border border-purple-100 text-xs shadow-2xs space-y-1">
+                                    <div className="font-black text-indigo-700 uppercase tracking-wide text-[10px]">Write Essay</div>
+                                    <div className="text-slate-600 text-[11px] leading-relaxed">
+                                        Enter the essay prompt or statement. Students compose a 200–300 word argumentative/opinion essay with a 20-minute timer.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
