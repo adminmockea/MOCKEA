@@ -1474,7 +1474,11 @@ const Reading = ({ preloadedSet = null }) => {
     if (submitted) {
       exitFullscreen();
       setIsStarted(false);
-      setSelectedSetId("");
+      if (preloadedSet) {
+        navigate(-1);
+      } else {
+        setSelectedSetId("");
+      }
       setAnswers({});
       setSubmitted(false);
       setResult(null);
@@ -1753,10 +1757,16 @@ const Reading = ({ preloadedSet = null }) => {
                       <PiCheckCircleFill className="text-xl" /> Session Finalized
                     </div>
                     <button
-                      onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
+                      onClick={handleExitTest}
+                      className="btn btn-error text-white btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest border-none shadow-md shadow-error/20"
+                    >
+                      End Test
+                    </button>
+                    <button
+                      onClick={handleRetake}
                       className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
                     >
-                      {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
+                      Retake Test
                     </button>
                   </div>
                 ) : (
@@ -1764,7 +1774,7 @@ const Reading = ({ preloadedSet = null }) => {
                     onClick={handleExitTest}
                     className="btn btn-error text-white rounded-2xl px-8 h-12 font-black border-none shadow-xl shadow-error/20"
                   >
-                    End Session
+                    End Test
                   </button>
                 )}
             </div>
@@ -1789,12 +1799,26 @@ const Reading = ({ preloadedSet = null }) => {
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
-                    className="btn bg-white text-primary border-none rounded-2xl px-8 h-14 font-black shadow-xl"
-                >
-                    {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={handleExitTest}
+                        className="btn bg-white text-error hover:bg-rose-50 border-none rounded-2xl px-6 h-14 font-black shadow-xl"
+                    >
+                        End Test
+                    </button>
+                    <button
+                        onClick={handleReturnToDashboard}
+                        className="btn bg-white text-primary hover:bg-slate-50 border-none rounded-2xl px-6 h-14 font-black shadow-xl"
+                    >
+                        Return to Dashboard
+                    </button>
+                    <button
+                        onClick={handleRetake}
+                        className="btn bg-white/20 text-white hover:bg-white/30 border-none rounded-2xl px-6 h-14 font-black"
+                    >
+                        Retake Test
+                    </button>
+                </div>
             </motion.div>
         )}
 

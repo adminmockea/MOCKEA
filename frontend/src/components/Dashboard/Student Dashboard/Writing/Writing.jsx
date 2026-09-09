@@ -26,8 +26,12 @@ import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questio
 const getTaskContent = (activeSet, tab, isPte) => {
   if (!activeSet) return "";
   if (isPte) {
+    if (activeSet.questions?.length === 1) {
+      const qText = activeSet.questions[0]?.question || activeSet.passage || "";
+      return DOMPurify.sanitize(qText.replace(/\n/g, "<br />"));
+    }
     const qIndex = tab === "task1" ? 0 : 1;
-    const qText = activeSet.questions?.[qIndex]?.question || "";
+    const qText = activeSet.questions?.[qIndex]?.question || activeSet.passage || "";
     return DOMPurify.sanitize(qText.replace(/\n/g, "<br />"));
   }
   const passage = activeSet.passage;
@@ -82,7 +86,7 @@ const Writing = ({ preloadedSet = null }) => {
   const writingSets = preloadedSet ? [preloadedSet] : fetchedWritingSets;
   const loading = preloadedSet ? false : queryLoading;
 
-  const [selectedSetId, setSelectedSetId] = useState("");
+  const [selectedSetId, setSelectedSetId] = useState(preloadedSet ? preloadedSet._id : "");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
 
   const categories = useMemo(() => {
@@ -100,6 +104,10 @@ const Writing = ({ preloadedSet = null }) => {
   }, [writingSets, selectedCategory]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Fullscreen & Gating States
+  const [isStarted, setIsStarted] = useState(false);
+  const { isFullscreen, showWarning, setShowWarning, enterFullscreen, exitFullscreen } = useTestIntegrity(isStarted, submitted);
   
   // Student input
   const [activeTab, setActiveTab] = useState("task1"); // "task1" or "task2"
@@ -127,21 +135,26 @@ const Writing = ({ preloadedSet = null }) => {
   };
 
   const activeSet = useMemo(
-    () => writingSets.find((set) => set._id === selectedSetId) || null,
-    [writingSets, selectedSetId],
+    () => preloadedSet || writingSets.find((set) => set._id === selectedSetId) || null,
+    [preloadedSet, writingSets, selectedSetId],
   );
 
   const isPte = useMemo(() => activeSet?.examType === "PTE" || targetExam === "PTE", [activeSet, targetExam]);
+  const isSinglePteTask = useMemo(() => isPte && activeSet?.questions?.length === 1, [isPte, activeSet]);
+  const singlePteType = useMemo(() => isSinglePteTask ? activeSet?.questions?.[0]?.type : null, [isSinglePteTask, activeSet]);
 
   const targetDurationSeconds = useMemo(() => {
     if (activeSet?.timeLimit && Number(activeSet.timeLimit) > 0) {
       return Number(activeSet.timeLimit) * 60;
     }
+    if (isSinglePteTask) {
+      return singlePteType === "pte-summarize-written-text" ? 10 * 60 : 20 * 60;
+    }
     if (isPte || activeSet?.examType === "PTE") {
       return 20 * 60; // 20 minutes default for PTE standalone tests
     }
     return 60 * 60; // 60 minutes default for IELTS Writing
-  }, [activeSet, isPte]);
+  }, [activeSet, isPte, isSinglePteTask, singlePteType]);
 
   const [timerActive, setTimerActive] = useState(false);
   const { timeLeft, fmtTime: fmt, resetCountdown } = useCountdown(targetDurationSeconds, timerActive, submitted);
@@ -158,20 +171,28 @@ const Writing = ({ preloadedSet = null }) => {
   const currentWordCount = activeTab === "task1" ? wordCount1 : wordCount2;
 
   const currentTargetWordsLabel = useMemo(() => {
+    if (isSinglePteTask) {
+      return singlePteType === "pte-summarize-written-text" ? "5-75" : "200-300";
+    }
     if (isPte) {
       return activeTab === "task1" ? "5-75" : "200-300";
     }
     return activeTab === "task1" ? "150" : "250";
-  }, [isPte, activeTab]);
+  }, [isSinglePteTask, singlePteType, isPte, activeTab]);
 
   const isWordCountValid = useMemo(() => {
+    if (isSinglePteTask) {
+      return singlePteType === "pte-summarize-written-text"
+        ? (wordCount1 >= 5 && wordCount1 <= 75)
+        : (wordCount1 >= 200 && wordCount1 <= 300);
+    }
     if (isPte) {
       return activeTab === "task1"
         ? (wordCount1 >= 5 && wordCount1 <= 75)
         : (wordCount2 >= 200 && wordCount2 <= 300);
     }
     return activeTab === "task1" ? wordCount1 >= 150 : wordCount2 >= 250;
-  }, [isPte, activeTab, wordCount1, wordCount2]);
+  }, [isSinglePteTask, singlePteType, isPte, activeTab, wordCount1, wordCount2]);
 
   // Writing data fetched via useQuery above
 
@@ -211,10 +232,18 @@ const Writing = ({ preloadedSet = null }) => {
   };
 
   const handleSubmit = async () => {
-    const minWords = isPte ? 200 : 50;
-    if (wordCount2 < minWords) {
-      toast.warning(`Your response is too short (minimum ${minWords} words recommended).`);
-      return;
+    if (isSinglePteTask) {
+      const minWords = singlePteType === "pte-summarize-written-text" ? 5 : 200;
+      if (wordCount1 < minWords) {
+        toast.warning(`Your response is too short (minimum ${minWords} words recommended).`);
+        return;
+      }
+    } else {
+      const minWords = isPte ? 200 : 50;
+      if (wordCount2 < minWords) {
+        toast.warning(`Your response is too short (minimum ${minWords} words recommended).`);
+        return;
+      }
     }
 
     try {
@@ -223,11 +252,14 @@ const Writing = ({ preloadedSet = null }) => {
         return;
       }
       setSubmitting(true);
+      const submissionContent = isSinglePteTask
+        ? `--- ${singlePteType === 'pte-summarize-written-text' ? 'SUMMARIZE WRITTEN TEXT' : 'PTE ESSAY'} ---\n${task1Text}`
+        : text;
       const response = await axiosSecure.post("/submissions/submit", {
         questionSetId: activeSet._id,
         testType: "writing",
         title: activeSet.title,
-        content: text,
+        content: submissionContent,
         userName: user?.displayName || "Student",
         userEmail: user?.email
       });
@@ -249,7 +281,11 @@ const Writing = ({ preloadedSet = null }) => {
     if (submitted) {
       exitFullscreen();
       setIsStarted(false);
-      setSelectedSetId("");
+      if (preloadedSet) {
+        navigate(-1);
+      } else {
+        setSelectedSetId("");
+      }
       resetText();
       setSubmitted(false);
       setTimerActive(false);
@@ -267,14 +303,19 @@ const Writing = ({ preloadedSet = null }) => {
       }
       setIsStarted(false);
 
-      if (hasAnswers && wordCount >= 50) {
+      const minExitWords = isSinglePteTask ? (singlePteType === 'pte-summarize-written-text' ? 5 : 50) : 50;
+      const totalWords = isSinglePteTask ? wordCount1 : wordCount;
+      if (hasAnswers && totalWords >= minExitWords) {
         try {
           toast.info("Auto-submitting your essay response...");
+          const submissionContent = isSinglePteTask
+            ? `--- ${singlePteType === 'pte-summarize-written-text' ? 'SUMMARIZE WRITTEN TEXT' : 'PTE ESSAY'} ---\n${task1Text}`
+            : text;
           await axiosSecure.post("/submissions/submit", {
             questionSetId: activeSet._id,
             testType: "writing",
             title: activeSet.title,
-            content: text,
+            content: submissionContent,
             userName: user?.displayName || "Student",
             userEmail: user?.email
           });
@@ -362,7 +403,7 @@ const Writing = ({ preloadedSet = null }) => {
     );
   }
 
-  if (!activeSet || !selectedSetId) {
+  if (!activeSet || (!preloadedSet && !selectedSetId)) {
     return (
         <div className="max-w-7xl mx-auto px-6 pt-2 pb-20">
             <div className="text-center space-y-4 mb-16">
@@ -485,7 +526,7 @@ const Writing = ({ preloadedSet = null }) => {
                                                 <span className="flex items-center gap-1.5">
                                                     <PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === 'PTE' ? '20m' : '60m')}
                                                 </span>
-                                                <span className="flex items-center gap-1.5"><PiTextAaFill /> 2 Tasks</span>
+                                                <span className="flex items-center gap-1.5"><PiTextAaFill /> {set.questions?.length === 1 ? '1 Task' : '2 Tasks'}</span>
                                                 {set.examType && (
                                                     <span className={`badge badge-sm font-black ${
                                                         set.examType === 'IELTS' ? 'badge-primary' :
@@ -512,7 +553,7 @@ const Writing = ({ preloadedSet = null }) => {
     <TestShell
       isStarted={isStarted}
       onStart={() => { setIsStarted(true); setTimerActive(true); enterFullscreen(); }}
-      onCancel={() => setSelectedSetId("")}
+      onCancel={() => preloadedSet ? navigate(-1) : setSelectedSetId("")}
       title="Ready to Start?"
       description="This practice test will open in fullscreen mode. Ensure you are in a quiet environment."
       icon={PiPencilLineFill}
@@ -549,15 +590,29 @@ const Writing = ({ preloadedSet = null }) => {
                       <PiCheckCircleFill className="text-xl" /> Session Finalized
                     </div>
                     <button
-                      onClick={!preloadedSet ? handleRetake : handleReturnToDashboard}
+                      onClick={handleExitTest}
+                      className="btn btn-error text-white btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest border-none shadow-md shadow-error/20"
+                    >
+                      End Test
+                    </button>
+                    <button
+                      onClick={handleRetake}
                       className="btn btn-primary btn-sm rounded-2xl px-4 h-10 font-black text-[10px] uppercase tracking-widest"
                     >
-                      {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
+                      Retake Test
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    {activeTab === "task1" ? (
+                    {isSinglePteTask ? (
+                      <button 
+                          onClick={handleSubmit} 
+                          disabled={submitting}
+                          className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
+                      >
+                          {submitting ? <span className="loading loading-spinner" /> : (singlePteType === "pte-summarize-written-text" ? "Submit Summary" : "Submit Essay")}
+                      </button>
+                    ) : activeTab === "task1" ? (
                       <button 
                           onClick={handleFirstTaskSubmit} 
                           className="btn btn-primary rounded-2xl px-6 h-12 font-black shadow-xl shadow-primary/20 border-none"
@@ -577,7 +632,7 @@ const Writing = ({ preloadedSet = null }) => {
                         onClick={handleExitTest}
                         className="btn btn-error text-white rounded-2xl px-6 h-12 font-black border-none shadow-xl shadow-error/20"
                     >
-                        End Session
+                        End Test
                     </button>
                   </div>
                 )}
@@ -631,47 +686,54 @@ const Writing = ({ preloadedSet = null }) => {
                 <div className="card bg-white rounded-[3rem] border border-base-300 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-180px)]">
                     {/* Editor Toolbar */}
                     <div className="px-10 py-6 border-b border-slate-200 bg-base-50/50 flex items-center justify-between">
-                        <div className="flex bg-slate-200/60 p-1 rounded-2xl gap-1.5 shadow-inner">
-                            <button 
-                                onClick={() => {
-                                    if (task1Submitted) {
-                                        toast.warning(isPte ? "Summarize Written Text has been submitted and locked." : "Task 1 has been submitted and locked.");
-                                        return;
-                                    }
-                                    setActiveTab("task1");
-                                }}
-                                className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    activeTab === "task1" 
-                                    ? "bg-white text-slate-800 shadow-sm" 
-                                    : "text-slate-400 hover:text-slate-600"
-                                } ${task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
-                            >
-                                {isPte ? "Summarize Written Text" : "Task 1"}
-                            </button>
-                            <button 
-                                onClick={() => {
-                                    if (!task1Submitted) {
-                                        toast.info(isPte ? "Please submit Summarize Written Text before proceeding to Write Essay." : "Please submit Task 1 before proceeding to Task 2.");
-                                        return;
-                                    }
-                                    setActiveTab("task2");
-                                }}
-                                className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    activeTab === "task2" 
-                                    ? "bg-white text-slate-800 shadow-sm" 
-                                    : "text-slate-400 hover:text-slate-600"
-                                } ${!task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
-                            >
-                                {isPte ? "Write Essay" : "Task 2"}
-                            </button>
-                        </div>
+                        {isSinglePteTask ? (
+                            <div className="bg-white border border-slate-200 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-800 shadow-sm flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                {singlePteType === "pte-summarize-written-text" ? "Summarize Written Text" : "Write Essay"}
+                            </div>
+                        ) : (
+                            <div className="flex bg-slate-200/60 p-1 rounded-2xl gap-1.5 shadow-inner">
+                                <button 
+                                    onClick={() => {
+                                        if (task1Submitted) {
+                                            toast.warning(isPte ? "Summarize Written Text has been submitted and locked." : "Task 1 has been submitted and locked.");
+                                            return;
+                                        }
+                                        setActiveTab("task1");
+                                    }}
+                                    className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        activeTab === "task1" 
+                                        ? "bg-white text-slate-800 shadow-sm" 
+                                        : "text-slate-400 hover:text-slate-600"
+                                    } ${task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
+                                >
+                                    {isPte ? "Summarize Written Text" : "Task 1"}
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        if (!task1Submitted) {
+                                            toast.info(isPte ? "Please submit Summarize Written Text before proceeding to Write Essay." : "Please submit Task 1 before proceeding to Task 2.");
+                                            return;
+                                        }
+                                        setActiveTab("task2");
+                                    }}
+                                    className={`py-2 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        activeTab === "task2" 
+                                        ? "bg-white text-slate-800 shadow-sm" 
+                                        : "text-slate-400 hover:text-slate-600"
+                                    } ${!task1Submitted ? "opacity-50 cursor-not-allowed" : ""}`}
+                                >
+                                    {isPte ? "Write Essay" : "Task 2"}
+                                </button>
+                            </div>
+                        )}
                         <div className="flex items-center gap-4">
                             <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
                                 isWordCountValid 
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                                 : "bg-orange-50 text-orange-600 border-orange-100"
                             }`}>
-                                Words: {currentWordCount} / {currentTargetWordsLabel} Target
+                                Words: {isSinglePteTask ? wordCount1 : currentWordCount} / {currentTargetWordsLabel} Target
                             </div>
                         </div>
                     </div>
@@ -693,22 +755,36 @@ const Writing = ({ preloadedSet = null }) => {
                                         Your response has been added to the instructor's queue. You will be notified once the grading is complete.
                                     </p>
                                 </div>
-                                <button 
-                                    onClick={!preloadedSet ? handleRetake : () => {
-                                        exitFullscreen();
-                                        setIsStarted(false);
-                                        navigate(-1);
-                                    }} 
-                                    className="btn btn-primary rounded-2xl px-10 font-black"
-                                >
-                                    {!preloadedSet ? "Retake Test" : "Return to Dashboard"}
-                                </button>
+                                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                                    <button 
+                                        onClick={handleExitTest} 
+                                        className="btn btn-error text-white rounded-2xl px-8 font-black border-none shadow-lg shadow-error/20"
+                                    >
+                                        End Test
+                                    </button>
+                                    <button 
+                                        onClick={handleReturnToDashboard} 
+                                        className="btn btn-primary rounded-2xl px-8 font-black shadow-lg shadow-primary/20"
+                                    >
+                                        Return to Dashboard
+                                    </button>
+                                    <button 
+                                        onClick={handleRetake} 
+                                        className="btn btn-outline border-slate-300 text-slate-700 hover:bg-slate-100 rounded-2xl px-6 font-black"
+                                    >
+                                        Retake Test
+                                    </button>
+                                </div>
                             </motion.div>
                         ) : (
                             <textarea 
                                 className="w-full h-full resize-none border-none focus:ring-0 text-lg leading-relaxed text-slate-700 placeholder:text-slate-300 font-medium custom-scrollbar focus:outline-none"
                                 placeholder={
-                                    isPte
+                                    isSinglePteTask
+                                    ? (singlePteType === "pte-summarize-written-text"
+                                        ? "Write your Summarize Written Text response here (5-75 words, single sentence)..."
+                                        : "Write your PTE Essay response here (200-300 words)...")
+                                    : isPte
                                     ? (activeTab === "task1"
                                         ? "Write your Summarize Written Text response here (5-75 words, single sentence)..."
                                         : "Write your PTE Essay response here (200-300 words)...")
@@ -716,9 +792,9 @@ const Writing = ({ preloadedSet = null }) => {
                                         ? "Write your Task 1 academic report here (minimum 150 words)..." 
                                         : "Write your Task 2 argumentative opinion essay here (minimum 250 words)...")
                                 }
-                                value={activeTab === "task1" ? task1Text : task2Text}
-                                onChange={(e) => handleTextChange(e.target.value)}
-                                readOnly={activeTab === "task1" && task1Submitted}
+                                value={isSinglePteTask ? task1Text : (activeTab === "task1" ? task1Text : task2Text)}
+                                onChange={(e) => isSinglePteTask ? setTask1Text(e.target.value) : handleTextChange(e.target.value)}
+                                readOnly={!isSinglePteTask && activeTab === "task1" && task1Submitted}
                             />
                         )}
                     </div>
@@ -727,8 +803,14 @@ const Writing = ({ preloadedSet = null }) => {
                     <div className="px-10 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <span>Status: {timerActive ? 'Active Session' : 'Standby'}</span>
                         <div className="flex items-center gap-4">
-                            <span>{isPte ? "Summary" : "Task 1"}: {wordCount1}w</span>
-                            <span>{isPte ? "Essay" : "Task 2"}: {wordCount2}w</span>
+                            {isSinglePteTask ? (
+                                <span>{singlePteType === 'pte-summarize-written-text' ? "Summary" : "Essay"}: {wordCount1}w</span>
+                            ) : (
+                                <>
+                                    <span>{isPte ? "Summary" : "Task 1"}: {wordCount1}w</span>
+                                    <span>{isPte ? "Essay" : "Task 2"}: {wordCount2}w</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
