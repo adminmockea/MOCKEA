@@ -128,24 +128,42 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
   // Listening data fetched via useQuery above
 
+  const activeAudioUrl = useMemo(() => {
+    return activeSet?.audioUrl || activeSet?.questions?.find((q) => q.audioUrl)?.audioUrl || "";
+  }, [activeSet]);
+
   /* --- Audio Logic --- */
   useEffect(() => {
-    if (!activeSet?.audioUrl) return;
+    if (!activeAudioUrl) {
+      if (howlRef.current) {
+        howlRef.current.unload();
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+        setIsLoaded(false);
+      }
+      return;
+    }
 
     if (howlRef.current) {
         howlRef.current.unload();
         setIsPlaying(false);
         setProgress(0);
         setCurrentTime(0);
+        setIsLoaded(false);
     }
 
     const sound = new Howl({
-      src: [activeSet.audioUrl],
+      src: [activeAudioUrl],
       html5: true,
       volume: volume,
       onload: () => {
         setIsLoaded(true);
         setDuration(sound.duration());
+      },
+      onloaderror: (_id, err) => {
+        console.error("Audio load error:", err);
+        setIsLoaded(false);
       },
       onend: () => {
         setIsPlaying(false);
@@ -158,7 +176,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       cancelAnimationFrame(rafRef.current);
       sound.unload();
     };
-    }, [activeSet?.audioUrl]);
+  }, [activeAudioUrl]);
 
     useEffect(() => {
         if (targetDurationSeconds > 0 && !submitted) {
@@ -638,7 +656,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             </div>
                         </div>
 
-                        {!activeSet?.audioUrl ? (
+                        {!activeAudioUrl ? (
                             <p className="text-[11px] text-amber-500/80 font-bold text-center">
                                 ⚠ No audio URL configured for this test.
                             </p>
@@ -755,6 +773,13 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                 </div>
 
                                                 <p className="text-lg font-black text-slate-700 leading-tight">{q.question}</p>
+                                                
+                                                {q.audioUrl && (activeSet?.questions?.length > 1 || !activeAudioUrl) && (
+                                                    <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-1.5">
+                                                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Prompt</p>
+                                                        <audio controls src={q.audioUrl} className="w-full h-9" />
+                                                    </div>
+                                                )}
 
                                                 {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
                                                     <div className="grid md:grid-cols-2 gap-4">
@@ -810,7 +835,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                         )}
                                                         {submitted && !isCorrect && (
                                                             <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20">
-                                                                <PiCheckCircleFill /> Correct Key: {q.correctAnswer}
+                                                                <PiCheckCircleFill /> {q.type === "pte-summarize-spoken-text" || q.correctAnswer === "[INSTRUCTOR REVIEW REQUIRED]" ? "Submitted for Evaluation" : `Correct Key: ${q.correctAnswer}`}
                                                             </div>
                                                         )}
                                                     </div>

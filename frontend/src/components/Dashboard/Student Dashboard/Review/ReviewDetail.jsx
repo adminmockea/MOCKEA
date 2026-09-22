@@ -1143,7 +1143,7 @@ const ReviewDetail = () => {
                                                 <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-2xl text-purple-600">
                                                     <PiEarFill />
                                                 </div>
-                                                <audio controls src={currentSectionData?.audioUrl} className="w-full" />
+                                                 <audio controls src={currentSectionData?.audioUrl || currentSectionData?.questions?.find(q => q.audioUrl)?.audioUrl} className="w-full" />
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section Recording Player</p>
                                             </div>
 

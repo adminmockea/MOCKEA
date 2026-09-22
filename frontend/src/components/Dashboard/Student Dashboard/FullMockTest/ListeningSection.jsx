@@ -1374,7 +1374,7 @@ const ListeningSection = ({ sections = [], answers, onAnswerChange, activePartId
                             
                             <audio 
                                 ref={audioRef} 
-                                src={data?.audioUrl} 
+                                src={data?.audioUrl || data?.questions?.find(q => q.audioUrl)?.audioUrl} 
                                 onTimeUpdate={handleTimeUpdate}
                                 onLoadedMetadata={handleLoadedMetadata}
                                 onEnded={() => setIsPlaying(false)}

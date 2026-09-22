@@ -8,7 +8,7 @@ import {
     PiCheckCircle
 } from "react-icons/pi";
 import { QuestionTypeSelect, QuestionTypeExtras } from "./QuestionTypeFields";
-import { NEEDS_OPTIONS } from "./questionFormConstants";
+import { NEEDS_OPTIONS, OPEN_ENDED_TYPES } from "./questionFormConstants";
 
 export default function QuestionsBuilderCard({
     testType,
@@ -160,6 +160,7 @@ export default function QuestionsBuilderCard({
             {formData.questions?.map((q, index) => {
                 const questionNum = index + 1;
                 const isWritingTask = testType === "writing" || q.type === "pte-summarize-written-text" || q.type === "pte-write-essay";
+                const isOpenEndedTask = isWritingTask || testType === "speaking" || OPEN_ENDED_TYPES.includes(q.type);
                 const group = (testType === "reading" || testType === "listening") && formData.examType !== "PTE"
                     ? (formData.questionGroups || []).find(g => Number(g.fromQuestion) === questionNum)
                     : null;
@@ -362,17 +363,23 @@ export default function QuestionsBuilderCard({
                             />
 
                             {/* Correct answer */}
-                            {isWritingTask ? (
+                            {isOpenEndedTask ? (
                                 <div className="flex items-center gap-3 p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs">
                                     <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
                                         <PiCheckCircle className="w-5 h-5" />
                                     </div>
                                     <div className="space-y-0.5">
                                         <div className="font-bold text-emerald-900 uppercase tracking-wider text-[10px]">
-                                            Open-Ended Writing Task
+                                            {q.type === "pte-summarize-spoken-text"
+                                                ? "Open-Ended Spoken Text Summary"
+                                                : testType === "speaking" || q.type?.startsWith("pte-")
+                                                ? "Open-Ended Audio / Speech Task"
+                                                : "Open-Ended Writing Task"}
                                         </div>
                                         <div className="text-emerald-700 font-medium">
-                                            No manual correct answer required. Student responses are automatically evaluated based on word count targets and submitted to instructors &amp; AI for grading.
+                                            {q.type === "pte-summarize-spoken-text"
+                                                ? "No manual exact answer required. Student responses (50–70 words) are automatically evaluated using the audio reference transcript, content relevance, and submitted for AI / instructor scoring."
+                                                : "No manual correct answer required. Student responses are automatically evaluated based on word count targets and submitted to instructors & AI for grading."}
                                         </div>
                                     </div>
                                 </div>

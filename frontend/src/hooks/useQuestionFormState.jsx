@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { makeQuestion, initialForm } from "../components/Dashboard/Admin Dashboard/QuestionForm/questionFormConstants";
+import { makeQuestion, initialForm, OPEN_ENDED_TYPES } from "../components/Dashboard/Admin Dashboard/QuestionForm/questionFormConstants";
 import { stripListeningExampleBlocks } from "../utils/listeningPassage";
 
 const isDragDropType = (type) => type === "drag-drop-completion" || type === "pte-reading-fill-blanks-drag-drop" || type === "pte-reading-fill-blanks";
@@ -71,7 +71,7 @@ export function parseQuestionToState(fetchedQuestion) {
         passage: cleanPassage,
         passages,
         questionGroups,
-        audioUrl: fetchedQuestion.audioUrl || "",
+        audioUrl: fetchedQuestion.audioUrl || fetchedQuestion.questions?.find(q => q.audioUrl)?.audioUrl || "",
         speakingPrompt: fetchedQuestion.speakingPrompt || "",
         speakingPart1Questions: fetchedQuestion.speakingPart1Questions?.length ? fetchedQuestion.speakingPart1Questions : [""],
         speakingPart1AudioUrls: fetchedQuestion.speakingPart1AudioUrls?.length 
@@ -99,11 +99,11 @@ export function parseQuestionToState(fetchedQuestion) {
             id: q.id || `${idPrefix}${idx + 1}`,
             type: q.type || "short-answer",
             question: q.question || "",
-            correctAnswer: q.correctAnswer || "",
+            correctAnswer: q.correctAnswer || (OPEN_ENDED_TYPES.includes(q.type) ? "[INSTRUCTOR REVIEW REQUIRED]" : ""),
             options: q.options || ["", ""],
             matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
             imageUrl: q.imageUrl || "",
-            audioUrl: q.audioUrl || "",
+            audioUrl: q.audioUrl || (idx === 0 && fetchedQuestion.audioUrl ? fetchedQuestion.audioUrl : ""),
             passageIndex: q.passageIndex || 0,
             info: q.info || "",
             pteDropdownOptions: q.pteDropdownOptions || [["", "", "", ""]],
@@ -209,7 +209,7 @@ export function useQuestionFormState(initialData = initialForm("reading")) {
                     if (firstDD && firstDD.options?.length) {
                         updates.options = [...firstDD.options];
                     }
-                } else if (value === "pte-summarize-written-text" || value === "pte-write-essay") {
+                } else if (OPEN_ENDED_TYPES.includes(value)) {
                     updates.correctAnswer = "[INSTRUCTOR REVIEW REQUIRED]";
                 }
             } else if (field === "correctAnswer") {

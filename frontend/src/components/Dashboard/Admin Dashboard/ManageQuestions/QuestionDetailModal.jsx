@@ -82,10 +82,12 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                 </div>
                             )}
 
-                            {selectedQuestion.testType === "listening" && (
+                            {selectedQuestion.testType === "listening" && (() => {
+                                const displayAudioUrl = selectedQuestion.audioUrl || selectedQuestion.questions?.find(q => q.audioUrl)?.audioUrl;
+                                return (
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-black uppercase tracking-wider text-base-content/50">Listening Test Content</h3>
-                                    {selectedQuestion.audioUrl ? (
+                                    {displayAudioUrl ? (
                                         <div className="bg-indigo-50/40 border border-indigo-100/60 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-xl shrink-0">
@@ -93,10 +95,10 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-sm text-slate-800">Audio Track Player</div>
-                                                    <a href={selectedQuestion.audioUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline line-clamp-1 break-all">{selectedQuestion.audioUrl}</a>
+                                                    <a href={displayAudioUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline line-clamp-1 break-all">{displayAudioUrl}</a>
                                                 </div>
                                             </div>
-                                            <audio src={selectedQuestion.audioUrl} controls className="w-full md:max-w-md" />
+                                            <audio src={displayAudioUrl} controls className="w-full md:max-w-md" />
                                         </div>
                                     ) : (
                                         <div className="text-sm text-error bg-error/10 p-3 rounded-xl font-semibold">No audio URL specified.</div>
@@ -125,7 +127,8 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                         </div>
                                     )}
                                 </div>
-                            )}
+                                );
+                            })()}
 
                             {selectedQuestion.testType === "writing" && selectedQuestion.passage && (
                                 <div className="space-y-4">

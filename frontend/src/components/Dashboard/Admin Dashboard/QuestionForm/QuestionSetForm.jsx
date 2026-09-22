@@ -7,7 +7,7 @@ import useAxiosSecure from "../../../../hooks/useAxiosSecure";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils";
 import { stripListeningExampleBlocks } from "../../../../utils/listeningPassage";
 
-import { initialForm } from "./questionFormConstants";
+import { initialForm, OPEN_ENDED_TYPES } from "./questionFormConstants";
 import { useQuestionFormState, parseQuestionToState } from "../../../../hooks/useQuestionFormState";
 
 import TestSectionPicker from "./TestSectionPicker";
@@ -109,6 +109,10 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             toast.success(res.data.message || `Question set ${mode === "edit" ? "updated" : "saved"} successfully!`);
             queryClient.invalidateQueries({ queryKey: ["admin-questions"] });
             queryClient.invalidateQueries({ queryKey: ["admin-questions-for-bundle"] });
+            queryClient.invalidateQueries({ queryKey: ["listening-sets"] });
+            queryClient.invalidateQueries({ queryKey: ["reading-sets"] });
+            queryClient.invalidateQueries({ queryKey: ["writing-sets"] });
+            queryClient.invalidateQueries({ queryKey: ["speaking-sets"] });
             if (mode === "edit") {
                 queryClient.invalidateQueries({ queryKey: ["admin-question", id] });
                 navigate("/dashboard/admin/manage-questions");
@@ -153,6 +157,16 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
             questionGroups: sanitizedGroups,
             testType
         };
+
+        // Ensure audioUrl synchronization between root question set and questions
+        if (testType === "listening") {
+            const firstQuestionAudio = (data.questions || []).find(q => q.audioUrl)?.audioUrl;
+            if (!data.audioUrl && firstQuestionAudio) {
+                data.audioUrl = firstQuestionAudio;
+            } else if (data.audioUrl && data.questions?.length > 0 && !data.questions[0].audioUrl) {
+                data.questions = data.questions.map((q, idx) => idx === 0 ? { ...q, audioUrl: data.audioUrl } : q);
+            }
+        }
 
         if (testType === "reading") {
             if (formData.examType === "PTE") {
@@ -256,7 +270,7 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                         correctAnswer: derivedAns || q.correctAnswer || ""
                     };
                 }
-                if (q.type === "pte-summarize-written-text" || q.type === "pte-write-essay" || testType === "writing") {
+                if (OPEN_ENDED_TYPES.includes(q.type) || testType === "writing" || testType === "speaking") {
                     return {
                         ...q,
                         correctAnswer: (q.correctAnswer && q.correctAnswer.trim()) || "[INSTRUCTOR REVIEW REQUIRED]"

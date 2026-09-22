@@ -68,6 +68,17 @@ export const NEEDS_IMAGE = ["map-labelling", "diagram-labelling", "pte-describe-
 // Which PTE types need an audio prompt file
 export const PTE_NEEDS_AUDIO = ["pte-repeat-sentence", "pte-retell-lecture", "pte-answer-short-question"];
 
+// Types that are evaluated subjectively, by AI, or via speech/audio transcript rather than exact match
+export const OPEN_ENDED_TYPES = [
+    "pte-summarize-written-text",
+    "pte-write-essay",
+    "pte-summarize-spoken-text",
+    "pte-read-aloud",
+    "pte-repeat-sentence",
+    "pte-describe-image",
+    "pte-retell-lecture"
+];
+
 export const PTE_QUESTION_TYPE_GROUPS = [
     {
         group: "PTE Speaking",

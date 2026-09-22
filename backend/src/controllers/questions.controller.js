@@ -321,6 +321,16 @@ export const getQuestions = async (req, res) => {
             });
         }
 
+        // Ensure audioUrl fallback for all clients (PTE questions often store audio at the question item level)
+        questions = questions.map(q => {
+            const qObj = q.toObject ? q.toObject() : { ...q };
+            if (!qObj.audioUrl && Array.isArray(qObj.questions)) {
+                const foundAudio = qObj.questions.find(sub => sub.audioUrl)?.audioUrl;
+                if (foundAudio) qObj.audioUrl = foundAudio;
+            }
+            return qObj;
+        });
+
         return res.status(200).json({
             success: true,
             message: "Questions fetched successfully",
@@ -344,6 +354,18 @@ export const postQuestion = async (req, res) => {
             const num = Number(questionData.timeLimit);
             questionData.timeLimit = !isNaN(num) && num > 0 ? num : null;
         }
+
+        // Synchronize audioUrl between question set root and sub-questions
+        if (!questionData.audioUrl && Array.isArray(questionData.questions)) {
+            const foundAudio = questionData.questions.find(q => q.audioUrl)?.audioUrl;
+            if (foundAudio) questionData.audioUrl = foundAudio;
+        }
+        if (questionData.audioUrl && Array.isArray(questionData.questions) && questionData.questions.length > 0) {
+            if (!questionData.questions[0].audioUrl) {
+                questionData.questions[0].audioUrl = questionData.audioUrl;
+            }
+        }
+
         const newQuestion = new Questions(questionData);
         await newQuestion.save();
         return res.status(201).json({
@@ -408,9 +430,15 @@ export const getQuestionById = async (req, res) => {
             }
         }
 
+        const qObj = question.toObject ? question.toObject() : { ...question };
+        if (!qObj.audioUrl && Array.isArray(qObj.questions)) {
+            const foundAudio = qObj.questions.find(sub => sub.audioUrl)?.audioUrl;
+            if (foundAudio) qObj.audioUrl = foundAudio;
+        }
+
         return res.status(200).json({
             success: true,
-            question
+            question: qObj
         });
     } catch (error) {
         return res.status(500).json({
@@ -432,6 +460,17 @@ export const updateQuestion = async (req, res) => {
             } else {
                 const num = Number(updateData.timeLimit);
                 updateData.timeLimit = !isNaN(num) && num > 0 ? num : null;
+            }
+        }
+
+        // Synchronize audioUrl between question set root and sub-questions
+        if (!updateData.audioUrl && Array.isArray(updateData.questions)) {
+            const foundAudio = updateData.questions.find(q => q.audioUrl)?.audioUrl;
+            if (foundAudio) updateData.audioUrl = foundAudio;
+        }
+        if (updateData.audioUrl && Array.isArray(updateData.questions) && updateData.questions.length > 0) {
+            if (!updateData.questions[0].audioUrl) {
+                updateData.questions[0].audioUrl = updateData.audioUrl;
             }
         }
         
