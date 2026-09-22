@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { PiPlay, PiClockFill, PiGraduationCapFill } from "react-icons/pi";
+import { PiPlay, PiPause, PiClockFill, PiGraduationCapFill } from "react-icons/pi";
 
 const PteSpeakingSection = ({
   activeSet,
@@ -59,18 +59,25 @@ const PteSpeakingSection = ({
                 </p>
               )}
 
-              {currentPteQuestion.audioText && (
+              {(currentPteQuestion.audioUrl || currentPteQuestion.audioText || currentPteQuestion.pteAudioTranscript) && (
                 <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200">
                   <button
                     type="button"
-                    onClick={() => playPteAudio(currentPteQuestion.audioText)}
-                    className="btn btn-circle btn-primary shadow-md"
+                    onClick={() => playPteAudio(currentPteQuestion.audioUrl || currentPteQuestion.audioText || currentPteQuestion.pteAudioTranscript)}
+                    className={`btn btn-circle ${isPlayingPteAudio ? "btn-error animate-pulse text-white" : "btn-primary"} shadow-md`}
                   >
-                    <PiPlay className="text-xl" />
+                    {isPlayingPteAudio ? <PiPause className="text-xl" /> : <PiPlay className="text-xl" />}
                   </button>
-                  <span className="text-xs font-bold text-slate-600">
-                    {isPlayingPteAudio ? "Playing prompt audio..." : "Click to listen to prompt audio"}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-700">
+                      {isPlayingPteAudio ? "Playing prompt audio..." : "Click to listen to prompt audio"}
+                    </span>
+                    {currentPteQuestion.audioUrl && (
+                      <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                        Master Prompt Audio Recording
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
 

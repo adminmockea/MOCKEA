@@ -65,6 +65,8 @@ export const NEEDS_OPTIONS = ["multiple-choice", "true-false", "yes-no", "matchi
 export const NEEDS_PAIRS = ["matching", "heading-matching"];
 // Which types need a per-question image URL
 export const NEEDS_IMAGE = ["map-labelling", "diagram-labelling", "pte-describe-image"];
+// Which PTE types need an audio prompt file
+export const PTE_NEEDS_AUDIO = ["pte-repeat-sentence", "pte-retell-lecture", "pte-answer-short-question"];
 
 export const PTE_QUESTION_TYPE_GROUPS = [
     {
@@ -134,6 +136,7 @@ export const makeQuestion = (testType = "listening") => {
         options: ["", ""],
         matchingPairs: [{ key: "", value: "" }],
         imageUrl: "",
+        audioUrl: "",
         passageIndex: 0,
         info: "",
         // PTE specific fields
@@ -153,7 +156,10 @@ export const initialForm = (testType = "reading") => ({
     audioUrl: "",
     speakingPrompt: "",
     speakingPart1Questions: [""],
+    speakingPart1AudioUrls: [""],
+    speakingPart2AudioUrl: "",
     speakingPart3Questions: [""],
+    speakingPart3AudioUrls: [""],
     images: [],
     task1Prompt: "",
     task1Image: "",

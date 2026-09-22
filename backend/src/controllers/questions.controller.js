@@ -3,6 +3,7 @@ import User from "../model/user.js";
 import MockTest from "../model/mockTest.js";
 import { v2 as cloudinary } from 'cloudinary';
 import { cache } from '../utils/cache.js';
+import fs from 'fs';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
     cloudinary.config({
@@ -726,5 +727,59 @@ export const bulkUpdateQuestions = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const uploadQuestionAudio = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No audio file was uploaded" });
+        }
+
+        const ext = req.file.originalname.split(".").pop().toLowerCase();
+        const allowed = ["mp3", "wav", "m4a", "ogg", "aac", "webm", "flac"];
+        if (!allowed.includes(ext)) {
+            if (req.file.path && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch (_) {}
+            }
+            return res.status(400).json({ 
+                success: false, 
+                message: `Unsupported audio format (.${ext}). Allowed: ${allowed.join(", ")}` 
+            });
+        }
+
+        const destinationFolder = req.body?.folder || "mockea/question_audio";
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            folder: destinationFolder,
+            resource_type: "video",
+            use_filename: true,
+            unique_filename: true,
+        });
+
+        if (req.file.path && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (cleanupErr) {
+                console.warn("[uploadQuestionAudio] Temp file cleanup warning:", cleanupErr.message);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            audioUrl: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            duration: uploadResult.duration || 0,
+            originalName: req.file.originalname,
+            size: req.file.size
+        });
+    } catch (error) {
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch (_) {}
+        }
+        console.error("[uploadQuestionAudio] Cloudinary upload error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Failed to upload audio to Cloudinary" 
+        });
     }
 };

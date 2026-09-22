@@ -14,6 +14,7 @@ import {
     isWebCopyText,
     insertTextAtCursor
 } from "./contentEditorUtils";
+import AudioUploader from "./AudioUploader";
 
 export default function ContentEditorCard({ testType, isIeltsListening, formData, patch }) {
     const [focusedSelectId, setFocusedSelectId] = useState(null);
@@ -389,16 +390,13 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
 
             {testType === "listening" && (
                 <div className="space-y-5">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-2 gap-4 items-start">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-700 tracking-wide">Audio URL</label>
-                            <input
-                                type="url"
-                                className="w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none"
-                                placeholder="Direct link to audio file (Dropbox, S3, Cloudinary…)"
-                                value={formData.audioUrl || ""}
-                                onChange={(e) => patch({ audioUrl: e.target.value })}
-                                required
+                            <AudioUploader
+                                label="Listening Audio File"
+                                audioUrl={formData.audioUrl || ""}
+                                onChange={(url) => patch({ audioUrl: url })}
+                                helperText="Upload an audio recording (.mp3, .wav, .m4a) or paste direct link"
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
@@ -788,12 +786,23 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                         />
                                     </div>
                                     {/* Link URL */}
-                                    <div className="col-span-1">
-                                        <label className="label"><span className="label-text font-semibold text-xs">Link URL (optional)</span></label>
+                                    <div className="col-span-1 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <label className="label py-0"><span className="label-text font-semibold text-xs">Link / Audio URL (optional)</span></label>
+                                            <AudioUploader
+                                                compact={true}
+                                                audioUrl={group.linkUrl && (/\.(mp3|wav|ogg|m4a|aac|mp4)/i.test(group.linkUrl) || group.linkUrl.includes("audio")) ? group.linkUrl : ""}
+                                                onChange={(url) => {
+                                                    const upd = [...(formData.questionGroups || [])];
+                                                    upd[gIdx] = { ...upd[gIdx], linkUrl: url };
+                                                    patch({ questionGroups: upd });
+                                                }}
+                                            />
+                                        </div>
                                         <input
                                             type="url"
                                             className="input input-bordered w-full rounded-2xl text-sm"
-                                            placeholder="e.g. https://..."
+                                            placeholder="e.g. https://... or upload audio file"
                                             value={group.linkUrl || ""}
                                             onChange={(e) => {
                                                 const upd = [...(formData.questionGroups || [])];
@@ -1087,6 +1096,16 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
             {/* Speaking */}
             {testType === "speaking" && (
                 <div className="space-y-6">
+                    {/* Overall Speaking Audio (Optional welcome/instruction audio) */}
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/60">
+                        <AudioUploader
+                            label="Speaking Section Master Audio (Optional Welcome or Overview)"
+                            audioUrl={formData.audioUrl || ""}
+                            onChange={(url) => patch({ audioUrl: url })}
+                            helperText="Optional global examiner introduction or test briefing audio file"
+                        />
+                    </div>
+
                     {formData.examType !== "PTE" ? (
                         <>
                             {/* Part 1 */}
@@ -1095,19 +1114,22 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <span>Part 1: Introduction &amp; Interview Questions</span>
                                     <button
                                         type="button"
-                                        onClick={() => patch({ speakingPart1Questions: [...formData.speakingPart1Questions, ""] })}
+                                        onClick={() => patch({ 
+                                            speakingPart1Questions: [...formData.speakingPart1Questions, ""],
+                                            speakingPart1AudioUrls: [...(formData.speakingPart1AudioUrls || []), ""]
+                                        })}
                                         className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
                                     >
                                         + Add Question
                                     </button>
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {formData.speakingPart1Questions.map((q, idx) => (
-                                        <div key={idx} className="flex gap-2 items-center">
-                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                        <div key={idx} className="flex flex-col md:flex-row gap-2 items-start md:items-center bg-white p-2 rounded-2xl border border-slate-200/70">
+                                            <span className="text-xs font-bold text-slate-400 pl-2">{idx + 1}.</span>
                                             <input
                                                 type="text"
-                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                className="input input-ghost rounded-xl flex-1 text-sm h-10 font-medium focus:bg-slate-50"
                                                 placeholder="e.g. Do you work or study?"
                                                 value={q}
                                                 onChange={(e) => {
@@ -1116,15 +1138,30 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     patch({ speakingPart1Questions: arr });
                                                 }}
                                             />
-                                            {formData.speakingPart1Questions.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => patch({ speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx) })}
-                                                    className="btn btn-ghost btn-circle btn-sm text-error animate-none"
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
+                                            <div className="flex items-center gap-2 self-end md:self-center pr-1">
+                                                <AudioUploader
+                                                    compact={true}
+                                                    audioUrl={formData.speakingPart1AudioUrls?.[idx] || ""}
+                                                    onChange={(url) => {
+                                                        const audios = [...(formData.speakingPart1AudioUrls || [])];
+                                                        audios[idx] = url;
+                                                        patch({ speakingPart1AudioUrls: audios });
+                                                    }}
+                                                />
+                                                {formData.speakingPart1Questions.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => patch({ 
+                                                            speakingPart1Questions: formData.speakingPart1Questions.filter((_, i) => i !== idx),
+                                                            speakingPart1AudioUrls: (formData.speakingPart1AudioUrls || []).filter((_, i) => i !== idx)
+                                                        })}
+                                                        className="btn btn-ghost btn-circle btn-sm text-error"
+                                                        title="Delete Question"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1135,16 +1172,24 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                 <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">
                                     Part 2: Long Turn (Cue Card Prompt)
                                 </h3>
-                                <div className="form-control w-full">
-                                    <label className="label">
-                                        <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
-                                    </label>
-                                    <textarea
-                                        className="textarea textarea-bordered w-full rounded-2xl h-28 text-sm bg-white font-medium"
-                                        placeholder="Describe a historical building you have visited. You should say..."
-                                        value={formData.speakingPrompt}
-                                        onChange={(e) => patch({ speakingPrompt: e.target.value })}
-                                        required
+                                <div className="form-control w-full space-y-3">
+                                    <div>
+                                        <label className="label">
+                                            <span className="label-text font-semibold text-xs text-slate-600">Cue Card Topic Prompt</span>
+                                        </label>
+                                        <textarea
+                                            className="textarea textarea-bordered w-full rounded-2xl h-28 text-sm bg-white font-medium"
+                                            placeholder="Describe a historical building you have visited. You should say..."
+                                            value={formData.speakingPrompt}
+                                            onChange={(e) => patch({ speakingPrompt: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <AudioUploader
+                                        label="Part 2 Examiner Prompt Audio (Optional)"
+                                        audioUrl={formData.speakingPart2AudioUrl || ""}
+                                        onChange={(url) => patch({ speakingPart2AudioUrl: url })}
+                                        helperText="Examiner audio instructing candidate and reading the cue card topic"
                                     />
                                 </div>
                             </div>
@@ -1155,19 +1200,22 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                     <span>Part 3: Two-Way Analytical Discussion Questions</span>
                                     <button
                                         type="button"
-                                        onClick={() => patch({ speakingPart3Questions: [...formData.speakingPart3Questions, ""] })}
+                                        onClick={() => patch({ 
+                                            speakingPart3Questions: [...formData.speakingPart3Questions, ""],
+                                            speakingPart3AudioUrls: [...(formData.speakingPart3AudioUrls || []), ""]
+                                        })}
                                         className="btn btn-ghost btn-xs text-primary font-bold uppercase tracking-wider"
                                     >
                                         + Add Question
                                     </button>
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {formData.speakingPart3Questions.map((q, idx) => (
-                                        <div key={idx} className="flex gap-2 items-center">
-                                            <span className="text-xs font-bold text-slate-400">{idx + 1}.</span>
+                                        <div key={idx} className="flex flex-col md:flex-row gap-2 items-start md:items-center bg-white p-2 rounded-2xl border border-slate-200/70">
+                                            <span className="text-xs font-bold text-slate-400 pl-2">{idx + 1}.</span>
                                             <input
                                                 type="text"
-                                                className="input input-bordered rounded-2xl flex-1 text-sm h-11 bg-white"
+                                                className="input input-ghost rounded-xl flex-1 text-sm h-10 font-medium focus:bg-slate-50"
                                                 placeholder="e.g. Why do people think protecting old buildings is important?"
                                                 value={q}
                                                 onChange={(e) => {
@@ -1176,15 +1224,30 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                                                     patch({ speakingPart3Questions: arr });
                                                 }}
                                             />
-                                            {formData.speakingPart3Questions.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => patch({ speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx) })}
-                                                    className="btn btn-ghost btn-circle btn-sm text-error animate-none"
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
+                                            <div className="flex items-center gap-2 self-end md:self-center pr-1">
+                                                <AudioUploader
+                                                    compact={true}
+                                                    audioUrl={formData.speakingPart3AudioUrls?.[idx] || ""}
+                                                    onChange={(url) => {
+                                                        const audios = [...(formData.speakingPart3AudioUrls || [])];
+                                                        audios[idx] = url;
+                                                        patch({ speakingPart3AudioUrls: audios });
+                                                    }}
+                                                />
+                                                {formData.speakingPart3Questions.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => patch({ 
+                                                            speakingPart3Questions: formData.speakingPart3Questions.filter((_, i) => i !== idx),
+                                                            speakingPart3AudioUrls: (formData.speakingPart3AudioUrls || []).filter((_, i) => i !== idx)
+                                                        })}
+                                                        className="btn btn-ghost btn-circle btn-sm text-error"
+                                                        title="Delete Question"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1193,8 +1256,8 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                     ) : (
                         <div className="p-6 bg-purple-50 border border-purple-100 rounded-3xl text-sm text-purple-700 space-y-2">
                             <h3 className="font-bold text-base">PTE Speaking Tasks Guidance</h3>
-                            <p>No global speaking prompts or interview structures are required for PTE Academic.</p>
-                            <p className="font-semibold text-xs">Please use the <strong>Questions Builder</strong> section below to add and configure your PTE speaking questions (e.g. <em>Read Aloud</em>, <em>Describe Image</em>, <em>Retell Lecture</em>).</p>
+                            <p>For PTE Academic speaking tasks (e.g. <em>Repeat Sentence</em>, <em>Re-tell Lecture</em>, <em>Answer Short Question</em>), audio clips are attached directly per-question.</p>
+                            <p className="font-semibold text-xs">Please use the <strong>Questions Builder</strong> section below to add your PTE speaking questions and upload their individual prompt audio files!</p>
                         </div>
                     )}
                 </div>

@@ -178,24 +178,59 @@ const Speaking = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const part3BlobsRef = useRef([]);
   const audioBlobRef = useRef(null);
 
-  const playPteAudio = (text) => {
-    if (!text) return;
+  const pteAudioElementRef = useRef(null);
+
+  const playPteAudio = (textOrUrl) => {
+    if (!textOrUrl) return;
+
+    const isUrl = /^https?:\/\//i.test(textOrUrl) || /\.(mp3|wav|m4a|ogg|aac|webm)(\?.*)?$/i.test(textOrUrl);
+
     if (isPlayingPteAudio) {
-      window.speechSynthesis.cancel();
+      if (pteAudioElementRef.current) {
+        pteAudioElementRef.current.pause();
+        pteAudioElementRef.current.currentTime = 0;
+      }
+      window.speechSynthesis?.cancel();
       setIsPlayingPteAudio(false);
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onstart = () => setIsPlayingPteAudio(true);
-    utterance.onend = () => setIsPlayingPteAudio(false);
-    utterance.onerror = () => setIsPlayingPteAudio(false);
-    window.speechSynthesis.speak(utterance);
+
+    if (isUrl) {
+      window.speechSynthesis?.cancel();
+      if (!pteAudioElementRef.current) {
+        pteAudioElementRef.current = new Audio();
+      }
+      pteAudioElementRef.current.src = textOrUrl;
+      pteAudioElementRef.current.onplay = () => setIsPlayingPteAudio(true);
+      pteAudioElementRef.current.onended = () => setIsPlayingPteAudio(false);
+      pteAudioElementRef.current.onerror = () => {
+        setIsPlayingPteAudio(false);
+        toast.error("Failed to play audio prompt.");
+      };
+      pteAudioElementRef.current.play().catch((err) => {
+        console.error("PTE audio playback error:", err);
+        setIsPlayingPteAudio(false);
+      });
+    } else {
+      if (pteAudioElementRef.current) {
+        pteAudioElementRef.current.pause();
+      }
+      window.speechSynthesis?.cancel();
+      const utterance = new SpeechSynthesisUtterance(textOrUrl);
+      utterance.onstart = () => setIsPlayingPteAudio(true);
+      utterance.onend = () => setIsPlayingPteAudio(false);
+      utterance.onerror = () => setIsPlayingPteAudio(false);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (pteAudioElementRef.current) {
+        pteAudioElementRef.current.pause();
+      }
+      window.speechSynthesis?.cancel();
+      setIsPlayingPteAudio(false);
     };
   }, [pteQuestionIdx]);
 

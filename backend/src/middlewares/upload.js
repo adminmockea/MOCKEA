@@ -9,8 +9,9 @@ const baseUploadDir = isServerless ? "/tmp/uploads" : path.join(process.cwd(), "
 const uploadDir = baseUploadDir;
 const resourcesDir = path.join(uploadDir, "resources");
 const coversDir = path.join(uploadDir, "covers");
+const audioDir = path.join(uploadDir, "audio");
 
-[uploadDir, resourcesDir, coversDir].forEach((dir) => {
+[uploadDir, resourcesDir, coversDir, audioDir].forEach((dir) => {
   try {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -25,6 +26,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     if (file.fieldname === "cover") {
       cb(null, coversDir);
+    } else if (file.fieldname === "audio") {
+      cb(null, audioDir);
     } else {
       cb(null, resourcesDir);
     }
@@ -41,8 +44,9 @@ const storage = multer.diskStorage({
 
 // File filter validation
 const fileFilter = (req, file, cb) => {
-  const allowedDocExts = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|epub|mp3|mp4)$/i;
+  const allowedDocExts = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|epub|mp3|mp4|wav|m4a|ogg|aac|webm|flac)$/i;
   const allowedImgExts = /\.(png|jpg|jpeg|webp|gif|svg)$/i;
+  const allowedAudioExts = /\.(mp3|wav|m4a|ogg|aac|webm|flac)$/i;
 
   const ext = path.extname(file.originalname).toLowerCase();
 
@@ -51,6 +55,12 @@ const fileFilter = (req, file, cb) => {
       cb(null, true);
     } else {
       cb(new Error("Only image files (.png, .jpg, .jpeg, .webp, .gif, .svg) are allowed for cover images!"));
+    }
+  } else if (file.fieldname === "audio") {
+    if (allowedAudioExts.test(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only audio files (.mp3, .wav, .m4a, .ogg, .aac, .webm, .flac) are allowed for audio upload!"));
     }
   } else {
     if (allowedDocExts.test(ext) || allowedImgExts.test(ext)) {

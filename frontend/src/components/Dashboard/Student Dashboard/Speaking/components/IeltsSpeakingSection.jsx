@@ -4,6 +4,7 @@ import {
   PiMicrophoneStageFill,
   PiNotebookFill,
   PiArrowLeftBold,
+  PiSpeakerHighFill,
 } from "react-icons/pi";
 import { toast } from "react-toastify";
 
@@ -179,6 +180,20 @@ const IeltsSpeakingSection = ({
                     {part1Questions[part1QuestionIdx]}
                   </p>
                 </div>
+
+                {activeSet?.speakingPart1AudioUrls?.[part1QuestionIdx] && (
+                  <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                      <PiSpeakerHighFill className="w-4 h-4" />
+                      <span>Examiner Prompt:</span>
+                    </div>
+                    <audio
+                      src={activeSet.speakingPart1AudioUrls[part1QuestionIdx]}
+                      controls
+                      className="h-8 flex-1 max-w-md"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Question Navigation Dots & Back/Next */}
@@ -268,6 +283,20 @@ const IeltsSpeakingSection = ({
                 <div className="text-lg font-bold text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {activeSet?.speakingPrompt || activeSet?.passage || activeSet?.content || "Describe a memorable journey you have taken."}
                 </div>
+
+                {activeSet?.speakingPart2AudioUrl && (
+                  <div className="pt-4 border-t border-slate-200 flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                      <PiSpeakerHighFill className="w-4 h-4" />
+                      <span>Examiner Prompt:</span>
+                    </div>
+                    <audio
+                      src={activeSet.speakingPart2AudioUrl}
+                      controls
+                      className="h-8 flex-1 max-w-md"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -325,6 +354,20 @@ const IeltsSpeakingSection = ({
                     {part3Questions[part3QuestionIdx]}
                   </p>
                 </div>
+
+                {activeSet?.speakingPart3AudioUrls?.[part3QuestionIdx] && (
+                  <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                      <PiSpeakerHighFill className="w-4 h-4" />
+                      <span>Examiner Prompt:</span>
+                    </div>
+                    <audio
+                      src={activeSet.speakingPart3AudioUrls[part3QuestionIdx]}
+                      controls
+                      className="h-8 flex-1 max-w-md"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Question Navigation Dots & Back/Next */}

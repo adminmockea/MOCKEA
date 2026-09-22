@@ -12,7 +12,8 @@ import {
     PiPlay,
     PiClock,
     PiMicrophoneStage,
-    PiInfo
+    PiInfo,
+    PiSpeakerHighFill
 } from "react-icons/pi";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -47,24 +48,59 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
     const [mediaStream, setMediaStream] = useState(null);
     const [isPlayingPteAudio, setIsPlayingPteAudio] = useState(false);
 
-    const playPteAudio = (text) => {
-        if (!text) return;
+    const pteAudioElementRef = useRef(null);
+
+    const playPteAudio = (textOrUrl) => {
+        if (!textOrUrl) return;
+
+        const isUrl = /^https?:\/\//i.test(textOrUrl) || /\.(mp3|wav|m4a|ogg|aac|webm)(\?.*)?$/i.test(textOrUrl);
+
         if (isPlayingPteAudio) {
-            window.speechSynthesis.cancel();
+            if (pteAudioElementRef.current) {
+                pteAudioElementRef.current.pause();
+                pteAudioElementRef.current.currentTime = 0;
+            }
+            window.speechSynthesis?.cancel();
             setIsPlayingPteAudio(false);
             return;
         }
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.onstart = () => setIsPlayingPteAudio(true);
-        utterance.onend = () => setIsPlayingPteAudio(false);
-        utterance.onerror = () => setIsPlayingPteAudio(false);
-        window.speechSynthesis.speak(utterance);
+
+        if (isUrl) {
+            window.speechSynthesis?.cancel();
+            if (!pteAudioElementRef.current) {
+                pteAudioElementRef.current = new Audio();
+            }
+            pteAudioElementRef.current.src = textOrUrl;
+            pteAudioElementRef.current.onplay = () => setIsPlayingPteAudio(true);
+            pteAudioElementRef.current.onended = () => setIsPlayingPteAudio(false);
+            pteAudioElementRef.current.onerror = () => {
+                setIsPlayingPteAudio(false);
+                toast.error("Failed to load prompt audio.");
+            };
+            pteAudioElementRef.current.play().catch((err) => {
+                console.error("Audio playback error:", err);
+                setIsPlayingPteAudio(false);
+            });
+        } else {
+            if (pteAudioElementRef.current) {
+                pteAudioElementRef.current.pause();
+            }
+            window.speechSynthesis?.cancel();
+            const utterance = new SpeechSynthesisUtterance(textOrUrl);
+            utterance.onstart = () => setIsPlayingPteAudio(true);
+            utterance.onend = () => setIsPlayingPteAudio(false);
+            utterance.onerror = () => setIsPlayingPteAudio(false);
+            window.speechSynthesis.speak(utterance);
+        }
     };
 
     useEffect(() => {
         return () => {
-            window.speechSynthesis.cancel();
+            if (pteAudioElementRef.current) {
+                pteAudioElementRef.current.pause();
+            }
+            window.speechSynthesis?.cancel();
+            setIsPlayingPteAudio(false);
         };
     }, [activePart]);
 
@@ -727,7 +763,7 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                                     <div className="p-8 bg-slate-50 border-2 border-primary/20 rounded-[2rem] shadow-md flex flex-col items-center gap-4">
                                         <button
                                             type="button"
-                                            onClick={() => playPteAudio(data?.questions?.[1]?.pteAudioTranscript)}
+                                            onClick={() => playPteAudio(data?.questions?.[1]?.audioUrl || data?.questions?.[1]?.pteAudioTranscript)}
                                             className={`btn btn-circle btn-lg ${isPlayingPteAudio ? "btn-error animate-pulse" : "btn-primary"} text-white`}
                                         >
                                             {isPlayingPteAudio ? <PiStopCircleFill className="w-8 h-8" /> : <PiPlay className="w-8 h-8" />}
@@ -735,6 +771,11 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                                         <span className="text-sm font-bold text-slate-600">
                                             {isPlayingPteAudio ? "Playing Sentence..." : "Click to Play Sentence"}
                                         </span>
+                                        {data?.questions?.[1]?.audioUrl && (
+                                            <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
+                                                Master Audio Prompt Available
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -833,6 +874,20 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                                         </p>
                                     </div>
 
+                                    {data?.speakingPart1AudioUrls?.[part1QuestionIdx] && (
+                                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4">
+                                            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                                                <PiSpeakerHighFill className="w-4 h-4" />
+                                                <span>Examiner Audio:</span>
+                                            </div>
+                                            <audio
+                                                src={data.speakingPart1AudioUrls[part1QuestionIdx]}
+                                                controls
+                                                className="h-8 flex-1 max-w-md"
+                                            />
+                                        </div>
+                                    )}
+
                                     {/* Question Nav Dots & Arrows */}
                                     <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">
                                         <button
@@ -909,6 +964,20 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                                                     {data?.passage || "• Where the building is\n• What it looks like\n• Why it is famous\n• And explain why you chose to visit it."}
                                                 </div>
                                             </div>
+
+                                            {data?.speakingPart2AudioUrl && (
+                                                <div className="pt-4 border-t border-slate-200 flex items-center gap-4">
+                                                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                                                        <PiSpeakerHighFill className="w-4 h-4" />
+                                                        <span>Examiner Audio:</span>
+                                                    </div>
+                                                    <audio
+                                                        src={data.speakingPart2AudioUrl}
+                                                        controls
+                                                        className="h-8 flex-1 max-w-md"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -957,6 +1026,20 @@ const SpeakingSection = ({ data, answers = {}, onAnswerChange, examType }) => {
                                             {part3Questions[part3QuestionIdx]}
                                         </p>
                                     </div>
+
+                                    {data?.speakingPart3AudioUrls?.[part3QuestionIdx] && (
+                                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-4">
+                                            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider shrink-0">
+                                                <PiSpeakerHighFill className="w-4 h-4" />
+                                                <span>Examiner Audio:</span>
+                                            </div>
+                                            <audio
+                                                src={data.speakingPart3AudioUrls[part3QuestionIdx]}
+                                                controls
+                                                className="h-8 flex-1 max-w-md"
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* Question Nav Dots & Arrows */}
                                     <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-slate-100">

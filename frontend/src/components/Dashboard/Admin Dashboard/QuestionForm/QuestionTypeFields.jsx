@@ -4,9 +4,11 @@ import {
   PTE_QUESTION_TYPE_GROUPS,
   NEEDS_OPTIONS, 
   NEEDS_PAIRS, 
-  NEEDS_IMAGE 
+  NEEDS_IMAGE,
+  PTE_NEEDS_AUDIO
 } from "./questionFormConstants";
 import { parsePastedOptionsText } from "../../../../hooks/useQuestionFormState.jsx";
+import AudioUploader from "./AudioUploader";
 
 export const QuestionTypeSelect = ({ value, onChange, examType }) => {
     const groups = examType === "PTE" ? PTE_QUESTION_TYPE_GROUPS : QUESTION_TYPE_GROUPS;
@@ -361,21 +363,30 @@ export const QuestionTypeExtras = ({
         );
     }
 
-    // ── PTE Audio Transcripts ──
-    if (["pte-repeat-sentence", "pte-retell-lecture", "pte-summarize-spoken-text", "pte-write-from-dictation"].includes(q.type)) {
+    // ── PTE Listening & Speaking Audio Prompts & Transcripts ──
+    if (["pte-repeat-sentence", "pte-retell-lecture", "pte-summarize-spoken-text", "pte-write-from-dictation", "pte-answer-short-question", "pte-highlight-incorrect-words", "pte-select-missing-word"].includes(q.type)) {
         return (
-            <div className="form-control">
-                <label className="label">
-                    <span className="label-text font-semibold text-xs">
-                        PTE Audio Reference Transcript (for Auto-grading)
-                    </span>
-                </label>
-                <textarea
-                    className="textarea textarea-bordered rounded-2xl text-sm min-h-[5rem]"
-                    placeholder="Enter the exact spoken text inside the audio file..."
-                    value={q.pteAudioTranscript || ""}
-                    onChange={(e) => onUpdate(q.id, "pteAudioTranscript", e.target.value)}
+            <div className="bg-slate-50 p-4 rounded-2xl space-y-4 border border-slate-200">
+                <AudioUploader
+                    label="PTE Listening Audio Clip"
+                    audioUrl={q.audioUrl || ""}
+                    onChange={(url) => onUpdate(q.id, "audioUrl", url)}
+                    helperText="Upload the audio clip the candidate listens to (e.g. lecture recording, sentence, or dictation)"
                 />
+
+                <div className="form-control">
+                    <label className="label py-1">
+                        <span className="label-text font-semibold text-xs text-slate-700">
+                            PTE Audio Reference Transcript (for Auto-grading &amp; Fallback)
+                        </span>
+                    </label>
+                    <textarea
+                        className="textarea textarea-bordered rounded-xl text-sm min-h-[4.5rem] bg-white font-medium"
+                        placeholder="Enter the exact spoken text inside the audio clip..."
+                        value={q.pteAudioTranscript || ""}
+                        onChange={(e) => onUpdate(q.id, "pteAudioTranscript", e.target.value)}
+                    />
+                </div>
             </div>
         );
     }

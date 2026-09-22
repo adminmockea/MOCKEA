@@ -152,18 +152,35 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                             {selectedQuestion.testType === "speaking" && (
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-black uppercase tracking-wider text-base-content/50">Speaking Outline</h3>
+                                    {selectedQuestion.audioUrl && (
+                                        <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-2xl flex items-center justify-between gap-4">
+                                            <span className="text-xs font-bold text-slate-600">Master Section Audio</span>
+                                            <audio src={selectedQuestion.audioUrl} controls className="h-8 max-w-xs" />
+                                        </div>
+                                    )}
                                     {selectedQuestion.speakingPrompt && (
-                                        <div className="bg-slate-50 border border-slate-200/60 p-6 rounded-2xl">
-                                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Part 2 Cue Card Prompt</h4>
+                                        <div className="bg-slate-50 border border-slate-200/60 p-6 rounded-2xl space-y-3">
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">Part 2 Cue Card Prompt</h4>
                                             <p className="text-sm whitespace-pre-line text-slate-800 font-medium leading-relaxed">{selectedQuestion.speakingPrompt}</p>
+                                            {selectedQuestion.speakingPart2AudioUrl && (
+                                                <div className="pt-2 border-t border-slate-200/60 flex items-center gap-3">
+                                                    <span className="text-xs font-bold text-slate-500">Part 2 Audio:</span>
+                                                    <audio src={selectedQuestion.speakingPart2AudioUrl} controls className="h-8 max-w-xs" />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     {selectedQuestion.speakingPart1Questions && selectedQuestion.speakingPart1Questions.length > 0 && selectedQuestion.speakingPart1Questions.some(q => q.trim()) && (
                                         <div className="bg-slate-50 border border-slate-200/60 p-6 rounded-2xl">
                                             <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Part 1 Introduction Questions</h4>
-                                            <ol className="list-decimal list-inside space-y-1.5 text-sm text-slate-800 font-medium">
+                                            <ol className="list-decimal list-inside space-y-2 text-sm text-slate-800 font-medium">
                                                 {selectedQuestion.speakingPart1Questions.map((item, idx) => item && (
-                                                    <li key={idx} className="leading-relaxed">{item}</li>
+                                                    <li key={idx} className="leading-relaxed flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                                        <span>{item}</span>
+                                                        {selectedQuestion.speakingPart1AudioUrls?.[idx] && (
+                                                            <audio src={selectedQuestion.speakingPart1AudioUrls[idx]} controls className="h-7 max-w-[200px]" />
+                                                        )}
+                                                    </li>
                                                 ))}
                                             </ol>
                                         </div>
@@ -171,9 +188,14 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                     {selectedQuestion.speakingPart3Questions && selectedQuestion.speakingPart3Questions.length > 0 && selectedQuestion.speakingPart3Questions.some(q => q.trim()) && (
                                         <div className="bg-slate-50 border border-slate-200/60 p-6 rounded-2xl">
                                             <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Part 3 Discussion Questions</h4>
-                                            <ol className="list-decimal list-inside space-y-1.5 text-sm text-slate-800 font-medium">
+                                            <ol className="list-decimal list-inside space-y-2 text-sm text-slate-800 font-medium">
                                                 {selectedQuestion.speakingPart3Questions.map((item, idx) => item && (
-                                                    <li key={idx} className="leading-relaxed">{item}</li>
+                                                    <li key={idx} className="leading-relaxed flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                                        <span>{item}</span>
+                                                        {selectedQuestion.speakingPart3AudioUrls?.[idx] && (
+                                                            <audio src={selectedQuestion.speakingPart3AudioUrls[idx]} controls className="h-7 max-w-[200px]" />
+                                                        )}
+                                                    </li>
                                                 ))}
                                             </ol>
                                         </div>

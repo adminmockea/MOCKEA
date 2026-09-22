@@ -98,6 +98,14 @@ const QuestionItemSchema = new mongoose.Schema(
         pteAudioTranscript: {
             type: String,
             default: ""
+        },
+        audioUrl: {
+            type: String,
+            default: ""
+        },
+        audioDuration: {
+            type: Number,
+            default: 0
         }
     },
     { _id: false },
@@ -182,7 +190,19 @@ const QuestionsSchema = new mongoose.Schema(
             type: [String],
             default: []
         },
+        speakingPart1AudioUrls: {
+            type: [String],
+            default: []
+        },
+        speakingPart2AudioUrl: {
+            type: String,
+            default: ""
+        },
         speakingPart3Questions: {
+            type: [String],
+            default: []
+        },
+        speakingPart3AudioUrls: {
             type: [String],
             default: []
         },

@@ -74,7 +74,14 @@ export function parseQuestionToState(fetchedQuestion) {
         audioUrl: fetchedQuestion.audioUrl || "",
         speakingPrompt: fetchedQuestion.speakingPrompt || "",
         speakingPart1Questions: fetchedQuestion.speakingPart1Questions?.length ? fetchedQuestion.speakingPart1Questions : [""],
+        speakingPart1AudioUrls: fetchedQuestion.speakingPart1AudioUrls?.length 
+            ? fetchedQuestion.speakingPart1AudioUrls 
+            : new Array(fetchedQuestion.speakingPart1Questions?.length || 1).fill(""),
+        speakingPart2AudioUrl: fetchedQuestion.speakingPart2AudioUrl || "",
         speakingPart3Questions: fetchedQuestion.speakingPart3Questions?.length ? fetchedQuestion.speakingPart3Questions : [""],
+        speakingPart3AudioUrls: fetchedQuestion.speakingPart3AudioUrls?.length 
+            ? fetchedQuestion.speakingPart3AudioUrls 
+            : new Array(fetchedQuestion.speakingPart3Questions?.length || 1).fill(""),
         images: fetchedQuestion.images?.filter(img => img && img.trim() !== "") || [],
         task1Prompt,
         task1Image,
@@ -96,6 +103,7 @@ export function parseQuestionToState(fetchedQuestion) {
             options: q.options || ["", ""],
             matchingPairs: q.matchingPairs || [{ key: "", value: "" }],
             imageUrl: q.imageUrl || "",
+            audioUrl: q.audioUrl || "",
             passageIndex: q.passageIndex || 0,
             info: q.info || "",
             pteDropdownOptions: q.pteDropdownOptions || [["", "", "", ""]],
