@@ -14,7 +14,8 @@ import {
     PiArrowRightBold,
     PiArrowLeftBold,
     PiInfoFill,
-    PiChartLineUpFill
+    PiChartLineUpFill,
+    PiCheckBold
 } from "react-icons/pi";
 import { toast } from "react-toastify";
 import alerts from "../../../../utils/alerts";
@@ -220,6 +221,73 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   }, [testStarted, submitted]);
 
 
+
+  const groupedQuestions = useMemo(() => {
+    if (!activeSet?.questions) return [];
+    const items = [];
+    let currentSelectionGroup = null;
+    let currentSelectionQuestionText = null;
+
+    for (let i = 0; i < activeSet.questions.length; i++) {
+      const q = activeSet.questions[i];
+      if (q.type === 'multiple-selection') {
+        const cleanOptions = (q.options || []).filter(o => o && o.trim() !== "");
+        const optionsKey = cleanOptions.join('|');
+        const qText = q.question ? q.question.trim().toLowerCase() : "";
+
+        const isGroupableWithCurrent = currentSelectionGroup && qText && currentSelectionQuestionText === qText;
+
+        if (isGroupableWithCurrent) {
+          currentSelectionGroup.questions.push(q);
+          if (cleanOptions.length > currentSelectionGroup.options.length) {
+            currentSelectionGroup.options = cleanOptions;
+            currentSelectionGroup.optionsKey = optionsKey;
+          }
+        } else {
+          currentSelectionGroup = {
+            type: 'multiple-selection-group',
+            options: cleanOptions,
+            optionsKey: optionsKey,
+            questions: [q],
+            startIndex: i
+          };
+          currentSelectionQuestionText = qText;
+          items.push(currentSelectionGroup);
+        }
+      } else {
+        currentSelectionGroup = null;
+        currentSelectionQuestionText = null;
+        items.push({
+          type: 'single',
+          question: q,
+          index: i
+        });
+      }
+    }
+    return items;
+  }, [activeSet?.questions]);
+
+  const handleMultiSelectToggle = (groupQuestions, opt) => {
+    if (submitted) return;
+    const currentlySelected = groupQuestions.map(q => answers[q.id]).filter(Boolean);
+    const alreadySelectedIdx = currentlySelected.indexOf(opt);
+
+    if (alreadySelectedIdx !== -1) {
+      const newSelection = currentlySelected.filter(val => val !== opt);
+      groupQuestions.forEach((q, idx) => {
+        handleAnswerChange(q.id, newSelection[idx] || "");
+      });
+    } else {
+      if (currentlySelected.length < groupQuestions.length) {
+        const newSelection = [...currentlySelected, opt];
+        groupQuestions.forEach((q, idx) => {
+          handleAnswerChange(q.id, newSelection[idx] || "");
+        });
+      } else {
+        toast.info(`You can select at most ${groupQuestions.length} options.`);
+      }
+    }
+  };
 
   const handleEvaluate = async () => {
     await evaluate(activeSet, answers, onSubmitGuest);
@@ -734,8 +802,103 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                 </div>
 
                                 <div className="space-y-12">
-                                    {activeSet.questions.map((q, idx) => {
-                                        const evaluation = result?.evaluatedAnswers.find(a => a.questionId === q.id);
+                                    {groupedQuestions.map((entry, gIdx) => {
+                                        if (entry.type === 'multiple-selection-group' && entry.questions.length > 1) {
+                                            const firstQ = entry.questions[0];
+                                            const groupQuestions = entry.questions;
+                                            const groupOptions = entry.options;
+                                            const correctAnswers = groupQuestions.map(q => q.correctAnswer).filter(Boolean);
+                                            const evaluations = groupQuestions.map(q => result?.evaluatedAnswers?.find(a => a.questionId === q.id));
+                                            const isGroupCorrect = evaluations.length > 0 && evaluations.every(ev => ev?.isCorrect);
+
+                                            const isOptionMatching = (correctKey, optionText) => {
+                                                if (!correctKey || !optionText) return false;
+                                                const ck = correctKey.trim().toLowerCase();
+                                                const opt = optionText.trim().toLowerCase();
+                                                return ck === opt || opt.includes(ck) || ck.includes(opt);
+                                            };
+
+                                            return (
+                                                <div key={`ms-group-${firstQ.id}`} className={`group space-y-6 p-8 rounded-[2.5rem] transition-all border ${
+                                                    submitted 
+                                                    ? (isGroupCorrect ? "bg-emerald-50/50 border-emerald-500/20" : "bg-red-50/50 border-red-500/20")
+                                                    : "bg-base-50/50 border-base-200 hover:border-primary/20"
+                                                }`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                {groupQuestions.map((subQ, sIdx) => (
+                                                                    <div key={subQ.id} className="w-10 h-10 rounded-2xl bg-white border border-base-300 shadow-sm flex items-center justify-center font-black text-sm group-hover:scale-110 transition-transform">
+                                                                        {entry.startIndex + sIdx + 1}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/30">
+                                                                Listen Carefully (Select {groupQuestions.length})
+                                                            </span>
+                                                        </div>
+                                                        {submitted && (
+                                                            isGroupCorrect ? <PiCheckCircleFill className="text-emerald-500 text-2xl" /> : <PiXCircleFill className="text-red-500 text-2xl" />
+                                                        )}
+                                                    </div>
+
+                                                    <p className="text-lg font-black text-slate-700 leading-tight">{firstQ.question}</p>
+
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        {groupOptions.map((opt, oIdx) => {
+                                                            const isChecked = groupQuestions.some(q => answers[q.id] === opt);
+                                                            const isOptCorrect = correctAnswers.some(ca => isOptionMatching(ca, opt));
+
+                                                            let cardClass = "bg-white border-base-200 hover:border-primary/30";
+                                                            if (submitted) {
+                                                                if (isOptCorrect) {
+                                                                    cardClass = "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-md shadow-emerald-500/10";
+                                                                } else if (isChecked && !isOptCorrect) {
+                                                                    cardClass = "bg-red-50 border-red-500 text-red-900 font-bold shadow-md shadow-red-500/10";
+                                                                } else {
+                                                                    cardClass = "bg-base-100/50 border-base-200 text-base-content/40 opacity-70";
+                                                                }
+                                                            } else if (isChecked) {
+                                                                cardClass = "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold";
+                                                            }
+
+                                                            return (
+                                                                <label 
+                                                                    key={oIdx}
+                                                                    className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${cardClass}`}
+                                                                >
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        className="hidden"
+                                                                        checked={isChecked}
+                                                                        disabled={submitted}
+                                                                        onChange={() => handleMultiSelectToggle(groupQuestions, opt)}
+                                                                    />
+                                                                    <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center p-0.5 transition-colors ${
+                                                                        submitted
+                                                                            ? (isOptCorrect ? "border-emerald-600 bg-emerald-600 text-white" : isChecked ? "border-red-600 bg-red-600 text-white" : "border-base-300")
+                                                                            : (isChecked ? "border-white bg-white text-primary" : "border-base-300")
+                                                                    }`}>
+                                                                        {isChecked && <PiCheckBold className="text-xs" />}
+                                                                    </span>
+                                                                    <span className="text-sm">{opt}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    {submitted && !isGroupCorrect && (
+                                                        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20">
+                                                            <PiCheckCircleFill /> Correct Keys: {correctAnswers.join(", ")}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        const q = entry.type === 'multiple-selection-group' ? entry.questions[0] : entry.question;
+                                        const idx = entry.type === 'multiple-selection-group' ? entry.startIndex : entry.index;
+                                        const evaluation = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
                                         const isCorrect = evaluation?.isCorrect;
 
                                         return (
@@ -767,29 +930,32 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
                                                 {q.options && q.options.filter(opt => opt && opt.trim() !== "").length > 0 ? (
                                                     <div className="grid md:grid-cols-2 gap-4">
-                                                        {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => (
-                                                            <label 
-                                                                key={oIdx}
-                                                                className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
-                                                                    answers[q.id] === opt 
-                                                                    ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold" 
-                                                                    : "bg-white border-base-200 hover:border-primary/30"
-                                                                }`}
-                                                            >
-                                                                <input 
-                                                                    type="radio" 
-                                                                    className="hidden"
-                                                                    name={q.id}
-                                                                    value={opt}
-                                                                    disabled={submitted}
-                                                                    onChange={() => handleAnswerChange(q.id, opt)}
-                                                                />
-                                                                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 ${answers[q.id] === opt ? "border-white" : "border-base-300"}`}>
-                                                                    {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-white" />}
-                                                                </span>
-                                                                <span className="text-sm">{opt}</span>
-                                                            </label>
-                                                        ))}
+                                                        {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => {
+                                                            const isSelected = answers[q.id] === opt;
+                                                            return (
+                                                                <label 
+                                                                    key={oIdx}
+                                                                    className={`flex items-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
+                                                                        isSelected 
+                                                                        ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold" 
+                                                                        : "bg-white border-base-200 hover:border-primary/30"
+                                                                    }`}
+                                                                >
+                                                                    <input 
+                                                                        type="radio" 
+                                                                        className="hidden"
+                                                                        name={q.id}
+                                                                        value={opt}
+                                                                        disabled={submitted}
+                                                                        onChange={() => handleAnswerChange(q.id, opt)}
+                                                                    />
+                                                                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 ${answers[q.id] === opt ? "border-white" : "border-base-300"}`}>
+                                                                        {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-white" />}
+                                                                    </span>
+                                                                    <span className="text-sm">{opt}</span>
+                                                                </label>
+                                                            );
+                                                        })}
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-3">
