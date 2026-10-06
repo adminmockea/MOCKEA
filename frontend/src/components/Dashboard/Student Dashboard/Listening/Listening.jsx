@@ -862,6 +862,9 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                                 cardClass = "bg-primary text-white border-primary shadow-xl shadow-primary/20 font-bold";
                                                             }
 
+                                                            const letter = String.fromCharCode(65 + oIdx);
+                                                            const displayOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '');
+
                                                             return (
                                                                 <label 
                                                                     key={oIdx}
@@ -874,14 +877,21 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                                         disabled={submitted}
                                                                         onChange={() => handleMultiSelectToggle(groupQuestions, opt)}
                                                                     />
-                                                                    <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center p-0.5 transition-colors ${
+                                                                    <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center p-0.5 shrink-0 transition-colors ${
                                                                         submitted
                                                                             ? (isOptCorrect ? "border-emerald-600 bg-emerald-600 text-white" : isChecked ? "border-red-600 bg-red-600 text-white" : "border-base-300")
                                                                             : (isChecked ? "border-white bg-white text-primary" : "border-base-300")
                                                                     }`}>
                                                                         {isChecked && <PiCheckBold className="text-xs" />}
                                                                     </span>
-                                                                    <span className="text-sm">{opt}</span>
+                                                                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors ${
+                                                                        submitted
+                                                                            ? (isOptCorrect ? "bg-emerald-200 text-emerald-900" : isChecked ? "bg-red-200 text-red-900" : "bg-slate-100 text-slate-500")
+                                                                            : (isChecked ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600")
+                                                                    }`}>
+                                                                        {letter}
+                                                                    </span>
+                                                                    <span className="text-sm font-medium">{displayOpt}</span>
                                                                 </label>
                                                             );
                                                         })}
@@ -932,6 +942,9 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                     <div className="grid md:grid-cols-2 gap-4">
                                                         {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => {
                                                             const isSelected = answers[q.id] === opt;
+                                                            const letter = String.fromCharCode(65 + oIdx);
+                                                            const displayOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '');
+
                                                             return (
                                                                 <label 
                                                                     key={oIdx}
@@ -949,10 +962,15 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                                         disabled={submitted}
                                                                         onChange={() => handleAnswerChange(q.id, opt)}
                                                                     />
-                                                                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 ${answers[q.id] === opt ? "border-white" : "border-base-300"}`}>
-                                                                        {answers[q.id] === opt && <div className="w-full h-full rounded-full bg-white" />}
+                                                                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-1 shrink-0 ${isSelected ? "border-white" : "border-base-300"}`}>
+                                                                        {isSelected && <div className="w-full h-full rounded-full bg-white" />}
                                                                     </span>
-                                                                    <span className="text-sm">{opt}</span>
+                                                                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors ${
+                                                                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                                                                    }`}>
+                                                                        {letter}
+                                                                    </span>
+                                                                    <span className="text-sm font-medium">{displayOpt}</span>
                                                                 </label>
                                                             );
                                                         })}
