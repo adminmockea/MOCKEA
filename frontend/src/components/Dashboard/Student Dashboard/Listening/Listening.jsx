@@ -758,7 +758,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
                                                 <p className="text-lg font-black text-slate-700 leading-tight">{q.question}</p>
                                                 
-                                                {q.audioUrl && (activeSet?.questions?.length > 1 || !activeAudioUrl) && (
+                                                {q.audioUrl && (!activeAudioUrl || q.audioUrl !== activeAudioUrl) && activeSet?.examType !== "PTE" && (
                                                     <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-1.5">
                                                         <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Prompt</p>
                                                         <audio controls src={q.audioUrl} className="w-full h-9" />
