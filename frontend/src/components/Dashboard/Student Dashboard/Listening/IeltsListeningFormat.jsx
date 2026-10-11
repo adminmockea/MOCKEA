@@ -61,7 +61,7 @@ const findQuestion = (questions, matchKey, offset = 0, header = null, placeholde
         }
     }
 
-    const cleanKey = matchKey.toLowerCase().replace(/^[a-z]+/, "");
+    const cleanKey = matchKey.toString().toLowerCase().replace(/^blank-\$?/, "").replace(/^\$/, "").replace(/^[a-z]+/, "");
     return questions.find((item, idx) => {
         if (usedQuestionIds && usedQuestionIds.has(item.id)) return false;
         const questionNum = offset + idx + 1;
@@ -253,7 +253,7 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
     const processedPassage = useMemo(() => {
         let text = convertMarkdownTablesToHtml(collapseListeningExampleBlocks(passage));
         text = formatFlowChartPassage(text);
-        const hasInlinePlaceholders = /___([\w-]+)___/.test(text);
+        const hasInlinePlaceholders = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/.test(text);
         if (!hasInlinePlaceholders) {
             return text;
         }
@@ -261,7 +261,8 @@ const InlinePassage = memo(({ passage, questions, answers, onAnswerChange, submi
         const usedQuestionIds = new Set();
         let placeholderIdx = 0;
 
-        return text.replace(/___([\w-]+)___/g, (match, matchKey) => {
+        return text.replace(/(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g, (match, p1, p2) => {
+            const matchKey = p1 || p2;
             const currentIdx = placeholderIdx++;
             const q = findQuestion(questions, matchKey, offset, header, currentIdx, usedQuestionIds);
             if (!q) return match;
@@ -1733,14 +1734,15 @@ const IeltsListeningFormat = ({ activeSet, answers, onAnswerChange, submitted, r
         
         const scanText = (text) => {
             if (!text) return;
-            const matches = text.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
+            const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const matchKey = (match[1] || match[2] || "").trim();
                 const q = findQuestion(activeSet.questions, matchKey, offset);
                 if (q) {
                     ids.add(q.id);
                 }
-            });
+            }
         };
 
         scanText(activeSet.passage);

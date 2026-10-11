@@ -453,22 +453,27 @@ const GroupedReviewQuestionsRenderer = ({
 
         const checkText = (text) => {
             if (!text) return;
-            const matches = text.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
+            const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const matchKey = (match[1] || match[2] || "").trim();
+                const cleanKey = matchKey.replace(/^blank-\$?/, "").replace(/^\$/, "");
                 const q = allQuestions.find((item, idx) => {
                     const questionNum = (offset || 0) + idx + 1;
                     const localIndex = idx + 1;
                     return (
                         item.id === matchKey ||
+                        item.id === cleanKey ||
                         questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey
+                        questionNum.toString() === cleanKey ||
+                        localIndex.toString() === matchKey ||
+                        localIndex.toString() === cleanKey
                     );
                 });
                 if (q && q.type !== 'pte-reading-writing-fill-blanks' && q.type !== 'pte-reorder-paragraphs') {
                     ids.add(q.id);
                 }
-            });
+            }
         };
 
         if (activeTab === 'reading') {
@@ -478,7 +483,7 @@ const GroupedReviewQuestionsRenderer = ({
             }
             checkText(currentSectionData.passage);
         } else if (activeTab === 'listening') {
-            checkText(currentSectionData.passage);
+            checkText(currentSectionData.passage || currentSectionData.passages?.[0]?.content);
             checkText(currentSectionData.instructions);
         }
 
@@ -499,20 +504,25 @@ const GroupedReviewQuestionsRenderer = ({
 
         const checkText = (text) => {
             if (!text) return;
-            const matches = text.match(/___([\w-]+)___/g) || [];
-            matches.forEach(m => {
-                const matchKey = m.replace(/___/g, "").trim();
+            const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const matchKey = (match[1] || match[2] || "").trim();
+                const cleanKey = matchKey.replace(/^blank-\$?/, "").replace(/^\$/, "");
                 const q = allQuestions.find((item, idx) => {
                     const questionNum = (offset || 0) + idx + 1;
                     const localIndex = idx + 1;
                     return (
                         item.id === matchKey ||
+                        item.id === cleanKey ||
                         questionNum.toString() === matchKey ||
-                        localIndex.toString() === matchKey
+                        questionNum.toString() === cleanKey ||
+                        localIndex.toString() === matchKey ||
+                        localIndex.toString() === cleanKey
                     );
                 });
                 if (q) ids.add(q.id);
-            });
+            }
         };
 
         if (activeTab === 'reading') {
@@ -522,7 +532,7 @@ const GroupedReviewQuestionsRenderer = ({
             }
             checkText(currentSectionData.passage);
         } else if (activeTab === 'listening') {
-            checkText(currentSectionData.passage);
+            checkText(currentSectionData.passage || currentSectionData.passages?.[0]?.content);
         }
 
         return ids;
@@ -1088,7 +1098,8 @@ const ReviewDetail = () => {
                                     );
                                 })()}
                                 {activeTab === 'listening' && (() => {
-                                    const hasPassage = currentSectionData?.passage && currentSectionData.passage.trim() !== "";
+                                    const listeningPassage = currentSectionData?.passage || currentSectionData?.passages?.[0]?.content || "";
+                                    const hasPassage = listeningPassage.trim() !== "";
                                     const answersMap = (() => {
                                         const map = {};
                                         (currentSectionResult?.answers || []).forEach(a => {
@@ -1156,7 +1167,7 @@ const ReviewDetail = () => {
                                             {hasPassage && (
                                                 <div className="prose prose-slate max-w-none">
                                                     <ReadingPassageRenderer
-                                                        passageContent={currentSectionData.passage}
+                                                        passageContent={listeningPassage}
                                                         questions={currentSectionData?.questions || []}
                                                         answers={answersMap}
                                                         onAnswerChange={() => {}}

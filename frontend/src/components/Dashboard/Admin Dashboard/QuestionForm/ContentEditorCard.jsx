@@ -549,6 +549,74 @@ export default function ContentEditorCard({ testType, isIeltsListening, formData
                             </div>
                         </div>
                     )}
+
+                    {/* PTE Listening: Inline Passage / Transcript Editor */}
+                    {formData.examType === "PTE" && (
+                        <div className="p-6 bg-indigo-50/40 border border-indigo-100 rounded-3xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-primary">
+                                    PTE Listening — Passage / Transcript (Fill in the Blanks)
+                                </h3>
+                                <span className="text-[10px] text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full font-bold">
+                                    Supports [blank-1] or ___1___
+                                </span>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <textarea
+                                    id="pte-listening-passage-textarea"
+                                    className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all duration-200 outline-none resize-y min-h-[140px] font-mono text-slate-800 leading-relaxed"
+                                    placeholder="Paste or type the listening transcript here. Use [blank-1], [blank-2], etc. for inline Fill in the Blanks questions..."
+                                    value={formData.passage || ""}
+                                    onChange={(e) => patch({ passage: e.target.value })}
+                                />
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Insert Blank:</span>
+                                    {(formData.questions || []).map((q, idx) => {
+                                        const num = idx + 1;
+                                        const blankTag = `[blank-${num}]`;
+                                        const alreadyInserted =
+                                            (formData.passage || "").includes(blankTag) ||
+                                            (formData.passage || "").includes(`___${q.id}___`) ||
+                                            (formData.passage || "").includes(`___${num}___`);
+                                        return (
+                                            <button
+                                                key={q.id || idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    const ta = document.getElementById("pte-listening-passage-textarea");
+                                                    if (ta) {
+                                                        const start = ta.selectionStart;
+                                                        const end = ta.selectionEnd;
+                                                        const text = formData.passage || "";
+                                                        const newText = text.substring(0, start) + blankTag + text.substring(end);
+                                                        patch({ passage: newText });
+                                                        setTimeout(() => {
+                                                            ta.focus();
+                                                            ta.selectionStart = ta.selectionEnd = start + blankTag.length;
+                                                        }, 0);
+                                                    } else {
+                                                        patch({ passage: (formData.passage || "") + ` ${blankTag}` });
+                                                    }
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                                                    alreadyInserted
+                                                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default"
+                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-primary hover:text-white hover:border-primary cursor-pointer"
+                                                }`}
+                                                title={alreadyInserted ? `Blank ${num} already in passage` : `Insert ${blankTag} at cursor`}
+                                            >
+                                                {blankTag}
+                                            </button>
+                                        );
+                                    })}
+                                    {(!formData.questions || formData.questions.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 italic select-none">Add questions below first, then click to insert [blank-N] placeholders</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

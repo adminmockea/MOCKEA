@@ -52,6 +52,9 @@ export function getSetCategory(set) {
   const qType = firstQ?.type;
 
   if (qType && PTE_QUESTION_TYPE_LABELS[qType]) {
+    if (qType === "short-answer" && set.examType === "PTE" && set.testType === "listening") {
+      return "Listening: Fill in the Blanks";
+    }
     // If it's multiple choice in non-PTE context
     if (qType === "multiple-choice" && set.examType === "IELTS") {
       return "Multiple Choice";

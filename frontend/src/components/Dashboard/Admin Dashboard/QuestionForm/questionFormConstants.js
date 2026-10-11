@@ -115,6 +115,7 @@ export const PTE_QUESTION_TYPE_GROUPS = [
         group: "PTE Listening",
         icon: PiEar,
         types: [
+            { value: "short-answer", label: "Listening: Fill in the Blanks" },
             { value: "pte-summarize-spoken-text", label: "Summarize Spoken Text" },
             { value: "pte-highlight-incorrect-words", label: "Highlight Incorrect Words" },
             { value: "pte-write-from-dictation", label: "Write from Dictation" },

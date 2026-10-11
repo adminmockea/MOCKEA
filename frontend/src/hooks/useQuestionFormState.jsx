@@ -26,10 +26,10 @@ export function parseQuestionToState(fetchedQuestion) {
 
     let exampleQuestion = "";
     let exampleAnswer = "";
-    let cleanPassage = fetchedQuestion.passage || "";
+    let cleanPassage = fetchedQuestion.passage || fetchedQuestion.passages?.[0]?.content || "";
 
-    if (fetchedQuestion.testType === "listening" && fetchedQuestion.passage) {
-        let tempPassage = fetchedQuestion.passage;
+    if (fetchedQuestion.testType === "listening" && cleanPassage) {
+        let tempPassage = cleanPassage;
 
         const exampleBlockMatch = tempPassage.match(/<div class=["']mb-6[\s\S]*?<\/div>\s*<\/div>/);
         if (exampleBlockMatch) {

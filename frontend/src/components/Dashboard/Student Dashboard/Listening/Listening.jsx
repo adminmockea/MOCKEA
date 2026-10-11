@@ -32,6 +32,7 @@ import IeltsListeningFormat from "./IeltsListeningFormat";
 import useEvaluate from "../../../../hooks/useEvaluate";
 import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils";
 import CategoryDropdown from "../../../Common/CategoryDropdown.jsx";
+import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 
 
 const fmt = (s) => {
@@ -222,6 +223,33 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
 
 
+  const ptePassageContent = useMemo(() => {
+    if (!activeSet) return "";
+    return activeSet.passage || activeSet.passages?.[0]?.content || "";
+  }, [activeSet]);
+
+  const pteRenderedInlineIds = useMemo(() => {
+    const ids = new Set();
+    if (!ptePassageContent || !activeSet?.questions) return ids;
+    const regex = /(?:___([\w-]+)___|\[blank-\$?(\d+)\])/g;
+    let match;
+    while ((match = regex.exec(ptePassageContent)) !== null) {
+      const matchKey = match[1] || match[2];
+      const cleanKey = matchKey.toString().replace(/^\$/, "").replace(/^blank-\$?/, "");
+      const q = activeSet.questions.find((item, idx) => {
+        const localIndex = idx + 1;
+        return (
+          item.id === matchKey ||
+          item.id === cleanKey ||
+          localIndex.toString() === matchKey ||
+          localIndex.toString() === cleanKey
+        );
+      });
+      if (q) ids.add(q.id);
+    }
+    return ids;
+  }, [ptePassageContent, activeSet?.questions]);
+
   const groupedQuestions = useMemo(() => {
     if (!activeSet?.questions) return [];
     const items = [];
@@ -230,6 +258,9 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
     for (let i = 0; i < activeSet.questions.length; i++) {
       const q = activeSet.questions[i];
+      if (pteRenderedInlineIds.has(q.id)) {
+        continue;
+      }
       if (q.type === 'multiple-selection') {
         const cleanOptions = (q.options || []).filter(o => o && o.trim() !== "");
         const optionsKey = cleanOptions.join('|');
@@ -265,7 +296,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
       }
     }
     return items;
-  }, [activeSet?.questions]);
+  }, [activeSet?.questions, pteRenderedInlineIds]);
 
   const handleMultiSelectToggle = (groupQuestions, opt) => {
     if (submitted) return;
@@ -801,6 +832,29 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                     <span className="badge badge-primary px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Questions 1–{activeSet.questions.length}</span>
                                 </div>
 
+                                {ptePassageContent && ptePassageContent.trim() !== "" && (
+                                    <div className="space-y-6 p-8 rounded-[2.5rem] bg-base-50/50 border border-base-200">
+                                        {pteRenderedInlineIds.size > 0 && (
+                                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/15">
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary">
+                                                    You will hear a recording. Type the missing words in each blank.
+                                                </span>
+                                            </div>
+                                        )}
+                                        <ReadingPassageRenderer
+                                            passageContent={ptePassageContent}
+                                            questions={activeSet.questions || []}
+                                            answers={answers}
+                                            onAnswerChange={handleAnswerChange}
+                                            submitted={submitted}
+                                            result={result}
+                                            clickedOption={clickedOption}
+                                            setClickedOption={setClickedOption}
+                                        />
+                                    </div>
+                                )}
+
+                                {groupedQuestions.length > 0 && (
                                 <div className="space-y-12">
                                     {groupedQuestions.map((entry, gIdx) => {
                                         if (entry.type === 'multiple-selection-group' && entry.questions.length > 1) {
@@ -1012,6 +1066,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                         );
                                     })}
                                 </div>
+                                )}
 
                                 {!submitted && (
                                     <button 
