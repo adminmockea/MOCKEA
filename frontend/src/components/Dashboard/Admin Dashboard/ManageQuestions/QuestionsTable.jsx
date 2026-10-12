@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { PiBookOpen, PiEar, PiPencilLine, PiMicrophoneStage, PiCaretUp, PiCaretDown } from "react-icons/pi";
 import HoverActions from "../../../Common/HoverActions";
 import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils";
+import useProgressiveList from "../../../../hooks/useProgressiveList";
 
 const getIcon = (type) => {
     switch(type) {
@@ -45,13 +46,13 @@ const QuestionsTable = ({
     sortField,
     sortDirection,
     handleSort,
-    filterType,
     setFilterType,
-    filterSubCategory,
     setFilterSubCategory
 }) => {
     const navigateHook = useNavigate();
     const navigate = propNavigate || navigateHook;
+    const { visibleItems, hasMore, loadMore, sentinelRef } = useProgressiveList(filteredQuestions, 40);
+
     return (
         <div className="overflow-x-auto p-4">
             <table className="table table-md w-full">
@@ -128,7 +129,7 @@ const QuestionsTable = ({
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-base-100">
-                    {filteredQuestions.map((q) => (
+                    {visibleItems.map((q) => (
                         <tr key={q._id} className="hover:bg-slate-50/80 transition-colors group">
                             <td className="py-4 pl-6 w-12">
                                 <input
@@ -245,6 +246,17 @@ const QuestionsTable = ({
                     ))}
                 </tbody>
             </table>
+            {hasMore && (
+                <div ref={sentinelRef} className="pt-4 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={loadMore}
+                        className="btn btn-outline btn-sm border-slate-300 text-slate-700 hover:bg-slate-900 hover:text-white rounded-xl px-6 font-bold text-xs"
+                    >
+                        Load More ({visibleItems.length} of {filteredQuestions.length})
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

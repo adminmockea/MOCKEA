@@ -33,6 +33,7 @@ import useEvaluate from "../../../../hooks/useEvaluate";
 import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questionCategoryUtils";
 import CategoryDropdown from "../../../Common/CategoryDropdown.jsx";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
+import useProgressiveList from "../../../../hooks/useProgressiveList.js";
 
 
 const fmt = (s) => {
@@ -79,6 +80,13 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     if (selectedCategory === "ALL") return listeningSets;
     return listeningSets.filter(set => getSetCategory(set) === selectedCategory);
   }, [listeningSets, selectedCategory]);
+
+  const {
+    visibleItems: visibleListeningSets,
+    hasMore: hasMoreListeningSets,
+    loadMore: loadMoreListeningSets,
+    sentinelRef: listeningSentinelRef,
+  } = useProgressiveList(filteredListeningSets, 24);
   const { submitting, submitted, setSubmitted, result, setResult, evaluate } = useEvaluate();
   const { answers, setAnswers, handleAnswerChange } = useAnswers({});
   const [clickedOption, setClickedOption] = useState(null);
@@ -520,56 +528,68 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             <p className="text-slate-500 font-bold text-sm">No modules found for category "{selectedCategory}".</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {filteredListeningSets.map((set, idx) => {
-                                const categoryName = getSetCategory(set);
-                                return (
-                                    <motion.div 
-                                        key={set._id}
-                                        whileHover={{ y: -10 }}
-                                        className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                                        onClick={() => setSelectedSetId(set._id)}
-                                    >
-                                        <div className="flex flex-col h-full space-y-6">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
-                                                    <PiHeadphonesFill />
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {visibleListeningSets.map((set, idx) => {
+                                    const categoryName = getSetCategory(set);
+                                    return (
+                                        <div 
+                                            key={set._id}
+                                            className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 hover:-translate-y-2.5 cursor-pointer group transition-all duration-200"
+                                            onClick={() => setSelectedSetId(set._id)}
+                                        >
+                                            <div className="flex flex-col h-full space-y-6">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+                                                        <PiHeadphonesFill />
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1.5 flex-1 min-w-0">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
+                                                        {categoryName && (
+                                                            <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border truncate max-w-full ${getCategoryBadgeStyle(categoryName)}`}>
+                                                                {categoryName}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col items-end gap-1.5 flex-1 min-w-0">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">Unit {idx + 1}</span>
-                                                    {categoryName && (
-                                                        <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border truncate max-w-full ${getCategoryBadgeStyle(categoryName)}`}>
-                                                            {categoryName}
+                                                <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
+                                                <div className="flex items-center gap-2 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === 'PTE' ? '20m' : '30m')}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
+                                                    {set.examType && (
+                                                        <span className={`badge badge-sm font-black ${
+                                                            set.examType === 'IELTS' ? 'badge-primary' :
+                                                            set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
+                                                        }`}>{set.examType}</span>
+                                                    )}
+                                                    {set.listeningPart && (set.examType === 'IELTS' || set.examType === 'BOTH') && (
+                                                        <span className="badge badge-sm font-black badge-ghost border border-indigo-200 text-indigo-500">
+                                                            Part {set.listeningPart}
                                                         </span>
                                                     )}
                                                 </div>
+                                                <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
+                                                    Start Lab
+                                                </button>
                                             </div>
-                                            <h3 className="text-xl font-black group-hover:text-primary transition-colors">{set.title}</h3>
-                                            <div className="flex items-center gap-2 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                                <span className="flex items-center gap-1.5">
-                                                    <PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === 'PTE' ? '20m' : '30m')}
-                                                </span>
-                                                <span className="flex items-center gap-1.5"><PiChartLineUpFill /> {set.questions?.length} Qs</span>
-                                                {set.examType && (
-                                                    <span className={`badge badge-sm font-black ${
-                                                        set.examType === 'IELTS' ? 'badge-primary' :
-                                                        set.examType === 'PTE' ? 'badge-success' : 'badge-warning'
-                                                    }`}>{set.examType}</span>
-                                                )}
-                                                {set.listeningPart && (set.examType === 'IELTS' || set.examType === 'BOTH') && (
-                                                    <span className="badge badge-sm font-black badge-ghost border border-indigo-200 text-indigo-500">
-                                                        Part {set.listeningPart}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <button className="btn btn-block rounded-2xl h-14 bg-slate-900 text-white border-none group-hover:bg-primary transition-all font-black uppercase tracking-widest text-xs">
-                                                Start Lab
-                                            </button>
                                         </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                            {hasMoreListeningSets && (
+                                <div ref={listeningSentinelRef} className="pt-4 flex justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={loadMoreListeningSets}
+                                        className="btn btn-outline border-slate-300 text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 rounded-2xl px-8 h-12 font-black text-xs uppercase tracking-widest"
+                                    >
+                                        Load More Modules ({visibleListeningSets.length} of {filteredListeningSets.length})
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}

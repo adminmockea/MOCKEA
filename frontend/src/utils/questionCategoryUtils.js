@@ -42,34 +42,38 @@ export const PTE_QUESTION_TYPE_LABELS = {
   "diagram-labelling": "Diagram Labelling",
 };
 
+const categoryCache = new WeakMap();
+
 /**
- * Derives the Category Name for a Question Set
+ * Derives the Category Name for a Question Set (cached per set reference)
  */
 export function getSetCategory(set) {
-  if (!set) return "General Module";
+  if (!set || typeof set !== "object") return "General Module";
 
+  const cached = categoryCache.get(set);
+  if (cached !== undefined) return cached;
+
+  let result = "General Module";
   const firstQ = set.questions?.[0];
   const qType = firstQ?.type;
 
   if (qType && PTE_QUESTION_TYPE_LABELS[qType]) {
     if (qType === "short-answer" && set.examType === "PTE" && set.testType === "listening") {
-      return "Listening: Fill in the Blanks";
+      result = "Listening: Fill in the Blanks";
+    } else if (qType === "multiple-choice" && set.examType === "IELTS") {
+      // If it's multiple choice in non-PTE context
+      result = "Multiple Choice";
+    } else if (qType === "multiple-selection" && set.examType === "IELTS") {
+      result = "Multiple Selection";
+    } else {
+      result = PTE_QUESTION_TYPE_LABELS[qType];
     }
-    // If it's multiple choice in non-PTE context
-    if (qType === "multiple-choice" && set.examType === "IELTS") {
-      return "Multiple Choice";
-    }
-    if (qType === "multiple-selection" && set.examType === "IELTS") {
-      return "Multiple Selection";
-    }
-    return PTE_QUESTION_TYPE_LABELS[qType];
+  } else if (set.examType === "IELTS" && set.listeningPart) {
+    result = `Part ${set.listeningPart}`;
   }
 
-  if (set.examType === "IELTS" && set.listeningPart) {
-    return `Part ${set.listeningPart}`;
-  }
-
-  return "General Module";
+  categoryCache.set(set, result);
+  return result;
 }
 
 /**

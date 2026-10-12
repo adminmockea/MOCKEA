@@ -62,6 +62,12 @@ const CreateMockTest = () => {
     });
 
     const [mockUsageFilter, setMockUsageFilter] = useState("all"); // "all", "unused", "in_mock"
+    const [visibleCounts, setVisibleCounts] = useState({
+        reading: 30,
+        listening: 30,
+        writing: 30,
+        speaking: 30
+    });
 
     const [formData, setFormData] = useState({
         title: "",
@@ -603,7 +609,7 @@ const CreateMockTest = () => {
 
                                 {/* Questions Cards Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {sectionQs.map((q) => {
+                                    {sectionQs.slice(0, visibleCounts[type] || 30).map((q) => {
                                         const isSelected = formData.sections[type].includes(q._id);
                                         const selectedIndex = formData.sections[type].indexOf(q._id) + 1;
                                         const mockList = q.usedInMockTests || [];
@@ -670,6 +676,22 @@ const CreateMockTest = () => {
                                         </div>
                                     )}
                                 </div>
+                                {sectionQs.length > (visibleCounts[type] || 30) && (
+                                    <div className="pt-2 flex justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setVisibleCounts((prev) => ({
+                                                    ...prev,
+                                                    [type]: (prev[type] || 30) + 30,
+                                                }))
+                                            }
+                                            className="btn btn-outline btn-sm border-slate-300 text-slate-700 hover:bg-slate-900 hover:text-white rounded-xl px-6 font-bold text-xs"
+                                        >
+                                            Load More {type} Sets ({Math.min(visibleCounts[type] || 30, sectionQs.length)} of {sectionQs.length})
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

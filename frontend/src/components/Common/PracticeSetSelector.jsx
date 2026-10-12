@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { PiClockFill, PiFileTextFill } from "react-icons/pi";
 import { getSetCategory, getCategoryBadgeStyle } from "../../utils/questionCategoryUtils";
 import CategoryDropdown from "./CategoryDropdown.jsx";
+import useProgressiveList from "../../hooks/useProgressiveList.js";
 
 export default function PracticeSetSelector({
     sets = [],
@@ -35,6 +36,8 @@ export default function PracticeSetSelector({
         if (selectedCategory === "ALL") return sets;
         return sets.filter(set => getSetCategory(set) === selectedCategory);
     }, [sets, selectedCategory]);
+
+    const { visibleItems: visibleSets, hasMore, loadMore, sentinelRef } = useProgressiveList(filteredSets, 24);
 
     if (sets.length === 0) {
         return (
@@ -112,53 +115,65 @@ export default function PracticeSetSelector({
                     <p className="text-slate-500 font-bold text-sm">No modules found for category "{selectedCategory}".</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredSets.map((set, idx) => {
-                        const categoryName = getSetCategory(set);
-                        return (
-                            <motion.div
-                                key={set._id}
-                                whileHover={{ y: -10 }}
-                                className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 cursor-pointer group transition-all"
-                                onClick={() => handleSelect(set._id)}
-                            >
-                                <div className="flex flex-col h-full space-y-6">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
-                                            {icon || <PiFileTextFill />}
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1.5 flex-1 min-w-0">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">
-                                                Session {idx + 1}
-                                            </span>
-                                            {categoryName && (
-                                                <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border truncate max-w-full ${getCategoryBadgeStyle(categoryName)}`}>
-                                                    {categoryName}
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {visibleSets.map((set, idx) => {
+                            const categoryName = getSetCategory(set);
+                            return (
+                                <div
+                                    key={set._id}
+                                    className="card bg-white p-8 rounded-[3rem] border border-base-300 shadow-sm hover:shadow-2xl hover:border-primary/30 hover:-translate-y-2.5 cursor-pointer group transition-all duration-200"
+                                    onClick={() => handleSelect(set._id)}
+                                >
+                                    <div className="flex flex-col h-full space-y-6">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+                                                {icon || <PiFileTextFill />}
+                                            </div>
+                                            <div className="flex flex-col items-end gap-1.5 flex-1 min-w-0">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-base-content/20">
+                                                    Session {idx + 1}
                                                 </span>
+                                                {categoryName && (
+                                                    <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border truncate max-w-full ${getCategoryBadgeStyle(categoryName)}`}>
+                                                        {categoryName}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <h3 className="text-xl font-black group-hover:text-primary transition-colors text-slate-800">
+                                            {set.title}
+                                        </h3>
+                                        <div className="flex items-center gap-3 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                                            <span className="flex items-center gap-1.5"><PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === "PTE" ? "20m" : timeLabel)}</span>
+                                            <span className="flex items-center gap-1.5">{icon || <PiFileTextFill />} {actionLabel}</span>
+                                            {set.examType && (
+                                                <span className={`badge badge-sm font-black ${
+                                                    set.examType === "IELTS" ? "badge-primary" :
+                                                    set.examType === "PTE" ? "badge-success" : "badge-warning"
+                                                }`}>{set.examType}</span>
                                             )}
                                         </div>
+                                        <button className="btn btn-block rounded-2xl h-14 bg-primary text-white border-none transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-slate-900">
+                                            Start Test
+                                        </button>
                                     </div>
-                                    <h3 className="text-xl font-black group-hover:text-primary transition-colors text-slate-800">
-                                        {set.title}
-                                    </h3>
-                                    <div className="flex items-center gap-3 flex-wrap text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                                        <span className="flex items-center gap-1.5"><PiClockFill /> {set.timeLimit ? `${set.timeLimit}m` : (set.examType === "PTE" ? "20m" : timeLabel)}</span>
-                                        <span className="flex items-center gap-1.5">{icon || <PiFileTextFill />} {actionLabel}</span>
-                                        {set.examType && (
-                                            <span className={`badge badge-sm font-black ${
-                                                set.examType === "IELTS" ? "badge-primary" :
-                                                set.examType === "PTE" ? "badge-success" : "badge-warning"
-                                            }`}>{set.examType}</span>
-                                        )}
-                                    </div>
-                                    <button className="btn btn-block rounded-2xl h-14 bg-primary text-white border-none transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:bg-slate-900">
-                                        Start Test
-                                    </button>
                                 </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                    {hasMore && (
+                        <div ref={sentinelRef} className="pt-4 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={loadMore}
+                                className="btn btn-outline border-slate-300 text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 rounded-2xl px-8 h-12 font-black text-xs uppercase tracking-widest"
+                            >
+                                Load More Modules ({visibleSets.length} of {filteredSets.length})
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
