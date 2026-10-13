@@ -43,6 +43,8 @@ const fmt = (s) => {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
+const EMPTY_LISTENING_SETS = [];
+
 const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
@@ -51,7 +53,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
   const targetExam = userData?.targetExam || "IELTS";
 
   const queryClient = useQueryClient();
-  const { data: fetchedListeningSets = [], isLoading: queryLoading } = useQuery({
+  const { data: fetchedListeningSets = EMPTY_LISTENING_SETS, isLoading: queryLoading } = useQuery({
     queryKey: ["listening-sets", user?.email],
     queryFn: async () => {
       const response = await axiosSecure.get("/questions?type=listening");
@@ -61,7 +63,10 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const listeningSets = preloadedSet ? [preloadedSet] : fetchedListeningSets;
+  const listeningSets = useMemo(
+    () => (preloadedSet ? [preloadedSet] : fetchedListeningSets),
+    [preloadedSet, fetchedListeningSets]
+  );
   const loading = preloadedSet ? false : queryLoading;
 
   const [selectedSetId, setSelectedSetId] = useState("");
@@ -937,7 +942,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                             }
 
                                                             const letter = String.fromCharCode(65 + oIdx);
-                                                            const displayOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '');
+                                                            const displayOpt = opt.replace(/^[A-Z][.)]\s*/i, '');
 
                                                             return (
                                                                 <label 
@@ -1017,7 +1022,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                                         {q.options.filter(opt => opt && opt.trim() !== "").map((opt, oIdx) => {
                                                             const isSelected = answers[q.id] === opt;
                                                             const letter = String.fromCharCode(65 + oIdx);
-                                                            const displayOpt = opt.replace(/^[A-Z][\.\)]\s*/i, '');
+                                                            const displayOpt = opt.replace(/^[A-Z][.)]\s*/i, '');
 
                                                             return (
                                                                 <label 

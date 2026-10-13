@@ -67,6 +67,8 @@ const getTaskContent = (activeSet, tab, isPte) => {
   }
 };
 
+const EMPTY_WRITING_SETS = [];
+
 const Writing = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
@@ -75,7 +77,7 @@ const Writing = ({ preloadedSet = null }) => {
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  const { data: fetchedWritingSets = [], isLoading: queryLoading } = useQuery({
+  const { data: fetchedWritingSets = EMPTY_WRITING_SETS, isLoading: queryLoading } = useQuery({
     queryKey: ["writing-sets"],
     queryFn: async () => {
       const response = await axiosSecure.get("/questions?type=writing");
@@ -85,7 +87,10 @@ const Writing = ({ preloadedSet = null }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const writingSets = preloadedSet ? [preloadedSet] : fetchedWritingSets;
+  const writingSets = useMemo(
+    () => (preloadedSet ? [preloadedSet] : fetchedWritingSets),
+    [preloadedSet, fetchedWritingSets]
+  );
   const loading = preloadedSet ? false : queryLoading;
 
   const [selectedSetId, setSelectedSetId] = useState(preloadedSet ? preloadedSet._id : "");

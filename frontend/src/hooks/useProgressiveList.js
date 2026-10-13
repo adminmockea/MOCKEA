@@ -6,13 +6,23 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
  */
 export default function useProgressiveList(items = [], batchSize = 24) {
     const [visibleCount, setVisibleCount] = useState(batchSize);
-    const [prevItems, setPrevItems] = useState(items);
+    const prevItemsRef = useRef(items);
     const sentinelRef = useRef(null);
 
-    if (items !== prevItems) {
-        setPrevItems(items);
-        setVisibleCount(batchSize);
-    }
+    // Reset visibleCount back to batchSize only when items actually change
+    useEffect(() => {
+        const prev = prevItemsRef.current;
+        if (prev !== items) {
+            prevItemsRef.current = items;
+            const isDifferent =
+                !prev ||
+                prev.length !== items.length ||
+                prev.some((it, i) => it !== items[i]);
+            if (isDifferent) {
+                setVisibleCount(batchSize);
+            }
+        }
+    }, [items, batchSize]);
 
     const hasMore = visibleCount < items.length;
 

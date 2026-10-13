@@ -1193,6 +1193,8 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, handleAnswerChange, s
     );
 };
 
+const EMPTY_READING_SETS = [];
+
 const Reading = ({ preloadedSet = null }) => {
   const axiosSecure = useAxiosSecure();
   const queryClient = useQueryClient();
@@ -1201,7 +1203,7 @@ const Reading = ({ preloadedSet = null }) => {
   const { userData } = useUserProfile();
   const targetExam = userData?.targetExam || "IELTS";
 
-  const { data: fetchedReadingSets = [], isLoading: queryLoading } = useQuery({
+  const { data: fetchedReadingSets = EMPTY_READING_SETS, isLoading: queryLoading } = useQuery({
     queryKey: ["reading-sets", user?.email],
     queryFn: async () => {
       const response = await axiosSecure.get("/questions?type=reading");
@@ -1211,7 +1213,10 @@ const Reading = ({ preloadedSet = null }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const readingSets = preloadedSet ? [preloadedSet] : fetchedReadingSets;
+  const readingSets = useMemo(
+    () => (preloadedSet ? [preloadedSet] : fetchedReadingSets),
+    [preloadedSet, fetchedReadingSets]
+  );
   const loading = preloadedSet ? false : queryLoading;
 
   const [selectedSetId, setSelectedSetId] = useState("");

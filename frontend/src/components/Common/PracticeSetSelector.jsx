@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { PiClockFill, PiFileTextFill } from "react-icons/pi";
 import { getSetCategory, getCategoryBadgeStyle } from "../../utils/questionCategoryUtils";
 import CategoryDropdown from "./CategoryDropdown.jsx";
 import useProgressiveList from "../../hooks/useProgressiveList.js";
 
+const EMPTY_SETS = [];
+
 export default function PracticeSetSelector({
-    sets = [],
+    sets = EMPTY_SETS,
     onSelect,
     onSelectSet,
     title,
