@@ -34,6 +34,7 @@ import { getSetCategory, getCategoryBadgeStyle } from "../../../../utils/questio
 import CategoryDropdown from "../../../Common/CategoryDropdown.jsx";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
 import useProgressiveList from "../../../../hooks/useProgressiveList.js";
+import HighlightIncorrectWords from "./HighlightIncorrectWords";
 
 
 const fmt = (s) => {
@@ -857,7 +858,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                                     <span className="badge badge-primary px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Questions 1–{activeSet.questions.length}</span>
                                 </div>
 
-                                {ptePassageContent && ptePassageContent.trim() !== "" && (
+                                {ptePassageContent && ptePassageContent.trim() !== "" && pteRenderedInlineIds.size > 0 && (
                                     <div className="space-y-6 p-8 rounded-[2.5rem] bg-base-50/50 border border-base-200">
                                         {pteRenderedInlineIds.size > 0 && (
                                             <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 border border-primary/15">
@@ -987,8 +988,30 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
 
                                         const q = entry.type === 'multiple-selection-group' ? entry.questions[0] : entry.question;
                                         const idx = entry.type === 'multiple-selection-group' ? entry.startIndex : entry.index;
-                                        const evaluation = result?.evaluatedAnswers?.find(a => a.questionId === q.id);
+                                        const evaluation = result?.evaluatedAnswers?.find(a => a.questionId === q.id || (q._id && a.questionId === q._id));
                                         const isCorrect = evaluation?.isCorrect;
+
+                                        if (q.type === 'pte-highlight-incorrect-words') {
+                                            return (
+                                                <div key={q.id || q._id} className="p-8 rounded-[2.5rem] bg-base-50/50 border border-base-200 space-y-6">
+                                                    {q.audioUrl && (!activeAudioUrl || q.audioUrl !== activeAudioUrl) && (
+                                                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-1.5">
+                                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Recording</p>
+                                                            <audio controls src={q.audioUrl} className="w-full h-9" />
+                                                        </div>
+                                                    )}
+                                                    <HighlightIncorrectWords
+                                                        question={q}
+                                                        passageText={q.question || activeSet.passage || ""}
+                                                        userAnswer={answers[q.id] !== undefined ? answers[q.id] : (q._id ? answers[q._id] : undefined)}
+                                                        onAnswerChange={handleAnswerChange}
+                                                        submitted={submitted}
+                                                        result={result}
+                                                        questionNumber={idx + 1}
+                                                    />
+                                                </div>
+                                            );
+                                        }
 
                                         return (
                                             <div key={q.id} className={`group space-y-6 p-8 rounded-[2.5rem] transition-all border ${
@@ -1162,7 +1185,7 @@ const Listening = ({ preloadedSet = null, onSubmitGuest = null }) => {
                             const part = activeSet?.listeningPart || 1;
                             const isIelts = activeSet?.examType === 'IELTS' || activeSet?.examType === 'BOTH';
                             const offset = isIelts ? (part - 1) * 10 : 0;
-                            const isAnswered = !!answers[q.id];
+                            const isAnswered = Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : !!answers[q.id];
                             return (
                                 <div 
                                     key={q.id}

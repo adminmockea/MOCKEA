@@ -3,6 +3,7 @@ import { PiEar, PiPlayCircle, PiPauseCircle } from "react-icons/pi";
 import { collapseListeningExampleBlocks } from "../../../../utils/listeningPassage";
 import { convertMarkdownContentToHtml } from "../../../../utils/markdownUtils";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
+import HighlightIncorrectWords from "../Listening/HighlightIncorrectWords";
 
 const EMPTY_ARRAY = [];
 
@@ -829,7 +830,7 @@ const GroupedContainer = ({ header, children, hideInstructions }) => {
     );
 };
 
-const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption }) => {
+const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setClickedOption, offset = 0 }) => {
     const isDragDrop = q.type === 'drag-drop-completion' || (q.type === 'flow-chart-completion' && q.options && q.options.filter(Boolean).length > 0);
     return (
         <div className="space-y-4">
@@ -948,6 +949,23 @@ const QuestionRenderer = ({ q, idx, answers, onAnswerChange, clickedOption, setC
                             <div className="text-right text-xs font-bold text-slate-400 mt-1">
                                 Word count: {(answers[q.id] || "").trim() ? (answers[q.id] || "").trim().split(/\s+/).filter(w => w.length > 0).length : 0}
                             </div>
+                        </div>
+                    ) : q.type === "pte-highlight-incorrect-words" ? (
+                        <div className="space-y-4">
+                            {q.audioUrl && (
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Recording</p>
+                                    <audio controls src={q.audioUrl} className="w-full h-8" />
+                                </div>
+                            )}
+                            <HighlightIncorrectWords
+                                question={q}
+                                passageText={q.question || ""}
+                                userAnswer={answers[q.id]}
+                                onAnswerChange={onAnswerChange}
+                                submitted={false}
+                                questionNumber={(offset || 0) + idx + 1}
+                            />
                         </div>
                     ) : (
                         <input 
@@ -1086,6 +1104,24 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                     const isFlowChart = q.type === 'flow-chart-completion';
                     const nextIsFlowChart = vgIdx < groupEntry.visuals.length - 1 && groupEntry.visuals[vgIdx + 1]?.question?.type === 'flow-chart-completion';
 
+                    if (q.type === 'pte-highlight-incorrect-words') {
+                        return (
+                            <div key={q.id || idx} className="space-y-4">
+                                <div id={`question-${idx}`} className="scroll-mt-6">
+                                    <QuestionRenderer
+                                        q={q}
+                                        idx={idx}
+                                        answers={answers}
+                                        onAnswerChange={onAnswerChange}
+                                        clickedOption={clickedOption}
+                                        setClickedOption={setClickedOption}
+                                        offset={offset}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    }
+
                     return (
                         <div key={q.id || idx} className="space-y-4">
                             <div 
@@ -1112,6 +1148,7 @@ const GroupedQuestionsRenderer = ({ groupedItems, answers, onAnswerChange, offse
                                             onAnswerChange={onAnswerChange}
                                             clickedOption={clickedOption}
                                             setClickedOption={setClickedOption}
+                                            offset={offset}
                                         />
                                     </div>
                                 </div>

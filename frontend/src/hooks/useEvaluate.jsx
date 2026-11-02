@@ -19,6 +19,9 @@ export default function useEvaluate() {
         const totalQuestions = activeSet.questions?.length || 0;
         const answeredCount = activeSet.questions?.filter(q => {
             const ans = answers[q.id];
+            if (q.type === 'pte-highlight-incorrect-words') {
+                return true;
+            }
             if (typeof ans === 'string') {
                 return ans.trim() !== "";
             }

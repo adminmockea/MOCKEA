@@ -7,6 +7,7 @@ import { getQuestionPassageIndex } from "../../../../utils/readingUtils.js";
 import { parseFeedback } from "../../../../utils/parseFeedback";
 import TableCompletionRenderer from "../../../Common/TableCompletionRenderer";
 import ReadingPassageRenderer from "../../../Common/ReadingPassageRenderer";
+import HighlightIncorrectWords from "../Listening/HighlightIncorrectWords";
 import { 
     PiArrowLeftBold, 
     PiCheckCircleFill, 
@@ -575,6 +576,28 @@ const GroupedReviewQuestionsRenderer = ({
                     }
                     const qIdx = currentSectionData?.questions?.findIndex(item => item.id === q.id);
                     const displayNum = qIdx !== -1 ? ((offset || 0) + qIdx + 1) : (originalIdx + 1);
+
+                    if (q && q.type === 'pte-highlight-incorrect-words') {
+                        return (
+                            <div key={originalIdx} className="bg-white p-6 rounded-3xl border border-base-200 shadow-sm space-y-4">
+                                {q.audioUrl && (
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Recording</p>
+                                        <audio controls src={q.audioUrl} className="w-full h-8" />
+                                    </div>
+                                )}
+                                <HighlightIncorrectWords
+                                    question={q}
+                                    passageText={q.question || ""}
+                                    userAnswer={ans.userAnswer}
+                                    submitted={true}
+                                    result={{ evaluatedAnswers: [{ ...ans, questionId: q.id }] }}
+                                    questionNumber={displayNum}
+                                />
+                            </div>
+                        );
+                    }
+
                     return (
                         <div key={originalIdx} className={`card p-4 rounded-3xl border shadow-sm transition-all ${
                             ans.isCorrect ? "bg-success/5 border-success/20" : "bg-error/5 border-error/20"
@@ -590,7 +613,9 @@ const GroupedReviewQuestionsRenderer = ({
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-base-content/40">Your Answer</p>
                                             <p className={`font-black text-lg ${ans.isCorrect ? "text-success" : "text-error"}`}>
-                                                {ans.userAnswer || "No Answer"}
+                                                {Array.isArray(ans.userAnswer)
+                                                    ? ans.userAnswer.map(u => typeof u === 'object' ? (u.word || u.text) : u).join(", ")
+                                                    : (ans.userAnswer || "No Answer")}
                                             </p>
                                         </div>
                                         <div className="space-y-1">
