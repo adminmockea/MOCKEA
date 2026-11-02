@@ -6,3 +6,4 @@ uploads/
 SERVICES_AND_PLATFORMS.md
 *.docx
 ~$*
+.agents/
