@@ -160,6 +160,7 @@ export default function QuestionsBuilderCard({
             {formData.questions?.map((q, index) => {
                 const questionNum = index + 1;
                 const isWritingTask = testType === "writing" || q.type === "pte-summarize-written-text" || q.type === "pte-write-essay";
+                const isHiwTask = q.type === "pte-highlight-incorrect-words";
                 const isOpenEndedTask = isWritingTask || testType === "speaking" || OPEN_ENDED_TYPES.includes(q.type);
                 const group = (testType === "reading" || testType === "listening") && formData.examType !== "PTE"
                     ? (formData.questionGroups || []).find(g => Number(g.fromQuestion) === questionNum)
@@ -285,6 +286,58 @@ export default function QuestionsBuilderCard({
                                         </div>
                                     </div>
                                 </div>
+                            ) : isHiwTask ? (
+                                <div className="space-y-4">
+                                    <div className="grid md:grid-cols-3 gap-4 items-end">
+                                        <div>
+                                            <label className="label py-1"><span className="label-text font-bold text-xs">Task Type</span></label>
+                                            <QuestionTypeSelect
+                                                value={q.type}
+                                                onChange={(val) => updateQuestionField(q.id, "type", val)}
+                                                examType={formData.examType}
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center justify-between text-xs">
+                                                <span className="font-bold text-amber-900">
+                                                    Highlight Incorrect Words (HIW)
+                                                </span>
+                                                <span className="badge badge-sm bg-amber-200/70 border-none font-bold text-amber-800 text-[10px]">
+                                                    Transcription Passage with Deliberate Errors
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Dedicated spacious textarea for HIW transcription passage */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="label py-0">
+                                                <span className="label-text font-bold text-xs text-slate-800">
+                                                    Transcription Passage (containing deliberate incorrect words)
+                                                </span>
+                                            </label>
+                                            <span className="text-[11px] font-semibold text-slate-400">
+                                                Enter the passage that the candidate reads while listening
+                                            </span>
+                                        </div>
+                                        <textarea
+                                            className="w-full p-4 bg-white border border-slate-200 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-2xl text-sm transition-all outline-none resize-y min-h-[140px] font-serif text-slate-800 leading-relaxed shadow-2xs"
+                                            placeholder="Paste the transcription passage here with the deliberate incorrect words that differ from the audio recording..."
+                                            value={q.question || ""}
+                                            onChange={(e) => updateQuestionField(q.id, "question", e.target.value)}
+                                            required
+                                        />
+                                        <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium px-1">
+                                            <span>
+                                                Word count: {q.question?.trim() ? q.question.trim().split(/\s+/).filter(Boolean).length : 0} words
+                                            </span>
+                                            <span className="italic">
+                                                Words will be rendered as interactive clickable tokens for students
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="grid md:grid-cols-3 gap-4">
                                     {/* Type picker */}
@@ -392,6 +445,8 @@ export default function QuestionsBuilderCard({
                                         <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/50">
                                             {q.type === "pte-reading-writing-fill-blanks"
                                                 ? "✨ Auto-derived from Option #1 of each blank pool"
+                                                : q.type === "pte-highlight-incorrect-words"
+                                                ? "✨ Auto-synced from target incorrect words chips"
                                                 : NEEDS_OPTIONS.includes(q.type)
                                                 ? "Select from options list below"
                                                 : q.type === "short-answer" || q.type === "sentence-completion" || q.type === "summary-completion"
@@ -411,6 +466,17 @@ export default function QuestionsBuilderCard({
                                                 q.pteDropdownOptions?.map((arr) => arr?.[0]).filter(Boolean).join(", ") ||
                                                 q.correctAnswer ||
                                                 "Auto-derived when options are filled"
+                                            }
+                                            readOnly
+                                        />
+                                    ) : q.type === "pte-highlight-incorrect-words" ? (
+                                        <input
+                                            type="text"
+                                            className="input input-bordered rounded-2xl border-emerald-300 bg-emerald-50 text-emerald-900 font-bold text-sm cursor-not-allowed"
+                                            value={
+                                                Array.isArray(q.options) && q.options.filter(Boolean).length > 0
+                                                    ? q.options.filter(Boolean).join(", ")
+                                                    : q.correctAnswer || "Auto-derived from target incorrect words chips"
                                             }
                                             readOnly
                                         />

@@ -270,6 +270,17 @@ function QuestionSetFormContent({ mode, id, initialData, fetchedQuestionTestType
                         correctAnswer: derivedAns || q.correctAnswer || ""
                     };
                 }
+                if (q.type === "pte-highlight-incorrect-words") {
+                    const cleanOpts = Array.isArray(q.options)
+                        ? q.options.map(w => typeof w === 'string' ? w.trim() : String(w)).filter(Boolean)
+                        : (typeof q.correctAnswer === 'string' ? q.correctAnswer.split(/[,\n\r;]+/).map(s => s.trim()).filter(Boolean) : []);
+                    const derivedAns = cleanOpts.join(", ");
+                    return {
+                        ...q,
+                        options: cleanOpts,
+                        correctAnswer: derivedAns || q.correctAnswer || ""
+                    };
+                }
                 if (OPEN_ENDED_TYPES.includes(q.type) || testType === "writing" || testType === "speaking") {
                     return {
                         ...q,

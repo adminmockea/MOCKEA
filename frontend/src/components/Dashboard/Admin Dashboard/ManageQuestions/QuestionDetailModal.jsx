@@ -223,16 +223,29 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                                         <div className="flex-1 space-y-3">
                                                             <div className="font-semibold text-slate-800 text-sm">{subQ.question || "(No question text)"}</div>
                                                             
-                                                            {/* MCQ Options */}
+                                                            {/* Options / Target Words */}
                                                             {subQ.options && subQ.options.length > 0 && subQ.options.some(opt => opt) && (
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-1">
-                                                                    {subQ.options.map((opt, optIdx) => opt && (
-                                                                        <div key={optIdx} className="text-xs bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-slate-600 flex items-center gap-2">
-                                                                            <span className="font-bold text-primary">{String.fromCharCode(65 + optIdx)}.</span>
-                                                                            <span>{opt}</span>
+                                                                subQ.type === "pte-highlight-incorrect-words" ? (
+                                                                    <div className="space-y-1.5 pl-1">
+                                                                        <div className="text-[10px] uppercase tracking-wider font-bold text-amber-700">Target Incorrect Words</div>
+                                                                        <div className="flex flex-wrap gap-1.5">
+                                                                            {subQ.options.filter(Boolean).map((word, wIdx) => (
+                                                                                <span key={wIdx} className="px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs">
+                                                                                    {word}
+                                                                                </span>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
-                                                                </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-1">
+                                                                        {subQ.options.map((opt, optIdx) => opt && (
+                                                                            <div key={optIdx} className="text-xs bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-slate-600 flex items-center gap-2">
+                                                                                <span className="font-bold text-primary">{String.fromCharCode(65 + optIdx)}.</span>
+                                                                                <span>{opt}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )
                                                             )}
 
                                                             {/* Matching pairs */}
@@ -255,6 +268,22 @@ const QuestionDetailModal = ({ selectedQuestion, setSelectedQuestion, navigate: 
                                                             {subQ.imageUrl && (
                                                                 <div className="border border-base-300 rounded-xl p-2 bg-white max-w-xs mt-2">
                                                                     <img src={subQ.imageUrl} alt={`Question diagram`} className="rounded-lg max-h-32 object-contain" />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Audio Clip Preview */}
+                                                            {subQ.audioUrl && (
+                                                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Recording</span>
+                                                                    <audio controls src={subQ.audioUrl} className="w-full h-8" />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Reference Spoken Transcript */}
+                                                            {subQ.pteAudioTranscript && (
+                                                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Audio Reference Transcript</span>
+                                                                    <p className="text-xs italic text-slate-600 font-medium leading-relaxed">"{subQ.pteAudioTranscript}"</p>
                                                                 </div>
                                                             )}
 

@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { PiPlus, PiTrash } from "react-icons/pi";
 import { 
   QUESTION_TYPE_GROUPS, 
@@ -8,6 +9,7 @@ import {
   PTE_NEEDS_AUDIO
 } from "./questionFormConstants";
 import { parsePastedOptionsText } from "../../../../hooks/useQuestionFormState.jsx";
+import { cleanHiwWord, tokenizePassage } from "../../../../utils/hiwTokenizer.js";
 import AudioUploader from "./AudioUploader";
 
 export const QuestionTypeSelect = ({ value, onChange, examType }) => {
@@ -363,8 +365,13 @@ export const QuestionTypeExtras = ({
         );
     }
 
+    // ── PTE Highlight Incorrect Words Dedicated Builder ──
+    if (q.type === "pte-highlight-incorrect-words") {
+        return <PteHighlightIncorrectWordsFields q={q} onUpdate={onUpdate} />;
+    }
+
     // ── PTE Listening & Speaking Audio Prompts & Transcripts ──
-    if (["pte-repeat-sentence", "pte-retell-lecture", "pte-summarize-spoken-text", "pte-write-from-dictation", "pte-answer-short-question", "pte-highlight-incorrect-words", "pte-select-missing-word"].includes(q.type)) {
+    if (["pte-repeat-sentence", "pte-retell-lecture", "pte-summarize-spoken-text", "pte-write-from-dictation", "pte-answer-short-question", "pte-select-missing-word"].includes(q.type)) {
         return (
             <div className="bg-slate-50 p-4 rounded-2xl space-y-4 border border-slate-200">
                 <AudioUploader
@@ -392,4 +399,194 @@ export const QuestionTypeExtras = ({
     }
 
     return null;
+};
+
+export const PteHighlightIncorrectWordsFields = ({ q, onUpdate }) => {
+    const [inputValue, setInputValue] = useState("");
+    const incorrectWords = Array.isArray(q.options) && q.options.length > 0
+        ? q.options.filter(Boolean)
+        : (typeof q.correctAnswer === "string" && q.correctAnswer.trim()
+            ? q.correctAnswer.split(",").map(w => w.trim()).filter(Boolean)
+            : []);
+
+    const updateWords = (newWords) => {
+        const cleaned = newWords.map(w => w.trim()).filter(Boolean);
+        onUpdate(q.id, "options", cleaned);
+        onUpdate(q.id, "correctAnswer", cleaned.join(", "));
+    };
+
+    const handleAddWord = (wordToAdd) => {
+        const raw = wordToAdd || inputValue;
+        if (!raw || !raw.trim()) return;
+        const parts = raw.split(/[,;\n\r]+/).map(w => cleanHiwWord(w)).filter(Boolean);
+        const existingSet = new Set(incorrectWords.map(w => cleanHiwWord(w)));
+        const toAdd = parts.filter(p => !existingSet.has(p));
+        if (toAdd.length > 0) {
+            updateWords([...incorrectWords, ...toAdd]);
+        }
+        setInputValue("");
+    };
+
+    const handleRemoveWord = (indexToRemove) => {
+        const newWords = incorrectWords.filter((_, idx) => idx !== indexToRemove);
+        updateWords(newWords);
+    };
+
+    const handleClearAll = () => {
+        updateWords([]);
+    };
+
+    const passageTokens = useMemo(() => {
+        return tokenizePassage(q.question || "").filter(t => t.type === "word");
+    }, [q.question]);
+
+    return (
+        <div className="bg-slate-50 p-5 rounded-3xl space-y-5 border border-slate-200">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <span className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                    🎯 Highlight Incorrect Words (HIW) Configuration
+                </span>
+                <span className="badge badge-sm bg-primary/10 text-primary border-none font-bold text-[10px]">
+                    +1 hit / -1 penalty / min 0
+                </span>
+            </div>
+
+            {/* Audio Clip Uploader */}
+            <AudioUploader
+                label="PTE Listening Audio Clip"
+                audioUrl={q.audioUrl || ""}
+                onChange={(url) => onUpdate(q.id, "audioUrl", url)}
+                helperText="Upload the audio recording the candidate listens to while reading the altered passage"
+            />
+
+            {/* Audio Spoken Transcript */}
+            <div className="form-control">
+                <label className="label py-1">
+                    <span className="label-text font-semibold text-xs text-slate-700">
+                        PTE Audio Reference Transcript (What the speaker actually says)
+                    </span>
+                </label>
+                <textarea
+                    className="textarea textarea-bordered rounded-xl text-sm min-h-[4.5rem] bg-white font-medium"
+                    placeholder="Enter the exact spoken text inside the audio clip..."
+                    value={q.pteAudioTranscript || ""}
+                    onChange={(e) => onUpdate(q.id, "pteAudioTranscript", e.target.value)}
+                />
+                <label className="label py-0.5">
+                    <span className="label-text-alt text-slate-400 text-[11px]">
+                        The speaker says this; candidate spots the words that were altered in the passage.
+                    </span>
+                </label>
+            </div>
+
+            {/* Tag / Chips Manager */}
+            <div className="space-y-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 block">
+                            Target Incorrect Words Chips ({incorrectWords.length})
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                            Deliberate errors in the transcription passage that candidates must highlight
+                        </span>
+                    </div>
+                    {incorrectWords.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleClearAll}
+                            className="btn btn-ghost btn-xs text-error gap-1 text-[11px]"
+                        >
+                            <PiTrash className="w-3.5 h-3.5" /> Clear All
+                        </button>
+                    )}
+                </div>
+
+                {/* Add chip input */}
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        className="input input-bordered input-sm rounded-xl flex-1 text-xs font-semibold"
+                        placeholder="Type incorrect word and press Enter (or paste comma-separated)..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddWord();
+                            }
+                        }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => handleAddWord()}
+                        className="btn btn-primary btn-sm rounded-xl gap-1 text-xs font-bold px-4"
+                    >
+                        <PiPlus /> Add Word
+                    </button>
+                </div>
+
+                {/* Chips Display */}
+                <div className="flex flex-wrap gap-2 pt-1 min-h-[2.5rem] items-center">
+                    {incorrectWords.length === 0 ? (
+                        <span className="text-xs italic text-slate-400">
+                            No incorrect words added yet. Type above or click words from the passage preview below.
+                        </span>
+                    ) : (
+                        incorrectWords.map((word, idx) => (
+                            <span
+                                key={idx}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs shadow-xs"
+                            >
+                                <span>{word}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveWord(idx)}
+                                    className="w-4 h-4 rounded-full hover:bg-amber-200 inline-flex items-center justify-center text-amber-800 text-xs font-black cursor-pointer"
+                                    title="Remove this word"
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))
+                    )}
+                </div>
+
+                {/* One-click word picker from passage */}
+                {passageTokens.length > 0 && (
+                    <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                            💡 Quick Click-to-Flag from Passage:
+                        </span>
+                        <div className="flex flex-wrap gap-1 p-2.5 bg-slate-50 rounded-xl border border-slate-200 max-h-40 overflow-y-auto">
+                            {passageTokens.map((tok) => {
+                                const isFlagged = incorrectWords.some(w => cleanHiwWord(w) === tok.cleanWord);
+                                return (
+                                    <button
+                                        key={tok.index}
+                                        type="button"
+                                        onClick={() => {
+                                            if (isFlagged) {
+                                                const newWords = incorrectWords.filter(w => cleanHiwWord(w) !== tok.cleanWord);
+                                                updateWords(newWords);
+                                            } else {
+                                                handleAddWord(tok.word);
+                                            }
+                                        }}
+                                        className={`px-2 py-0.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                                            isFlagged
+                                                ? "bg-amber-300 text-amber-950 font-bold shadow-xs scale-105"
+                                                : "bg-white hover:bg-slate-200 text-slate-700 border border-slate-200"
+                                        }`}
+                                        title={isFlagged ? "Click to unflag" : "Click to flag as incorrect word"}
+                                    >
+                                        {tok.word}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
