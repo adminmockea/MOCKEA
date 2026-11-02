@@ -18,9 +18,16 @@ const mockTestResultSchema = new mongoose.Schema({
         },
         answers: [{
             questionId: String,
-            userAnswer: String,
+            userAnswer: mongoose.Schema.Types.Mixed,
             isCorrect: Boolean,
-            correctAnswer: String
+            correctAnswer: String,
+            score: Number,
+            rawScore: Number,
+            maxScore: Number,
+            correctWords: [String],
+            incorrectWords: [String],
+            missedWords: [String],
+            itemizedDetails: mongoose.Schema.Types.Mixed
         }],
         score: Number,
         isGraded: {

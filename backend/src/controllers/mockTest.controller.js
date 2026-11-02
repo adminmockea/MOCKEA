@@ -2,6 +2,7 @@ import MockTest from '../model/mockTest.js';
 import MockTestResult from '../model/mockTestResult.js';
 import User from '../model/user.js';
 import { cache } from '../utils/cache.js';
+import { gradePteHighlightIncorrectWords } from './questions.controller.js';
 
 const cleanAnswer = (str) => {
     if (!str) return "";
@@ -446,14 +447,24 @@ export const finalizeTest = async (req, res) => {
                         });
                     } else {
                         const it = group.item;
-                        const hasCorrectAnswer = it.originalQ && it.originalQ.correctAnswer != null;
-                        const isCorrect = hasCorrectAnswer && isAnswerMatching(it.originalQ.correctAnswer, it.ans.userAnswer || '');
-                        if (isCorrect) correctCount++;
-                        finalAnswers.push({
-                            ...it.ans,
-                            isCorrect,
-                            correctAnswer: it.originalQ?.correctAnswer
-                        });
+                        if (it.originalQ && it.originalQ.type === 'pte-highlight-incorrect-words') {
+                            const hiwResult = gradePteHighlightIncorrectWords(it.originalQ, it.ans.userAnswer);
+                            correctCount += hiwResult.score;
+                            finalAnswers.push({
+                                ...it.ans,
+                                ...hiwResult,
+                                questionId: it.ans.questionId
+                            });
+                        } else {
+                            const hasCorrectAnswer = it.originalQ && it.originalQ.correctAnswer != null;
+                            const isCorrect = hasCorrectAnswer && isAnswerMatching(it.originalQ.correctAnswer, it.ans.userAnswer || '');
+                            if (isCorrect) correctCount++;
+                            finalAnswers.push({
+                                ...it.ans,
+                                isCorrect,
+                                correctAnswer: it.originalQ?.correctAnswer
+                            });
+                        }
                     }
                 }
 

@@ -84,6 +84,122 @@ const isAnswerMatching = (correct, user) => {
     return false;
 };
 
+export const cleanHiwWord = (w) => {
+    if (!w) return "";
+    return String(w)
+        .toLowerCase()
+        .replace(/[\u2018\u2019\u02BC\u201B]/g, "'")
+        .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+        .trim();
+};
+
+export const normalizeHiwUserAnswer = (userAnswer) => {
+    if (!userAnswer) return [];
+    if (Array.isArray(userAnswer)) {
+        const seenIndices = new Set();
+        const deduplicated = [];
+        for (const item of userAnswer) {
+            if (typeof item === 'object' && item !== null && item.index !== undefined) {
+                const idxKey = Number(item.index);
+                if (!seenIndices.has(idxKey)) {
+                    seenIndices.add(idxKey);
+                    deduplicated.push(item);
+                }
+            } else {
+                deduplicated.push(item);
+            }
+        }
+        return deduplicated
+            .map(item => {
+                if (typeof item === 'object' && item !== null) {
+                    return item.word || item.text || item.cleanWord || "";
+                }
+                return String(item);
+            })
+            .map(cleanHiwWord)
+            .filter(Boolean);
+    }
+    if (typeof userAnswer === 'string') {
+        return userAnswer
+            .split(/[,\n\r;]+/)
+            .map(cleanHiwWord)
+            .filter(Boolean);
+    }
+    return [];
+};
+
+export const gradePteHighlightIncorrectWords = (question, userAnswer) => {
+    // 1. Target incorrect words from options or correctAnswer
+    let targetWords = [];
+    if (Array.isArray(question?.options) && question.options.length > 0) {
+        targetWords = question.options
+            .map(w => {
+                if (typeof w === 'object' && w !== null) {
+                    return w.word || w.text || w.cleanWord || "";
+                }
+                return String(w).trim();
+            })
+            .filter(Boolean);
+    } else if (typeof question?.correctAnswer === 'string' && question.correctAnswer.trim()) {
+        targetWords = question.correctAnswer
+            .split(/[,\n\r;]+/)
+            .map(w => w.trim())
+            .filter(Boolean);
+    }
+
+    const cleanTargets = targetWords.map(tw => ({
+        original: tw,
+        clean: cleanHiwWord(tw)
+    }));
+
+    // 2. User selected words
+    const userWords = normalizeHiwUserAnswer(userAnswer);
+
+    // 3. Match hits and false alarms
+    const hits = [];
+    const falseAlarms = [];
+    const remainingTargets = [...cleanTargets];
+
+    userWords.forEach(uw => {
+        const targetIdx = remainingTargets.findIndex(t => t.clean === uw);
+        if (targetIdx !== -1) {
+            hits.push(remainingTargets[targetIdx].original);
+            remainingTargets.splice(targetIdx, 1);
+        } else {
+            falseAlarms.push(uw);
+        }
+    });
+
+    const missed = remainingTargets.map(t => t.original);
+
+    // 4. Scoring: +1 per hit, -1 per false alarm, floor 0
+    const rawScore = hits.length - falseAlarms.length;
+    const finalScore = Math.max(0, rawScore);
+    const maxScore = targetWords.length;
+    const isCorrect = hits.length === maxScore && falseAlarms.length === 0 && maxScore > 0;
+
+    return {
+        questionId: question?.id || question?._id?.toString() || question?.questionId,
+        userAnswer,
+        correctAnswer: question?.correctAnswer || targetWords.join(', '),
+        isCorrect,
+        score: finalScore,
+        rawScore,
+        maxScore,
+        correctWords: hits,
+        incorrectWords: falseAlarms,
+        missedWords: missed,
+        itemizedDetails: {
+            hits,
+            falseAlarms,
+            missed,
+            points: finalScore,
+            rawPoints: rawScore,
+            maxPoints: maxScore
+        }
+    };
+};
+
 const getCloudinaryPublicId = (url) => {
     try {
         const parts = url.split('/upload/');
@@ -593,8 +709,8 @@ export const evaluateQuestions = async (req, res) => {
 
         if (!set) return res.status(404).json({ success: false, message: 'Question set not found' });
 
-        let correctCount = 0;
-        const totalQuestions = set.questions.length;
+        let totalPossiblePoints = 0;
+        let totalEarnedPoints = 0;
 
         const mappedQuestions = set.questions.map(q => {
             const userAnswer = answers[q.id] || "";
@@ -661,7 +777,8 @@ export const evaluateQuestions = async (req, res) => {
                         }
                     }
 
-                    if (isCorrect) correctCount++;
+                    totalPossiblePoints++;
+                    if (isCorrect) totalEarnedPoints++;
                     evaluatedAnswers.push({
                         questionId: it.q.id,
                         userAnswer: it.userAnswer,
@@ -671,24 +788,32 @@ export const evaluateQuestions = async (req, res) => {
                 });
             } else {
                 const it = group.item;
-                const isCorrect = isAnswerMatching(it.q.correctAnswer, it.userAnswer);
-                if (isCorrect) correctCount++;
-                evaluatedAnswers.push({
-                    questionId: it.q.id,
-                    userAnswer: it.userAnswer,
-                    correctAnswer: it.q.correctAnswer,
-                    isCorrect
-                });
+                if (it.q && it.q.type === 'pte-highlight-incorrect-words') {
+                    const hiwResult = gradePteHighlightIncorrectWords(it.q, it.userAnswer);
+                    totalPossiblePoints += (hiwResult.maxScore || 1);
+                    totalEarnedPoints += hiwResult.score;
+                    evaluatedAnswers.push(hiwResult);
+                } else {
+                    const isCorrect = isAnswerMatching(it.q.correctAnswer, it.userAnswer);
+                    totalPossiblePoints++;
+                    if (isCorrect) totalEarnedPoints++;
+                    evaluatedAnswers.push({
+                        questionId: it.q.id,
+                        userAnswer: it.userAnswer,
+                        correctAnswer: it.q.correctAnswer,
+                        isCorrect
+                    });
+                }
             }
         }
 
-        const score = Math.round((correctCount / totalQuestions) * 100);
+        const score = totalPossiblePoints > 0 ? Math.round((totalEarnedPoints / totalPossiblePoints) * 100) : 0;
 
         res.status(200).json({
             success: true,
             score,
-            correctAnswers: correctCount,
-            totalQuestions,
+            correctAnswers: totalEarnedPoints,
+            totalQuestions: totalPossiblePoints,
             evaluatedAnswers
         });
     } catch (error) {
